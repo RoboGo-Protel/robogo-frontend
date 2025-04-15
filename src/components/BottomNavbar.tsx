@@ -30,9 +30,14 @@ export default function BottomNavbar() {
   const pathname = usePathname();
 
   return (
-    <nav id="bottom-navbar" className="fixed bottom-0 left-0 right-0 z-10 flex items-center justify-around bg-gradient-to-br from-[#3BD5FF]/12 to-[#367AF2]/12 p-5 rounded-t-xl">
+    <nav
+      id="bottom-navbar"
+      className="fixed bottom-0 left-0 right-0 z-10 flex items-center justify-around bg-[#e6f5fe] p-5 rounded-t-xl"
+    >
       {menuItems.map((item, index) => {
-        const isActive = pathname === item.href;
+        const isActive =
+          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+
         const icon = isActive ? item.fillIcon : item.outlineIcon;
         const baseClass =
           "flex flex-row gap-3 items-center justify-center text-base font-medium transition duration-200 ease-in-out rounded-xl py-3 px-4 w-full";
@@ -51,7 +56,9 @@ export default function BottomNavbar() {
         );
 
         return isActive ? (
-          <div key={index} className="w-full">{content}</div>
+          <div key={index} className="w-full">
+            {content}
+          </div>
         ) : (
           <Link href={item.href} key={index} className="w-full">
             {content}

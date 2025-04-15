@@ -18,7 +18,7 @@ export default function LeftArea_Home() {
   };
 
   return (
-    <div className="flex flex-col items-start justify-start min-w-[450px] gap-4 h-full">
+    <div className="flex flex-col items-start justify-start min-w-[450px] max-w-[450px] gap-4 h-full">
       <ClockWeather />
       <div
         className={`flex flex-col items-center justify-start w-full px-5 py-4 border-2 ${

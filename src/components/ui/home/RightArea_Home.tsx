@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import Image from "next/image";
 import { infoItems } from "@/utils/info";
 import { motion, AnimatePresence } from "framer-motion";
-import ShortInfo from "@/components/ShortInfo";
+import ShortInfo from "@/components/cards/ShortInfoCard";
 
 export default function RightArea_Home() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -152,7 +152,7 @@ export default function RightArea_Home() {
               <img
                 src={imageSrc!}
                 alt="Live Camera Stream"
-                className="rounded-2xl h-80 object-cover"
+                className="rounded-2xl w-auto h-full object-cover"
               />
             </motion.div>
           ) : (

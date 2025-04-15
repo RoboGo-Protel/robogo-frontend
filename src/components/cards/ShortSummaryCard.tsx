@@ -9,11 +9,15 @@ interface SummaryItem {
 
 interface ShortSummaryProps {
   summaryItems: readonly SummaryItem[];
+  layout?: string;
 }
 
-const ShortSummary: React.FC<ShortSummaryProps> = ({ summaryItems }) => {
+const ShortSummary: React.FC<ShortSummaryProps> = ({
+  summaryItems,
+  layout,
+}) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full h-fit">
+    <div className={`w-full h-fit ${layout}`}>
       {summaryItems.map((summary, index) => {
         return (
           <div

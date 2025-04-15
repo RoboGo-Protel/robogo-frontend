@@ -1,11 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import LeftArea_Home from "@/components/ui/home/LeftArea_Home";
-import MidArea_Home from "@/components/ui/home/MidArea_Home";
-import RightArea_Home from "@/components/ui/home/RightArea_Home";
-import { clsx } from "clsx";
+import LeftArea_Monitoring from "@/components/ui/monitoring/LeftArea_Monitoring";
+import MidArea_Monitoring from "@/components/ui/monitoring/MidArea_Monitoring";
+import RightArea_Monitoring from "@/components/ui/monitoring/RightArea_Monitoring";
 
-export default function Home() {
+export default function Monitoring() {
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
 
@@ -30,17 +29,15 @@ export default function Home() {
 
   return (
     <div
-      className={clsx(
-        "flex flex-row items-center justify-center gap-4 h-screen p-5 transition-colors duration-300 bg-white text-black"
-      )}
+      className="bg-white flex flex-row items-center justify-center gap-4 text-black h-screen p-5"
       style={{
         paddingTop: topNavbarHeight,
         paddingBottom: bottomNavbarHeight + 20,
       }}
     >
-      <LeftArea_Home />
-      <MidArea_Home />
-      <RightArea_Home />
+      <LeftArea_Monitoring />
+      <MidArea_Monitoring />
+      <RightArea_Monitoring />
     </div>
   );
 }

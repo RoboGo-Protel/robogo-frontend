@@ -1,5 +1,5 @@
-import ShortSummary from "@/components/ShortSummary";
-import TunnelPath from "@/components/TunnelPath";
+import ShortSummary from "@/components/cards/ShortSummaryCard";
+import TunnelPath from "@/components/cards/TunnelPathCard";
 import { summaryItems } from "@/utils/summary";
 import React from "react";
 
@@ -12,9 +12,9 @@ export default function MidArea_Home() {
         </p>
       </div>
 
-      <TunnelPath />
+      <TunnelPath showStartpoint showEndpoint />
 
-      <ShortSummary summaryItems={summaryItems} />
+      <ShortSummary summaryItems={summaryItems} layout="grid grid-cols-1 sm:grid-cols-2 gap-4" />
     </div>
   );
 }
