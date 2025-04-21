@@ -4,7 +4,7 @@ export const monitoringItems = [
     icon: "mdi:proximity-sensor",
     status: "normal",
     title: "Ultrasonic Reading",
-    value: "1.25 m",
+    value: "0.48 m",
   },
   {
     key: "gps",

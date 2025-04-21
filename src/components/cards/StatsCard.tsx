@@ -36,8 +36,8 @@ const StatCardList: React.FC<StatCardListProps> = ({ infoItems, variant }) => {
           key={index}
           className="flex items-center gap-2 p-2 rounded-2xl border-2"
           style={{
-            borderColor: `${theme.borderColor}33`, // 20% opacity
-            background: `linear-gradient(to bottom right, ${theme.fromColor}1A, ${theme.toColor}1A)`, // 10% opacity
+            borderColor: `${theme.borderColor}33`,
+            background: `linear-gradient(to bottom right, ${theme.fromColor}1A, ${theme.toColor}1A)`,
           }}
         >
           <div

@@ -14,7 +14,7 @@ export const monitoringItems = [
     icon: "mdi:proximity-sensor",
     status: "normal",
     title: "Ultrasonic Reading",
-    value: "1.25 m",
+    value: "0.48 m",
   },
   {
     key: "gps",
@@ -28,7 +28,7 @@ export const monitoringItems = [
     icon: "mynaui:danger-triangle-solid",
     status: "danger",
     title: "Obstacle Detection Alert",
-    value: "0.48m • High",
+    value: "High",
   },
 ] as const;
 

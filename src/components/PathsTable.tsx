@@ -50,7 +50,7 @@ export default function PathsTable({
     switch (status) {
       case "Start":
         return (
-          <span className="bg-gradient-to-br from-[#D2D2D2] to-[#545454] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
+          <span className="bg-gradient-to-br from-[#FFC107] to-[#FF9800] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
             <Icon
               icon="material-symbols:not-started-rounded"
               className="w-4 h-4 mr-1"
@@ -70,7 +70,7 @@ export default function PathsTable({
         );
       case "Stop":
         return (
-          <span className="bg-gradient-to-br from-[#FFC107] to-[#FF9800] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
+          <span className="bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
             <Icon icon="gravity-ui:stop-fill" className="w-4 h-4 mr-1" />
             {status}
           </span>
