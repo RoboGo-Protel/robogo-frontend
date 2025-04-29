@@ -3,45 +3,55 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import StatCardList from "./cards/StatsCard";
-import { distance } from "@/utils/distance";
-import { velocity } from "@/utils/velocity";
 import MonitoringInfo from "./cards/MonitoringInfoCard_PhotoDetails";
 import TunnelPath from "./cards/TunnelPathCard";
 
-export const monitoringItems = [
-  {
-    key: "ultrasonic",
-    icon: "mdi:proximity-sensor",
-    status: "normal",
-    title: "Ultrasonic Reading",
-    value: "0.48 m",
-  },
-  {
-    key: "gps",
-    icon: "fa6-solid:compass",
-    status: "normal",
-    title: "IMU Heading Direction",
-    value: "118° SE",
-  },
-  {
-    key: "obstacle",
-    icon: "mynaui:danger-triangle-solid",
-    status: "danger",
-    title: "Obstacle Detection Alert",
-    value: "High",
-  },
-] as const;
-
 type SensorKey = "ultrasonic" | "battery" | "gps" | "obstacle";
+
+interface Metadata {
+  ultrasonic: number | string;
+  heading: number | string;
+  direction?: string;
+  accelerationMagnitude?: number;
+  rotationRate?: number;
+  distanceTraveled?: number;
+  linearAcceleration?: number;
+  distances: {
+    distTotal: number;
+    distX: number;
+    distY: number;
+  };
+  velocity: {
+    velocity?: number;
+    velocityX?: number;
+    velocityY?: number;
+    velTotal?: number;
+    velX?: number;
+    velY?: number;
+  };
+  magnetometer?: {
+    magnetometerX: number;
+    magnetometerY: number;
+    magnetometerZ: number;
+  };
+  position: {
+    positionX?: number;
+    positionY?: number;
+    posX?: number;
+    posY?: number;
+  };
+}
 
 interface PhotoDetailsProps {
   details: {
+    id: string;
     src: string;
     alt: string;
     obstacles: boolean;
     date: string;
     fileName: string;
     dateTime: string;
+    metadata: Metadata;
   };
   onClose: () => void;
 }
@@ -132,6 +142,32 @@ const formatDateTime = (isoString: string): string => {
 export default function PhotoDetails({ details, onClose }: PhotoDetailsProps) {
   const [activeTab, setActiveTab] = useState(0);
 
+  const categoryAlert = (ultrasonic: number | string) => {
+    if (typeof ultrasonic === "number") {
+      if (ultrasonic < 10) {
+        return "High";
+      } else if (ultrasonic >= 10 && ultrasonic <= 20) {
+        return "Medium";
+      } else {
+        return "Safe";
+      }
+    }
+    return null;
+  };
+
+  const categoryStatusAlert = (ultrasonic: number | string) => {
+    if (typeof ultrasonic === "number") {
+      if (ultrasonic < 10) {
+        return "danger";
+      } else if (ultrasonic >= 10 && ultrasonic <= 20) {
+        return "warning";
+      } else {
+        return "normal";
+      }
+    }
+    return null;
+  };
+
   return (
     <motion.div
       className="fixed top-0 left-0 w-full h-full bg-black/70 z-50 flex items-center justify-center p-5"
@@ -186,6 +222,17 @@ export default function PhotoDetails({ details, onClose }: PhotoDetailsProps) {
                   className="w-[420px] h-auto rounded-xl"
                 />
                 <div className="flex flex-col gap-5 items-start justify-start w-96 p-4 border border-[#DFDFDF] rounded-xl">
+                  <div className="flex flex-col gap-1 w-full">
+                    <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                      <Icon
+                        icon="material-symbols:info-rounded"
+                        width={16}
+                        height={16}
+                      />
+                      <p>ID</p>
+                    </div>
+                    <p className="text-sm text-black">{details.id}</p>
+                  </div>
                   <div className="flex flex-col gap-1 w-full">
                     <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
                       <Icon
@@ -245,11 +292,76 @@ export default function PhotoDetails({ details, onClose }: PhotoDetailsProps) {
                 </div>
               </div>
               <div className="flex flex-row gap-4 items-center w-full h-fit">
-                <StatCardList variant="distance" infoItems={distance} />
-                <StatCardList variant="velocity" infoItems={velocity} />
+                <StatCardList
+                  variant="distance"
+                  infoItems={[
+                    {
+                      title: "Distance",
+                      value: `${details.metadata.distances.distTotal.toString()} cm`,
+                    },
+                    {
+                      title: "Distance X",
+                      value: `${details.metadata.distances.distX.toString()} cm`,
+                    },
+                    {
+                      title: "Distance Y",
+                      value: `${details.metadata.distances.distY.toString()} cm`,
+                    },
+                  ]}
+                />
+                <StatCardList
+                  variant="velocity"
+                  infoItems={[
+                    {
+                      title: "Velocity",
+                      value: `${
+                        details.metadata.velocity.velocity?.toString() || "N/A"
+                      } m/s`,
+                    },
+                    {
+                      title: "Velocity X",
+                      value: `${
+                        details.metadata.velocity.velocityX?.toString() || "N/A"
+                      } m/s`,
+                    },
+                    {
+                      title: "Velocity Y",
+                      value: `${
+                        details.metadata.velocity.velocityY?.toString() || "N/A"
+                      } m/s`,
+                    },
+                  ]}
+                />
               </div>
               <div className="w-full">
-                <MonitoringInfo<SensorKey> infoItems={monitoringItems} />
+                <MonitoringInfo<SensorKey>
+                  infoItems={[
+                    {
+                      key: "ultrasonic",
+                      icon: "mdi:proximity-sensor",
+                      status: "normal",
+                      title: "Ultrasonic Reading",
+                      value: `${details.metadata.ultrasonic} cm`,
+                    },
+                    {
+                      key: "gps",
+                      icon: "fa6-solid:compass",
+                      status: "normal",
+                      title: "IMU Heading Direction",
+                      value: `${details.metadata.heading}° ${details.metadata.direction}`,
+                    },
+                    {
+                      key: "obstacle",
+                      icon: "mynaui:danger-triangle-solid",
+                      status: `${
+                        categoryStatusAlert(details.metadata.ultrasonic) ||
+                        "normal"
+                      }`,
+                      title: "Obstacle Detection Alert",
+                      value: `${categoryAlert(details.metadata.ultrasonic)}`,
+                    },
+                  ]}
+                />
               </div>
             </motion.div>
           ) : (
@@ -281,10 +393,10 @@ export default function PhotoDetails({ details, onClose }: PhotoDetailsProps) {
           </button>
           <button className="flex flex-row gap-2 items-center justify-center border-[#367AF2]/20 px-6 py-3 border-2 rounded-xl w-full">
             <p className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text font-semibold text-sm">
-              Save Image
+              Download
             </p>
             <Icon
-              icon="material-symbols:save"
+              icon="material-symbols:download"
               width={20}
               height={20}
               className="text-[#39A9F9]"

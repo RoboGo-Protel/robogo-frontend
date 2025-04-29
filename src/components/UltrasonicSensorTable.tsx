@@ -4,124 +4,83 @@ import { Icon } from "@iconify/react";
 import PhotoDetails from "./PhotoDetails";
 
 interface ReportData {
-  id: number;
+  id: string;
   timestamp: string;
+  sessionId?: number;
   distance: number;
-  alertLevel: "Safe" | "Medium" | "High";
+  alertLevel: "High" | "Medium" | "Safe";
   image?: string;
   alt?: string;
   obstacles?: boolean;
   fileName?: string;
   dateTime?: string;
+  metadata: Metadata;
 }
 
-export default function UltrasonicSensorTable() {
-  const [reports, setReports] = useState<ReportData[]>([
-    {
-      id: 1,
-      timestamp: "09:41:25",
-      distance: 1.25,
-      alertLevel: "Safe",
-      alt: "Image 15",
-      obstacles: false,
-      fileName: "RoboGo-G1_20250324_143244.jpg",
-      dateTime: "2025-03-24T14:32:44",
-      image:
-        "https://t3.ftcdn.net/jpg/01/80/46/56/360_F_180465639_UAJJt5COMPSSDuMS8w0NuHFqF7wvteCE.jpg",
-    },
-    {
-      id: 2,
-      timestamp: "09:41:30",
-      distance: 0.82,
-      alertLevel: "Medium",
-    },
-    {
-      id: 3,
-      timestamp: "09:41:35",
-      distance: 0.32,
-      alertLevel: "High",
-      alt: "Image 15",
-      obstacles: false,
-      fileName: "RoboGo-G1_20250324_143244.jpg",
-      dateTime: "2025-03-24T14:32:44",
-      image:
-        "https://t3.ftcdn.net/jpg/01/80/46/56/360_F_180465639_UAJJt5COMPSSDuMS8w0NuHFqF7wvteCE.jpg",
-    },
-    {
-      id: 4,
-      timestamp: "09:41:40",
-      distance: 0.45,
-      alertLevel: "High",
-      alt: "Image 15",
-      obstacles: false,
-      fileName: "RoboGo-G1_20250324_143244.jpg",
-      dateTime: "2025-03-24T14:32:44",
-      image:
-        "https://t3.ftcdn.net/jpg/01/80/46/56/360_F_180465639_UAJJt5COMPSSDuMS8w0NuHFqF7wvteCE.jpg",
-    },
-    {
-      id: 5,
-      timestamp: "09:41:45",
-      distance: 0.93,
-      alertLevel: "Medium",
-    },
-    {
-      id: 6,
-      timestamp: "09:41:50",
-      distance: 1.12,
-      alertLevel: "Safe",
-    },
-    {
-      id: 7,
-      timestamp: "09:41:55",
-      distance: 0.78,
-      alertLevel: "Medium",
-    },
-    {
-      id: 8,
-      timestamp: "09:42:00",
-      distance: 0.46,
-      alertLevel: "High",
-      alt: "Image 15",
-      obstacles: false,
-      fileName: "RoboGo-G1_20250324_143244.jpg",
-      dateTime: "2025-03-24T14:32:44",
-      image:
-        "https://t3.ftcdn.net/jpg/01/80/46/56/360_F_180465639_UAJJt5COMPSSDuMS8w0NuHFqF7wvteCE.jpg",
-    },
-  ]);
+interface UltrasonicSensorTableProps {
+  reports: ReportData[];
+}
 
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+interface Metadata {
+  ultrasonic: number | string;
+  heading: number | string;
+  direction?: string;
+  accelerationMagnitude?: number;
+  rotationRate?: number;
+  distanceTraveled?: number;
+  linearAcceleration?: number;
+  distances: {
+    distTotal: number;
+    distX: number;
+    distY: number;
+  };
+  velocity: {
+    velocity?: number;
+    velocityX?: number;
+    velocityY?: number;
+    velTotal?: number;
+    velX?: number;
+    velY?: number;
+  };
+  magnetometer?: {
+    magnetometerX: number;
+    magnetometerY: number;
+    magnetometerZ: number;
+  };
+  position: {
+    positionX?: number;
+    positionY?: number;
+    posX?: number;
+    posY?: number;
+  };
+}
 
+export default function UltrasonicSensorTable({
+  reports,
+}: UltrasonicSensorTableProps) {
+  // const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<null | {
+    id: string;
     src: string;
     alt: string;
     obstacles: boolean;
     date: string;
     fileName: string;
     dateTime: string;
+    metadata: Metadata;
   }>(null);
 
-  const toggleSelectItem = (id: number) => {
-    if (selectedItems.includes(id)) {
-      setSelectedItems(selectedItems.filter((item) => item !== id));
-    } else {
-      setSelectedItems([...selectedItems, id]);
-    }
-  };
+  // const toggleSelectItem = (id: number) => {
+  //   if (selectedItems.includes(id)) {
+  //     setSelectedItems(selectedItems.filter((item) => item !== id));
+  //   } else {
+  //     setSelectedItems([...selectedItems, id]);
+  //   }
+  // };
 
-  const toggleSelectAll = () => {
-    if (selectedItems.length === reports.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(reports.map((report) => report.id));
-    }
-  };
-
-  const deleteReport = (id: number) => {
-    setReports(reports.filter((report) => report.id !== id));
-    setSelectedItems(selectedItems.filter((item) => item !== id));
-  };
+  // const deleteReport = (id: number) => {
+  //   setSelectedItems(selectedItems.filter((item) => item !== id));
+  // };
 
   const getAlertBadge = (level: string) => {
     switch (level) {
@@ -151,29 +110,25 @@ export default function UltrasonicSensorTable() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
+
   return (
     <>
       <div className="bg-white overflow-x-auto">
         <table className="min-w-full bg-white">
           <thead>
             <tr className="bg-[#367AF2]/10 border-b border-gray-200">
-              <th className="py-3 px-4 relative flex items-center justify-center">
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
-                  checked={
-                    selectedItems.length === reports.length &&
-                    reports.length > 0
-                  }
-                  onChange={toggleSelectAll}
-                />
-                {selectedItems.length === reports.length && (
-                  <Icon
-                    icon="mdi:check"
-                    className="absolute text-white h-3 w-3 pointer-events-none"
-                  />
-                )}
-              </th>
               <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
                 No
               </th>
@@ -181,7 +136,7 @@ export default function UltrasonicSensorTable() {
                 Timestamp
               </th>
               <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
-                Distance (m)
+                Distance (cm)
               </th>
               <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
                 Alert Level
@@ -195,27 +150,11 @@ export default function UltrasonicSensorTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {reports.map((report) => (
+            {reports.map((report, index) => (
               <tr key={report.id} className="hover:bg-gray-50">
-                <td className="py-4 px-4">
-                  <div className="relative flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      className="h-5 w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
-                      checked={selectedItems.includes(report.id)}
-                      onChange={() => toggleSelectItem(report.id)}
-                    />
-                    {selectedItems.includes(report.id) && (
-                      <Icon
-                        icon="mdi:check"
-                        className="absolute text-white h-3 w-3 pointer-events-none"
-                      />
-                    )}
-                  </div>
-                </td>
-                <td className="py-4 px-4 text-sm text-gray-900">{report.id}</td>
+                <td className="py-4 px-4 text-sm text-gray-900">{index + 1}</td>
                 <td className="py-4 px-4 text-sm text-gray-900">
-                  {report.timestamp}
+                  {formatDate(report.timestamp)}
                 </td>
                 <td className="py-4 px-4 text-sm text-gray-900">
                   {report.distance}
@@ -229,12 +168,14 @@ export default function UltrasonicSensorTable() {
                       className="h-10 w-16 bg-gray-200 rounded cursor-pointer"
                       onClick={() =>
                         setSelectedPhoto({
+                          id: report.id.toString(),
                           src: report.image || "",
                           alt: report.alt || "Image",
                           obstacles: report.obstacles || false,
                           date: report.dateTime || "",
                           fileName: report.fileName || "",
                           dateTime: report.dateTime || "",
+                          metadata: report.metadata,
                         })
                       }
                     >
@@ -260,10 +201,7 @@ export default function UltrasonicSensorTable() {
                     />
                     Edit
                   </button>
-                  <button
-                    className="border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50"
-                    onClick={() => deleteReport(report.id)}
-                  >
+                  <button className="border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50">
                     <Icon
                       icon="mingcute:delete-fill"
                       className="inline mr-1"

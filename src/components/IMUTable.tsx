@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import PhotoDetails from "./PhotoDetails";
+// import PhotoDetails from "./PhotoDetails";
 
 interface ReportData {
   id: number;
@@ -93,14 +93,14 @@ export default function IMUTable() {
 
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
-  const [selectedPhoto, setSelectedPhoto] = useState<null | {
-    src: string;
-    alt: string;
-    obstacles: boolean;
-    date: string;
-    fileName: string;
-    dateTime: string;
-  }>(null);
+  // const [selectedPhoto, setSelectedPhoto] = useState<null | {
+  //   src: string;
+  //   alt: string;
+  //   obstacles: boolean;
+  //   date: string;
+  //   fileName: string;
+  //   dateTime: string;
+  // }>(null);
 
   const toggleSelectItem = (id: number) => {
     if (selectedItems.includes(id)) {
@@ -397,12 +397,12 @@ export default function IMUTable() {
         </table>
       </div>
 
-      {selectedPhoto && (
+      {/* {selectedPhoto && (
         <PhotoDetails
           details={selectedPhoto}
           onClose={() => setSelectedPhoto(null)}
         />
-      )}
+      )} */}
     </>
   );
 }
