@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,8 +10,8 @@ import TunnelPath from "./cards/TunnelPathCard";
 type SensorKey = "ultrasonic" | "battery" | "gps" | "obstacle";
 
 interface Metadata {
-  ultrasonic: number | string;
-  heading: number | string;
+  ultrasonic: number;
+  heading: number;
   direction?: string;
   accelerationMagnitude?: number;
   rotationRate?: number;
@@ -219,7 +220,7 @@ export default function PhotoDetails({ details, onClose }: PhotoDetailsProps) {
                 <img
                   src={details.src}
                   alt={details.alt}
-                  className="w-[420px] h-auto rounded-xl"
+                  className="w-[420px] h-auto rounded-xl border-2 border-gray-200"
                 />
                 <div className="flex flex-col gap-5 items-start justify-start w-96 p-4 border border-[#DFDFDF] rounded-xl">
                   <div className="flex flex-col gap-1 w-full">
@@ -233,17 +234,19 @@ export default function PhotoDetails({ details, onClose }: PhotoDetailsProps) {
                     </div>
                     <p className="text-sm text-black">{details.id}</p>
                   </div>
-                  <div className="flex flex-col gap-1 w-full">
-                    <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
-                      <Icon
-                        icon="ic:round-drive-file-rename-outline"
-                        width={16}
-                        height={16}
-                      />
-                      <p>File Name</p>
+                  {details.fileName && (
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                        <Icon
+                          icon="ic:round-drive-file-rename-outline"
+                          width={16}
+                          height={16}
+                        />
+                        <p>File Name</p>
+                      </div>
+                      <p className="text-sm text-black">{details.fileName}</p>
                     </div>
-                    <p className="text-sm text-black">{details.fileName}</p>
-                  </div>
+                  )}
                   <div className="flex flex-col gap-1 w-full">
                     <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
                       <Icon icon="mingcute:time-fill" width={16} height={16} />
@@ -297,15 +300,21 @@ export default function PhotoDetails({ details, onClose }: PhotoDetailsProps) {
                   infoItems={[
                     {
                       title: "Distance",
-                      value: `${details.metadata.distances.distTotal.toString()} cm`,
+                      value: `${details.metadata.distances.distTotal.toFixed(
+                        2
+                      )} cm`,
                     },
                     {
                       title: "Distance X",
-                      value: `${details.metadata.distances.distX.toString()} cm`,
+                      value: `${details.metadata.distances.distX.toFixed(
+                        2
+                      )} cm`,
                     },
                     {
                       title: "Distance Y",
-                      value: `${details.metadata.distances.distY.toString()} cm`,
+                      value: `${details.metadata.distances.distY.toFixed(
+                        2
+                      )} cm`,
                     },
                   ]}
                 />
@@ -315,19 +324,25 @@ export default function PhotoDetails({ details, onClose }: PhotoDetailsProps) {
                     {
                       title: "Velocity",
                       value: `${
-                        details.metadata.velocity.velocity?.toString() || "N/A"
+                        details.metadata.velocity.velocity !== undefined
+                          ? `${details.metadata.velocity.velocity.toFixed(2)}`
+                          : "N/A"
                       } m/s`,
                     },
                     {
                       title: "Velocity X",
                       value: `${
-                        details.metadata.velocity.velocityX?.toString() || "N/A"
+                        details.metadata.velocity.velocityX !== undefined
+                          ? `${details.metadata.velocity.velocityX.toFixed(2)}`
+                          : "N/A"
                       } m/s`,
                     },
                     {
                       title: "Velocity Y",
                       value: `${
-                        details.metadata.velocity.velocityY?.toString() || "N/A"
+                        details.metadata.velocity.velocityY !== undefined
+                          ? `${details.metadata.velocity.velocityY.toFixed(2)}`
+                          : "N/A"
                       } m/s`,
                     },
                   ]}
@@ -341,14 +356,16 @@ export default function PhotoDetails({ details, onClose }: PhotoDetailsProps) {
                       icon: "mdi:proximity-sensor",
                       status: "normal",
                       title: "Ultrasonic Reading",
-                      value: `${details.metadata.ultrasonic} cm`,
+                      value: `${details.metadata.ultrasonic.toFixed(2)} cm`,
                     },
                     {
                       key: "gps",
                       icon: "fa6-solid:compass",
                       status: "normal",
                       title: "IMU Heading Direction",
-                      value: `${details.metadata.heading}° ${details.metadata.direction}`,
+                      value: `${details.metadata.heading.toFixed(2)}° ${
+                        details.metadata.direction
+                      }`,
                     },
                     {
                       key: "obstacle",

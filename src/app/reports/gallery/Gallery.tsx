@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import React, { useEffect, useState } from "react";
 import clsx from "clsx";
@@ -21,8 +22,8 @@ interface Image {
 }
 
 interface Metadata {
-  ultrasonic: number | string;
-  heading: number | string;
+  ultrasonic: number;
+  heading: number;
   direction?: string;
   accelerationMagnitude?: number;
   rotationRate?: number;
@@ -173,7 +174,9 @@ export default function Gallery() {
                     onClick={() =>
                       setSelectedPhoto({
                         id: item.id,
-                        src: item.imageUrl,
+                        src: item.imageUrl
+                          ? item.imageUrl
+                          : "/images/no_image.png",
                         alt: item.filename,
                         obstacles: item.obstacle ?? false,
                         date: item.timestamp,
@@ -184,9 +187,11 @@ export default function Gallery() {
                     }
                   >
                     <img
-                      src={item.imageUrl}
+                      src={
+                        item.imageUrl ? item.imageUrl : "/images/no_image.png"
+                      }
                       alt={item.filename}
-                      className="object-cover rounded-xl shadow w-[180px] h-32"
+                      className="object-cover rounded-xl border border-2 border-gray-200 w-[180px] h-32"
                       loading="lazy"
                     />
                     {item.obstacle && (

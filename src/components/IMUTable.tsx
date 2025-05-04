@@ -1,97 +1,38 @@
 "use client";
-import { useState } from "react";
+// import { useState } from "react";
 import { Icon } from "@iconify/react";
 // import PhotoDetails from "./PhotoDetails";
 
-interface ReportData {
-  id: number;
-  timestamp: string;
-  acceleration: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  gyroscope: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  heading: number;
-  notes: string;
+interface Acceleration {
+  x: number;
+  y: number;
+  z: number;
 }
 
-export default function IMUTable() {
-  const [reports, setReports] = useState<ReportData[]>([
-    {
-      id: 1,
-      timestamp: "09:41:25",
-      acceleration: { x: 0.1, y: 0.2, z: 0.3 },
-      gyroscope: { x: 0.4, y: 0.5, z: 0.6 },
-      heading: 180,
-      notes: "Turn Detected",
-    },
+interface Gyroscope {
+  x: number;
+  y: number;
+  z: number;
+}
 
-    {
-      id: 2,
-      timestamp: "09:41:26",
-      acceleration: { x: 0.2, y: 0.3, z: 0.4 },
-      gyroscope: { x: 0.5, y: 0.6, z: 0.7 },
-      heading: 90,
-      notes: "IMU Calibrated",
-    },
-    {
-      id: 3,
-      timestamp: "09:41:27",
-      acceleration: { x: 0.3, y: 0.4, z: 0.5 },
-      gyroscope: { x: 0.6, y: 0.7, z: 0.8 },
-      heading: 45,
-      notes: "Normal",
-    },
-    {
-      id: 4,
-      timestamp: "09:41:28",
-      acceleration: { x: 0.4, y: 0.5, z: 0.6 },
-      gyroscope: { x: 0.7, y: 0.8, z: 0.9 },
-      heading: 270,
-      notes: "Turn Detected",
-    },
-    {
-      id: 5,
-      timestamp: "09:41:29",
-      acceleration: { x: 0.5, y: 0.6, z: 0.7 },
-      gyroscope: { x: 0.8, y: 0.9, z: 1 },
-      heading: -45,
-      notes: "IMU Calibrated",
-    },
-    // Generate 3 more reports for testing
+interface IMULogs {
+  id: string;
+  timestamp: string;
+  sessionId: number;
+  acceleration: Acceleration;
+  gyroscope: Gyroscope;
+  heading: number;
+  direction: string;
+  status: string;
+  createdAt: string;
+}
 
-    {
-      id: 6,
-      timestamp: "09:41:30",
-      acceleration: { x: 0.6, y: 0.7, z: 0.8 },
-      gyroscope: { x: 0.9, y: 1, z: 1.1 },
-      heading: -90,
-      notes: "Normal",
-    },
-    {
-      id: 7,
-      timestamp: "09:41:31",
-      acceleration: { x: 0.7, y: 0.8, z: 0.9 },
-      gyroscope: { x: 1, y: 1.1, z: 1.2 },
-      heading: -135,
-      notes: "Turn Detected",
-    },
-    {
-      id: 8,
-      timestamp: "09:41:32",
-      acceleration: { x: 0.8, y: 0.9, z: 1 },
-      gyroscope: { x: 1.1, y: 1.2, z: 1.3 },
-      heading: -180,
-      notes: "IMU Calibrated",
-    },
-  ]);
+interface IMUTableProps {
+  reports: IMULogs[];
+}
 
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+export default function IMUTable({ reports }: IMUTableProps) {
+  // const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   // const [selectedPhoto, setSelectedPhoto] = useState<null | {
   //   src: string;
@@ -102,58 +43,49 @@ export default function IMUTable() {
   //   dateTime: string;
   // }>(null);
 
-  const toggleSelectItem = (id: number) => {
-    if (selectedItems.includes(id)) {
-      setSelectedItems(selectedItems.filter((item) => item !== id));
-    } else {
-      setSelectedItems([...selectedItems, id]);
-    }
-  };
+  // const toggleSelectItem = (id: number) => {
+  //   if (selectedItems.includes(id)) {
+  //     setSelectedItems(selectedItems.filter((item) => item !== id));
+  //   } else {
+  //     setSelectedItems([...selectedItems, id]);
+  //   }
+  // };
 
-  const toggleSelectAll = () => {
-    if (selectedItems.length === reports.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(reports.map((report) => report.id));
-    }
-  };
+  // const toggleSelectAll = () => {
+  //   if (selectedItems.length === reports.length) {
+  //     setSelectedItems([]);
+  //   } else {
+  //     setSelectedItems(reports.map((report) => report.id));
+  //   }
+  // };
 
-  const deleteReport = (id: number) => {
-    setReports(reports.filter((report) => report.id !== id));
-    setSelectedItems(selectedItems.filter((item) => item !== id));
-  };
+  // const deleteReport = (id: number) => {
+  //   setReports(reports.filter((report) => report.id !== id));
+  //   setSelectedItems(selectedItems.filter((item) => item !== id));
+  // };
 
   const convertDegreesToDirection = (degrees: number) => {
     const directions = [
       "North (N)",
+      "North-North-East (NNE)",
       "North-East (NE)",
+      "East-North-East (ENE)",
       "East (E)",
+      "East-South-East (ESE)",
       "South-East (SE)",
+      "South-South-East (SSE)",
       "South (S)",
+      "South-South-West (SSW)",
       "South-West (SW)",
+      "West-South-West (WSW)",
       "West (W)",
+      "West-North-West (WNW)",
       "North-West (NW)",
+      "North-North-West (NNW)",
     ];
 
     const normalizedDegrees = ((degrees % 360) + 360) % 360;
-    const index = Math.round((normalizedDegrees % 360) / 45) % 8;
-    return directions[index];
-  };
-
-  const getArrowDirection = (degrees: number) => {
-    const directions = [
-      "material-symbols:north-rounded",
-      "material-symbols:north-east-rounded",
-      "material-symbols:east-rounded",
-      "material-symbols:south-east-rounded",
-      "material-symbols:south-rounded",
-      "material-symbols:south-west-rounded",
-      "material-symbols:west-rounded",
-      "material-symbols:north-west-rounded",
-    ];
-
-    const normalizedDegrees = ((degrees % 360) + 360) % 360;
-    const index = Math.round(normalizedDegrees / 45) % 8;
+    const index = Math.round((normalizedDegrees % 360) / 22.5) % 16;
     return directions[index];
   };
 
@@ -190,12 +122,21 @@ export default function IMUTable() {
     }
   };
 
+  const getTimeOnlyWithoutDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
+
   return (
     <>
       <div className="bg-white overflow-x-auto">
         <table className="table-fixed w-full border-collapse text-sm">
           <colgroup>
-            <col className="w-10" />
+            {/* <col className="w-10" /> */}
             <col className="w-14" />
             <col className="w-24" />
             <col className="w-16" />
@@ -212,14 +153,14 @@ export default function IMUTable() {
 
           <thead>
             <tr className="bg-[#367AF2]/10 border-b border-gray-200">
-              <th
+              {/* <th
                 rowSpan={2}
                 className="py-3 px-2 align-top text-xs font-medium text-black uppercase"
               >
                 <div className="relative flex items-center justify-center">
                   <input
                     type="checkbox"
-                    onChange={toggleSelectAll}
+                    // onChange={toggleSelectAll}
                     checked={
                       selectedItems.length === reports.length &&
                       reports.length > 0
@@ -234,7 +175,7 @@ export default function IMUTable() {
                       />
                     )}
                 </div>
-              </th>
+              </th> */}
               <th
                 rowSpan={2}
                 className="py-3 px-2 text-left text-xs font-medium text-black uppercase align-top"
@@ -308,9 +249,9 @@ export default function IMUTable() {
           </thead>
 
           <tbody className="divide-y divide-gray-200">
-            {reports.map((report) => (
+            {reports.map((report, index) => (
               <tr key={report.id} className="hover:bg-gray-50">
-                <td className="py-3 px-2">
+                {/* <td className="py-3 px-2">
                   <div className="relative flex items-center justify-center">
                     <input
                       type="checkbox"
@@ -325,10 +266,12 @@ export default function IMUTable() {
                       />
                     )}
                   </div>
-                </td>
+                </td> */}
 
-                <td className="py-3 px-2">{report.id}</td>
-                <td className="py-3 px-2">{report.timestamp}</td>
+                <td className="py-3 px-2">{index + 1}</td>
+                <td className="py-3 px-2">
+                  {getTimeOnlyWithoutDate(report.timestamp)}
+                </td>
 
                 <td className="py-3 px-2 text-center">
                   {report.acceleration.x.toFixed(2)}
@@ -354,8 +297,13 @@ export default function IMUTable() {
                 <td className="py-3 px-2">
                   <div className="flex items-center gap-1">
                     <Icon
-                      icon={getArrowDirection(report.heading)}
-                      className="text-[#367AF2]"
+                      icon="material-symbols:north-rounded"
+                      className={`text-[#367AF2]`}
+                      style={{
+                        transform: `rotate(${
+                          ((report.heading % 360) + 360) % 360
+                        }deg)`,
+                      }}
                       width={24}
                       height={24}
                     />
@@ -363,7 +311,7 @@ export default function IMUTable() {
                   </div>
                 </td>
 
-                <td className="py-3 px-2">{getNotesBadge(report.notes)}</td>
+                <td className="py-3 px-2">{getNotesBadge(report.status)}</td>
 
                 <td className="py-3 px-2 text-sm space-x-2">
                   <button
@@ -380,7 +328,7 @@ export default function IMUTable() {
                   </button>
                   <button
                     className="border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50"
-                    onClick={() => deleteReport(report.id)}
+                    // onClick={() => deleteReport(report.id)}
                   >
                     <Icon
                       icon="mingcute:delete-fill"

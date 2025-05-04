@@ -21,8 +21,8 @@ interface OptionType {
 }
 
 interface Metadata {
-  ultrasonic: number | string;
-  heading: number | string;
+  ultrasonic: number;
+  heading: number;
   direction?: string;
   accelerationMagnitude?: number;
   rotationRate?: number;

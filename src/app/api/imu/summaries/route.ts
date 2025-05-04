@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiUrl}/reports/ultrasonic/summaries`, {
+    const res = await fetch(`${apiUrl}/reports/imu/summaries`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

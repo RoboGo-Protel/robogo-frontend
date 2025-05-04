@@ -11,7 +11,7 @@ export async function GET() {
     });
     const data = await res.json();
 
-    return NextResponse.json({ status: "success", data: data || [] });
+    return NextResponse.json({ status: "success", data: data.data || [] });
   } catch (error) {
     console.error("Error fetching ultrasonic list:", error);
     return NextResponse.json(

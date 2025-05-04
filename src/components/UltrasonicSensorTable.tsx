@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
@@ -22,8 +23,8 @@ interface UltrasonicSensorTableProps {
 }
 
 interface Metadata {
-  ultrasonic: number | string;
-  heading: number | string;
+  ultrasonic: number;
+  heading: number;
   direction?: string;
   accelerationMagnitude?: number;
   rotationRate?: number;

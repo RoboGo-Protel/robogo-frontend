@@ -93,7 +93,7 @@ export default function ReportsNavbar() {
             className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
           >
             <Icon icon={icon} width={24} height={24} />
-            <span className="mt-1">{item.name}</span>
+            <span>{item.name}</span>
           </div>
         );
 
