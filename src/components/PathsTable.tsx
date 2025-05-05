@@ -1,51 +1,27 @@
 "use client";
 import { Icon } from "@iconify/react";
 
-interface ReportData {
-  id: number;
+interface Position {
   x: number;
   y: number;
+}
+
+interface ReportData {
+  id: string;
   timestamp: string;
+  sessionId: number;
+  position: Position;
   speed: number;
   heading: number;
   status: string;
+  createdAt: string;
 }
 
-const reportData: ReportData[] = [
-  {
-    id: 1,
-    x: 0,
-    y: 0,
-    timestamp: "09:41:25",
-    speed: 1.25,
-    heading: 45,
-    status: "Start",
-  },
-  {
-    id: 2,
-    x: 1,
-    y: 1,
-    timestamp: "09:42:25",
-    speed: 2.5,
-    heading: 90,
-    status: "Moving",
-  },
-  {
-    id: 3,
-    x: 2,
-    y: 2,
-    timestamp: "09:43:25",
-    speed: 0,
-    heading: 135,
-    status: "Stop",
-  },
-];
+interface PathsTableProps {
+  reports: ReportData[];
+}
 
-export default function PathsTable({
-  pathData = reportData,
-}: {
-  pathData?: ReportData[];
-}) {
+export default function PathsTable({ reports }: PathsTableProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Start":
@@ -96,21 +72,14 @@ export default function PathsTable({
     return directions[index];
   };
 
-  const getArrowDirection = (degrees: number) => {
-    const directions = [
-      "material-symbols:north-rounded",
-      "material-symbols:north-east-rounded",
-      "material-symbols:east-rounded",
-      "material-symbols:south-east-rounded",
-      "material-symbols:south-rounded",
-      "material-symbols:south-west-rounded",
-      "material-symbols:west-rounded",
-      "material-symbols:north-west-rounded",
-    ];
-
-    const normalizedDegrees = ((degrees % 360) + 360) % 360;
-    const index = Math.round(normalizedDegrees / 45) % 8;
-    return directions[index];
+  const getTimeOnlyWithoutDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    };
+    return date.toLocaleTimeString("id-ID", options).replace(/:/g, ".");
   };
 
   return (
@@ -140,13 +109,13 @@ export default function PathsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {pathData.map((report) => (
+            {reports.map((report) => (
               <tr key={report.id} className="hover:bg-gray-50">
                 <td className="py-4 px-4 text-sm text-gray-900">
-                  {report.x}, {report.y}
+                  {report.position.x}, {report.position.y}
                 </td>
                 <td className="py-4 px-4 text-sm text-gray-900">
-                  {report.timestamp}
+                  {getTimeOnlyWithoutDate(report.timestamp)}
                 </td>
                 <td className="py-4 px-4 text-sm text-gray-900">
                   {report.speed}
@@ -157,9 +126,15 @@ export default function PathsTable({
                 <td className="py-4 px-4 text-sm text-gray-900">
                   <div className="flex items-center gap-2">
                     <Icon
-                      icon={getArrowDirection(report.heading)}
-                      className="text-[#367AF2]"
+                      icon="material-symbols:north-rounded"
+                      className={`text-[#367AF2]`}
+                      style={{
+                        transform: `rotate(${
+                          ((report.heading % 360) + 360) % 360
+                        }deg)`,
+                      }}
                       width={24}
+                      height={24}
                     />
                     <div>{convertDegreesToDirection(report.heading)}</div>
                   </div>

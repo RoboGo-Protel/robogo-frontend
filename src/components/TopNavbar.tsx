@@ -39,7 +39,7 @@ export default function TopNavbar() {
   return (
     <nav
       id="top-navbar"
-      className={`fixed top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 p-5 h-[80px] transition-colors duration-300
+      className={`fixed top-0 left-0 right-0 z-20 flex items-center justify-between gap-3 p-5 h-[80px] transition-colors duration-300
       ${theme === "dark" ? "bg-[#112133] text-white" : "bg-white text-black"}`}
     >
       <div className="flex items-center gap-2 w-fit">

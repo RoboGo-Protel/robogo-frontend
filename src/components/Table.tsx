@@ -15,7 +15,7 @@ interface TableProps {
 
 const Table: React.FC<TableProps> = ({
   sensorTitle = "Ultrasonic Sensor",
-  sensorModel = "JSN-SR04T",
+  sensorModel,
   secondHeaderValue = "Distance (m)",
   data,
   className = "",
@@ -26,7 +26,12 @@ const Table: React.FC<TableProps> = ({
     >
       {/* Header */}
       <div className="flex justify-center items-center gap-1 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-4 py-3 text-white text-sm font-semibold rounded-t-2xl">
-        {sensorTitle} • <span className="font-bold">{sensorModel}</span>
+        {sensorTitle}
+        {sensorModel && (
+          <>
+            &nbsp;• <span className="font-bold">{sensorModel}</span>
+          </>
+        )}
       </div>
 
       {/* Table */}

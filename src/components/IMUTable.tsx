@@ -1,7 +1,7 @@
 "use client";
 // import { useState } from "react";
 import { Icon } from "@iconify/react";
-// import PhotoDetails from "./PhotoDetails";
+// import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
 
 interface Acceleration {
   x: number;
@@ -124,11 +124,12 @@ export default function IMUTable({ reports }: IMUTableProps) {
 
   const getTimeOnlyWithoutDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString("id-ID", {
+    const options: Intl.DateTimeFormatOptions = {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-    });
+    };
+    return date.toLocaleTimeString("id-ID", options).replace(/:/g, ".");
   };
 
   return (
@@ -346,7 +347,7 @@ export default function IMUTable({ reports }: IMUTableProps) {
       </div>
 
       {/* {selectedPhoto && (
-        <PhotoDetails
+        <PhotoDetailsWithPaths
           details={selectedPhoto}
           onClose={() => setSelectedPhoto(null)}
         />

@@ -37,6 +37,7 @@ export default function ReportsNavbar() {
   const pathname = usePathname();
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const router = usePathname();
 
   useEffect(() => {
     const top = document.querySelector("#top-navbar");
@@ -68,10 +69,10 @@ export default function ReportsNavbar() {
     <nav
       id="reports-navbar"
       className={clsx(
-        "fixed flex items-center justify-around px-5 rounded-t-xl w-full bg-white py-2.5 z-10 transition-shadow duration-300",
+        "fixed hidden md:flex items-center justify-around px-5 rounded-t-xl w-full bg-white pt-2.5 pb-4 z-20 transition-shadow duration-300",
         {
-          "shadow-xl": scrolled,
-          "shadow-none": !scrolled,
+          "shadow-xl": router !== "/reports/gallery" && scrolled,
+          "shadow-none": router !== "/reports/gallery" && !scrolled,
         }
       )}
       style={{

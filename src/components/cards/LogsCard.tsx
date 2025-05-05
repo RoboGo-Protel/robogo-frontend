@@ -1,7 +1,6 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React from "react";
 
-// Fungsi untuk mengonversi timestamp ke waktu
 const convertTimestampToTime = (timestamp: string) => {
   const date = new Date(timestamp);
   const options: Intl.DateTimeFormatOptions = {
@@ -13,10 +12,13 @@ const convertTimestampToTime = (timestamp: string) => {
   return date.toLocaleTimeString("en-US", options);
 };
 
-// Tipe data untuk props
 interface LogItem {
+  id: string;
   timestamp: string;
+  sessionId: number;
+  logType: string;
   message: string;
+  createdAt: string;
 }
 
 interface LogsCardProps {

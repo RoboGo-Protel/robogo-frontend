@@ -14,7 +14,7 @@ const sensorConfigs: Record<
   SensorKey,
   {
     title: string;
-    model: string;
+    model?: string;
     secondHeaderValue: string;
     data: { timestamp: string; value: number }[];
   }
@@ -57,7 +57,6 @@ const sensorConfigs: Record<
   },
   obstacle: {
     title: "Obstacle Detection",
-    model: "ToF VL53L0X",
     secondHeaderValue: "Distance (m)",
     data: [
       { timestamp: "09:41:45", value: 0.48 },

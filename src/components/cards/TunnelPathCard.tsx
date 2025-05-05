@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { Icon } from "@iconify/react";
 import React, { useRef, useState, useEffect } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -6,55 +7,35 @@ const maxX = 10;
 const maxY = 6;
 const iconOffset = 0;
 
-const defaultPathData = [
-  {
-    x: 0,
-    y: 0,
-  },
-  {
-    x: 2,
-    y: 1,
-    imageUrl:
-      "https://img.waterworld.com/files/base/ebm/ww/image/2022/05/16x9/dreamstime_xxl_103719318.62790c38b9109.png?auto=format,compress&fit=max&q=45&w=640&width=640",
-    isEndpoint: false,
-  },
-  {
-    x: 4.8,
-    y: 2.5,
-    imageUrl:
-      "https://img.waterworld.com/files/base/ebm/ww/image/2022/05/16x9/dreamstime_xxl_103719318.62790c38b9109.png?auto=format,compress&fit=max&q=45&w=640&width=640",
-    isEndpoint: false,
-  },
-  {
-    x: 7.5,
-    y: 3.5,
-    imageUrl:
-      "https://img.waterworld.com/files/base/ebm/ww/image/2022/05/16x9/dreamstime_xxl_103719318.62790c38b9109.png?auto=format,compress&fit=max&q=45&w=640&width=640",
-    isEndpoint: false,
-  },
-  {
-    x: 8.5,
-    y: 4.5,
-    imageUrl:
-      "https://img.waterworld.com/files/base/ebm/ww/image/2022/05/16x9/dreamstime_xxl_103719318.62790c38b9109.png?auto=format,compress&fit=max&q=45&w=640&width=640",
-    isEndpoint: false,
-  },
-  {
-    x: 9,
-    y: 6,
-    isEndpoint: true,
-  },
-];
+interface Position {
+  x: number;
+  y: number;
+}
 
-export default function TunnelPath({
-  showStartpoint = false,
-  showEndpoint = false,
-  pathData = defaultPathData,
-}: {
+interface PathData {
+  id: string;
+  timestamp: string;
+  sessionId: number;
+  position: Position;
+  speed: number;
+  heading: number;
+  status: string;
+  createdAt: string;
+  imageUrl?: string;
+  isEndpoint?: boolean;
+}
+
+interface TunnelPathProps {
+  pathData?: PathData[];
   showStartpoint?: boolean;
   showEndpoint?: boolean;
-  pathData?: typeof defaultPathData;
-}) {
+}
+
+export default function TunnelPath({
+  pathData = [],
+  showStartpoint = false,
+  showEndpoint = false,
+}: TunnelPathProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
 
@@ -87,7 +68,10 @@ export default function TunnelPath({
 
   const polylinePoints = pathData
     .map((point) => {
-      const { pixelX, pixelY } = convertToPixelForLine(point.x, point.y);
+      const { pixelX, pixelY } = convertToPixelForLine(
+        point.position.x,
+        point.position.y
+      );
       return `${pixelX},${pixelY}`;
     })
     .join(" ");
@@ -172,14 +156,17 @@ export default function TunnelPath({
                 </svg>
 
                 {pathData.map((point, idx) => {
-                  const pos = getMarkerPosition(point.x, point.y);
+                  const pos = getMarkerPosition(
+                    point.position.x,
+                    point.position.y
+                  );
                   if (idx === 0 && showStartpoint) {
                     return (
                       <div
                         key={idx}
                         className="absolute flex flex-col items-center z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                         style={{ left: pos.left, top: pos.top }}
-                        onClick={() => handleClick(point)}
+                        onClick={() => handleClick(point.position)}
                       >
                         <div className="rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center">
                           <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800] flex items-center justify-center" />
@@ -196,7 +183,7 @@ export default function TunnelPath({
                         key={idx}
                         className="absolute flex flex-col items-center z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                         style={{ left: pos.left, top: pos.top }}
-                        onClick={() => handleClick(point)}
+                        onClick={() => handleClick(point.position)}
                       >
                         <div className="rounded-full w-8 h-8 bg-gradient-to-br from-[#FF623B]/30 to-[#CD2323]/30 flex items-center justify-center">
                           <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323] flex items-center justify-center" />
@@ -224,7 +211,7 @@ export default function TunnelPath({
                           <div
                             onClick={
                               shouldPlaceAbove
-                                ? () => handleClick(point)
+                                ? () => handleClick(point.position)
                                 : undefined
                             }
                             className={`${
@@ -234,12 +221,16 @@ export default function TunnelPath({
                             } rounded-xl border border-gray-300 bg-white shadow-md p-1 hover:shadow-lg transition`}
                           >
                             <img
-                              src={point.imageUrl}
+                              src={
+                                point.imageUrl
+                                  ? point.imageUrl
+                                  : "/images/no_image.png"
+                              }
                               className="w-40 h-24 object-cover rounded-md"
-                              alt={`Tunnel at ${point.x}, ${point.y}`}
+                              alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
                             />
                             <p className="text-xs text-center pt-1 font-medium">
-                              x: {point.x} – y: {point.y}
+                              x: {point.position.x} – y: {point.position.y}
                             </p>
                           </div>
                           <div className="flex items-center justify-center bg-gradient-to-br from-[#FF623B] to-[#CD2323] rounded-full p-1.5 my-1 shadow">
@@ -254,7 +245,7 @@ export default function TunnelPath({
                             onClick={
                               shouldPlaceAbove
                                 ? undefined
-                                : () => handleClick(point)
+                                : () => handleClick(point.position)
                             }
                             className={`${
                               shouldPlaceAbove
@@ -263,12 +254,16 @@ export default function TunnelPath({
                             } rounded-xl border border-gray-300 bg-white shadow-md p-1 hover:shadow-lg transition`}
                           >
                             <img
-                              src={point.imageUrl}
+                              src={
+                                point.imageUrl
+                                  ? point.imageUrl
+                                  : "/images/no_image.png"
+                              }
                               className="w-40 h-24 object-cover rounded-md"
-                              alt={`Tunnel at ${point.x}, ${point.y}`}
+                              alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
                             />
                             <p className="text-xs text-center pt-1 font-medium">
-                              x: {point.x} – y: {point.y}
+                              x: {point.position.x} – y: {point.position.y}
                             </p>
                           </div>
                         </>

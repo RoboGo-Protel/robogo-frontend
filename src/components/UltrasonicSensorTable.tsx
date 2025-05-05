@@ -2,7 +2,7 @@
 "use client";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import PhotoDetails from "./PhotoDetails";
+import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
 
 interface ReportData {
   id: string;
@@ -111,17 +111,14 @@ export default function UltrasonicSensorTable({
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const getTimeOnlyWithoutDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
+    const options: Intl.DateTimeFormatOptions = {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-    });
+    };
+    return date.toLocaleTimeString("id-ID", options).replace(/:/g, ".");
   };
 
   return (
@@ -155,7 +152,7 @@ export default function UltrasonicSensorTable({
               <tr key={report.id} className="hover:bg-gray-50">
                 <td className="py-4 px-4 text-sm text-gray-900">{index + 1}</td>
                 <td className="py-4 px-4 text-sm text-gray-900">
-                  {formatDate(report.timestamp)}
+                  {getTimeOnlyWithoutDate(report.timestamp)}
                 </td>
                 <td className="py-4 px-4 text-sm text-gray-900">
                   {report.distance}
@@ -218,7 +215,7 @@ export default function UltrasonicSensorTable({
         </table>
       </div>
       {selectedPhoto && (
-        <PhotoDetails
+        <PhotoDetailsWithPaths
           details={selectedPhoto}
           onClose={() => setSelectedPhoto(null)}
         />

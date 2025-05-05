@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import clsx from "clsx";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { AnimatePresence } from "framer-motion";
-import PhotoDetails from "@/components/PhotoDetails";
-import SyncLoader from "react-spinners/SyncLoader"; // Gantilah ClipLoader dengan SyncLoader
+import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
+import SyncLoader from "react-spinners/SyncLoader";
 
 interface Image {
   id: string;
@@ -105,11 +105,10 @@ export default function Gallery() {
   useEffect(() => {
     const fetchImagesList = async () => {
       try {
-        const response = await fetch("/api/images");
+        const response = await fetch("/api/reports/images");
         const data = await response.json();
 
         setListPhotoWithDate(data.data || []);
-        console.log("Images List:", data.data);
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching images list:", error);
@@ -124,7 +123,7 @@ export default function Gallery() {
     const grouped: { [date: string]: Image[] } = {};
 
     photos.forEach((photo) => {
-      const dateKey = new Date(photo.timestamp).toISOString().split("T")[0]; // e.g. '2025-04-29'
+      const dateKey = new Date(photo.timestamp).toISOString().split("T")[0];
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
       }
@@ -133,6 +132,15 @@ export default function Gallery() {
 
     return grouped;
   };
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--top-navbar-height", `${topNavbarHeight}px`);
+    root.style.setProperty(
+      "--reports-navbar-height",
+      `${reportsNavbarHeight}px`
+    );
+  }, [topNavbarHeight, reportsNavbarHeight]);
 
   const groupedPhotos = groupPhotosByDate(listPhotoWithDate);
 
@@ -148,7 +156,14 @@ export default function Gallery() {
         }}
       >
         {isLoading ? (
-          <div className="flex flex-col justify-center items-center h-[400px]">
+          <div
+            className="flex flex-col justify-center items-center"
+            style={{
+              height: `calc(100vh - ${
+                topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
+              }px)`,
+            }}
+          >
             <SyncLoader
               color="#367AF2"
               loading={isLoading}
@@ -159,14 +174,39 @@ export default function Gallery() {
               Loading photos, please wait...
             </p>
           </div>
+        ) : listPhotoWithDate.length === 0 ? (
+          <div
+            className="flex flex-col justify-center items-center w-full p-4 border-2 border-gray-300 rounded-xl"
+            style={{
+              height: `calc(100vh - ${
+                topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
+              }px)`,
+            }}
+          >
+            <Icon
+              icon="tabler:photo-off"
+              width={48}
+              height={48}
+              className="text-gray-400"
+            />
+            <p className="mt-4 text-lg text-gray-500">
+              No photos available. Please check back later.
+            </p>
+          </div>
         ) : (
           Object.entries(groupedPhotos).map(([dateKey, photos]) => (
-            <div key={dateKey} className="mb-8">
-              <div className="flex flex-row items-center gap-2.5 text-lg font-semibold mb-3 px-5 py-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-xl shadow">
+            <div key={dateKey} className="mb-4">
+              <div
+                className="sticky top-[calc(var(--top-navbar-height)+var(--reports-navbar-height))] z-10 flex flex-row items-center gap-2.5 text-lg font-semibold mb-3 px-5 py-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow"
+                style={{
+                  borderRadius: "1rem 1rem 1rem 1rem",
+                  marginBottom: "-1px",
+                }}
+              >
                 <Icon icon="tabler:calendar-filled" width={24} height={24} />
                 <p>{formatDate(dateKey)}</p>
               </div>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 mt-4">
                 {photos.map((item, idx) => (
                   <div
                     key={idx}
@@ -191,7 +231,7 @@ export default function Gallery() {
                         item.imageUrl ? item.imageUrl : "/images/no_image.png"
                       }
                       alt={item.filename}
-                      className="object-cover rounded-xl border border-2 border-gray-200 w-[180px] h-32"
+                      className="object-cover rounded-xl border border-2 border-gray-200 w-40 h-32"
                       loading="lazy"
                     />
                     {item.obstacle && (
@@ -212,7 +252,7 @@ export default function Gallery() {
       </div>
       <AnimatePresence>
         {selectedPhoto && (
-          <PhotoDetails
+          <PhotoDetailsWithPaths
             details={selectedPhoto}
             onClose={() => setSelectedPhoto(null)}
           />

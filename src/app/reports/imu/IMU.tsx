@@ -4,16 +4,8 @@ import clsx from "clsx";
 import ShortSummary from "@/components/cards/ShortSummaryCard";
 import Select, { StylesConfig } from "react-select";
 import IMUTable from "@/components/IMUTable";
-import { SyncLoader } from "react-spinners";
-
-const listDates = [
-  "2025-03-24",
-  "2025-03-25",
-  "2025-03-26",
-  "2025-03-27",
-  "2025-03-28",
-  "2025-11-24",
-];
+import { PulseLoader } from "react-spinners";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 interface OptionType {
   value: string;
@@ -55,16 +47,14 @@ export default function IMU() {
     total_orientation_changes: 0,
     max_turn_angle: 0,
   });
+  const [dateWithSessions, setDateWithSessions] = useState<
+    { value: string; label: string; sessions: OptionType[] }[]
+  >([]);
+  const [selectedDate, setSelectedDate] = useState<OptionType | null>(null);
+  const [selectedSession, setSelectedSession] = useState<OptionType | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   useEffect(() => {
     const reports = document.querySelector("#reports-navbar");
@@ -84,11 +74,6 @@ export default function IMU() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [topNavbarHeight, bottomNavbarHeight, reportsNavbarHeight]);
-
-  const options: OptionType[] = listDates.map((date) => ({
-    value: date,
-    label: formatDate(date),
-  }));
 
   const customStyles: StylesConfig<OptionType, false> = {
     container: (provided) => ({
@@ -131,20 +116,9 @@ export default function IMU() {
   };
 
   useEffect(() => {
-    const fetchReportsList = async () => {
-      try {
-        const response = await fetch("/api/imu");
-        const data = await response.json();
-        setReports(data.data || []);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching reports list:", error);
-        setIsLoading(false);
-      }
-    };
     const fetchSummaries = async () => {
       try {
-        const response = await fetch("/api/imu/summaries");
+        const response = await fetch("/api/reports/imu/summaries");
         const data = await response.json();
 
         setSummaries({
@@ -153,17 +127,59 @@ export default function IMU() {
           total_orientation_changes: data.data.total_orientation_changes,
           max_turn_angle: data.data.max_turn_angle,
         });
-
-        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching summaries:", error);
+      }
+    };
+
+    const fetchDatesWithSessions = async () => {
+      try {
+        const response = await fetch("/api/reports/imu/dates-with-sessions");
+        const result = await response.json();
+
+        const data = result.data;
+        setDateWithSessions(data);
+
+        if (data.length > 0) {
+          const defaultDate = data[0];
+          setSelectedDate({
+            value: defaultDate.value,
+            label: defaultDate.label,
+          });
+
+          if (defaultDate.sessions.length > 0) {
+            setSelectedSession(defaultDate.sessions[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching dates with sessions:", error);
+      }
+    };
+
+    fetchSummaries();
+    fetchDatesWithSessions();
+  }, []);
+
+  useEffect(() => {
+    const fetchFilteredReports = async () => {
+      if (!selectedDate || !selectedSession) return;
+
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `/api/reports/imu/date/${selectedDate.value}/session/${selectedSession.value}`
+        );
+        const result = await response.json();
+        setReports(result.data || []);
+      } catch (error) {
+        console.error("Error fetching filtered reports:", error);
+      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchReportsList();
-    fetchSummaries();
-  }, []);
+    fetchFilteredReports();
+  }, [selectedDate, selectedSession]);
 
   function getDirectionFromHeading(heading: number): string {
     const directions = [
@@ -227,15 +243,41 @@ export default function IMU() {
       }}
     >
       {isLoading ? (
-        <div className="flex flex-col justify-center items-center h-[400px]">
-          <SyncLoader
+        <div
+          className="flex flex-col justify-center items-center"
+          style={{
+            height: `calc(100vh - ${
+              topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
+            }px)`,
+          }}
+        >
+          <PulseLoader
             color="#367AF2"
             loading={isLoading}
             size={15}
             margin={5}
           />
           <p className="mt-4 text-lg text-gray-500">
-            Loading IMU logs, please wait...
+            Loading IMU reports, please wait...
+          </p>
+        </div>
+      ) : reports.length === 0 ? (
+        <div
+          className="flex flex-col justify-center items-center w-full p-4 border-2 border-gray-300 rounded-xl"
+          style={{
+            height: `calc(100vh - ${
+              topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
+            }px)`,
+          }}
+        >
+          <Icon
+            icon="tabler:photo-off"
+            width={48}
+            height={48}
+            className="text-gray-400"
+          />
+          <p className="mt-4 text-lg text-gray-500">
+            No IMU reports available. Please check back later.
           </p>
         </div>
       ) : (
@@ -250,10 +292,40 @@ export default function IMU() {
 
             <div className="flex items-center">
               <Select
-                options={options}
+                options={dateWithSessions.map((d) => ({
+                  value: d.value,
+                  label: d.label,
+                }))}
                 styles={customStyles}
-                defaultValue={options[0]}
+                value={selectedDate}
+                onChange={(option) => {
+                  setSelectedDate(option);
+                  const selected = dateWithSessions.find(
+                    (d) => d.value === option?.value
+                  );
+                  if (selected?.sessions.length) {
+                    setSelectedSession(selected.sessions[0]);
+                  } else {
+                    setSelectedSession(null);
+                  }
+                }}
                 isSearchable={false}
+              />
+            </div>
+            <div className="flex items-center">
+              <Select
+                options={
+                  selectedDate
+                    ? dateWithSessions.find(
+                        (d) => d.value === selectedDate.value
+                      )?.sessions || []
+                    : []
+                }
+                styles={customStyles}
+                value={selectedSession}
+                onChange={setSelectedSession}
+                isSearchable={false}
+                isDisabled={!selectedDate}
               />
             </div>
           </div>

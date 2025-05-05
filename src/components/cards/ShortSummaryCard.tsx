@@ -17,12 +17,12 @@ const ShortSummary: React.FC<ShortSummaryProps> = ({
   layout,
 }) => {
   return (
-    <div className={`w-full h-fit ${layout}`}>
+    <div className={`w-full h-h-full ${layout}`}>
       {summaryItems.map((summary, index) => {
         return (
           <div
             key={index}
-            className="flex flex-row items-center justify-start w-full gap-3 p-3 border-2 rounded-2xl border-[#3BD5FF]/20 bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 h-fit"
+            className="flex flex-row items-center justify-start w-full h-full gap-3 p-3 border-2 rounded-2xl border-[#3BD5FF]/20 bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 h-fit"
           >
             <div className="p-2 rounded-xl shadow-md bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
               <Icon

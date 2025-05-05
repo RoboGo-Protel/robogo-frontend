@@ -176,7 +176,7 @@ export default function MidArea_Monitoring() {
 
       <div className="relative flex-1 w-full h-full rounded-2xl overflow-hidden">
         <AnimatePresence mode="wait">
-          {!isStreamActive ? (
+          {isStreamActive ? (
             <motion.div
               key="stream-on"
               initial={{ opacity: 0 }}

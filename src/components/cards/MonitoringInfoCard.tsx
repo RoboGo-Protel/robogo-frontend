@@ -52,6 +52,8 @@ function MonitoringInfo<K extends string = string>({
       const sidePadding = 10;
 
       const maxDrag = scrollWidth - clientWidth + sidePadding + gapSize;
+      console.log({ scrollWidth, clientWidth, maxDrag });
+
       setDragBounds({
         left: -maxDrag,
         right: 0,
@@ -62,7 +64,7 @@ function MonitoringInfo<K extends string = string>({
   return (
     <div ref={wrapperRef} className="relative w-full overflow-hidden pr-6">
       <motion.div
-        className="flex gap-4 w-full cursor-grab active:cursor-grabbing none"
+        className="inline-flex gap-4 cursor-grab active:cursor-grabbing"
         drag="x"
         dragConstraints={dragBounds}
         dragElastic={0.1}
