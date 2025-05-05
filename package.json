@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "watch": "nodemon --watch src --ext js,ts,jsx,tsx --delay 2 --exec \"npm run build && pm2 restart robogo_frontend\"",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -32,6 +33,7 @@
     "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
+    "nodemon": "^3.1.10",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.1",
     "typescript": "^5"
