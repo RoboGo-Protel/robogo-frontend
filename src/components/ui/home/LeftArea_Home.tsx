@@ -3,7 +3,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import ClockWeather from "./ClockWeather";
 import Link from "next/link";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
 
 interface Logs {
@@ -76,7 +78,7 @@ export default function LeftArea_Home() {
   };
 
   const [logsItems, setLogsItems] = useState<Logs[]>([]);
-  const [listPhotoWithDate, setListPhotoWithDate] = useState([]);
+  const [listPhotoWithDate, setListPhotoWithDate] = useState<Image[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<null | {
     id: string;
     src: string;
@@ -87,6 +89,10 @@ export default function LeftArea_Home() {
     dateTime: string;
     metadata: Metadata;
   }>(null);
+
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(true);
+
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -95,22 +101,27 @@ export default function LeftArea_Home() {
 
     const fetchLogs = async () => {
       try {
+        setIsLoadingLogs(true);
         const response = await fetch("/api/monitoring/logs");
         const data = await response.json();
         setLogsItems(data.data || []);
-        console.log("Logs data:", data.data);
       } catch (error) {
         console.error("Error fetching logs:", error);
+      } finally {
+        setIsLoadingLogs(false);
       }
     };
+
     const fetchImages = async () => {
       try {
-        const response = await fetch("/api/reports/images");
+        setIsLoadingImages(true);
+        const response = await fetch("/api/monitoring/realtime/images");
         const data = await response.json();
         setListPhotoWithDate(data.data || []);
-        console.log("Images data:", data.data);
       } catch (error) {
         console.error("Error fetching images:", error);
+      } finally {
+        setIsLoadingImages(false);
       }
     };
 
@@ -120,10 +131,14 @@ export default function LeftArea_Home() {
 
   return (
     <>
-      <div className="flex flex-col items-start justify-start min-w-[450px] max-w-[450px] gap-4 h-full">
+      <div className="flex flex-col items-start justify-start w-full sm:min-w-[450px] sm:max-w-[450px] gap-4 h-full">
         <ClockWeather />
-        <div
-          className={`flex flex-col items-center justify-start w-full px-5 py-4 border-2 border-[#ECECEC] rounded-xl`}
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex flex-col items-center justify-start w-full px-5 py-4 border-2 border-[#ECECEC] rounded-xl"
         >
           <div className="flex flex-row items-center justify-start w-full gap-2">
             <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md">
@@ -136,8 +151,23 @@ export default function LeftArea_Home() {
             </div>
             <p className="font-semibold text-base">Images</p>
           </div>
-          <div className="flex flex-wrap items-center justify-start w-full gap-2.5 mt-2">
-            {listPhotoWithDate.length > 0 ? (
+
+          <div className="flex flex-wrap items-center justify-start w-full gap-2.5 mt-2 min-h-[80px]">
+            {isLoadingImages ? (
+              // Skeleton placeholder for images
+              Array(6)
+                .fill(0)
+                .map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    width={48}
+                    height={48}
+                    borderRadius={12}
+                    baseColor="#E6E6E6"
+                    highlightColor="#F5F5F5"
+                  />
+                ))
+            ) : listPhotoWithDate.length > 0 ? (
               <>
                 {listPhotoWithDate
                   .slice(0, 6)
@@ -189,9 +219,13 @@ export default function LeftArea_Home() {
               <p className="text-sm text-gray-400 mt-2">No photos available</p>
             )}
           </div>
-        </div>
-        <div
-          className={`flex flex-col items-center justify-start w-full px-5 py-4 border-2 border-[#ECECEC] rounded-xl flex-1 overflow-hidden`}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="flex flex-col items-center justify-start w-full px-5 py-4 border-2 border-[#ECECEC] rounded-xl flex-1 overflow-hidden"
         >
           <div className="flex flex-row items-center justify-start w-full gap-2">
             <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md">
@@ -205,28 +239,57 @@ export default function LeftArea_Home() {
             <p className="font-semibold text-base">Logs</p>
           </div>
 
-          <div className="flex flex-col items-start justify-start w-full gap-2 mt-3 overflow-y-auto pr-2">
-            {logsItems.map((item, index) => (
-              <div
-                key={index}
-                className="flex flex-row items-center justify-start gap-2"
-              >
-                <p className="text-sm font-semibold text-[#979797]">
-                  [{convertTimestampToTime(item.timestamp)}]{" "}
-                  <span className="font-normal text-black">{item.message}</span>
-                </p>
-              </div>
-            ))}
+          <div className="flex flex-col items-start justify-start w-full gap-2 mt-3 overflow-y-auto pr-2 max-h-[300px] sm:max-h-[400px]">
+            {isLoadingLogs ? (
+              // Skeleton placeholder for logs
+              Array(6)
+                .fill(0)
+                .map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    height={20}
+                    borderRadius={4}
+                    baseColor="#E6E6E6"
+                    highlightColor="#F5F5F5"
+                    style={{ marginBottom: 8 }}
+                  />
+                ))
+            ) : logsItems.length > 0 ? (
+              logsItems.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex flex-row items-center justify-start gap-2"
+                >
+                  <p className="text-sm font-semibold text-[#979797]">
+                    [{convertTimestampToTime(item.timestamp)}]{" "}
+                    <span className="font-normal text-black">
+                      {item.message}
+                    </span>
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-400 mt-2">No logs available</p>
+            )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       <AnimatePresence>
         {selectedPhoto && (
-          <PhotoDetailsWithPaths
-            details={selectedPhoto}
-            onClose={() => setSelectedPhoto(null)}
-          />
+          <motion.div
+            key="photo-details"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+          >
+            <PhotoDetailsWithPaths
+              details={selectedPhoto}
+              onClose={() => setSelectedPhoto(null)}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
     </>

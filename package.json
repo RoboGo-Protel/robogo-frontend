@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "watch": "nodemon --watch src --ext js,ts,jsx,tsx --delay 2 --exec \"npm run build && pm2 restart robogo_frontend\"",
+    "watch": "nodemon --watch src --ext js,ts,jsx,tsx --delay 2 --exec \"pnpm run build && pm2 restart robogo_frontend\"",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -15,14 +15,17 @@
     "@iconify/react": "^5.2.0",
     "axios": "^1.8.4",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.6.3",
+    "framer-motion": "^12.12.1",
     "next": "15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-loading": "^2.0.3",
+    "react-loading-skeleton": "^3.5.0",
     "react-select": "^5.10.1",
     "react-spinners": "^0.17.0",
-    "react-zoom-pan-pinch": "^3.7.0"
+    "react-zoom-pan-pinch": "^3.7.0",
+    "three": "^0.176.0",
+    "three-stdlib": "^2.36.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -30,11 +33,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.176.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
     "nodemon": "^3.1.10",
     "postcss": "^8.5.3",
+    "prettier": "^3.5.3",
     "tailwindcss": "^4.1.1",
     "typescript": "^5"
   }

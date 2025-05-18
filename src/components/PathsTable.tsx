@@ -84,62 +84,67 @@ export default function PathsTable({ reports }: PathsTableProps) {
 
   return (
     <>
-      <div className="bg-white overflow-x-auto">
-        <table className="min-w-full bg-white">
-          <thead>
-            <tr className="bg-[#367AF2]/10 border-b border-gray-200 rounded-xl">
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+      <div className="bg-white overflow-x-auto rounded-xl shadow-sm">
+        <table className="min-w-[700px] w-full text-sm text-left text-gray-900">
+          <thead className="bg-[#367AF2]/10 border-b border-gray-200">
+            <tr>
+              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+                No
+              </th>
+              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Pos (x, y)
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Timestamp
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Speed (m/s)
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Heading (°)
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Direction
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Status
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {reports.map((report) => (
-              <tr key={report.id} className="hover:bg-gray-50">
-                <td className="py-4 px-4 text-sm text-gray-900">
+              <tr
+                key={report.id}
+                className="hover:bg-gray-50 transition-colors"
+              >
+                <td className="py-3 px-4 whitespace-nowrap">
+                  {reports.indexOf(report) + 1}
+                </td>
+                <td className="py-3 px-4 whitespace-nowrap">
                   {report.position.x}, {report.position.y}
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td className="py-3 px-4 whitespace-nowrap">
                   {getTimeOnlyWithoutDate(report.timestamp)}
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
-                  {report.speed}
-                </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td className="py-3 px-4 whitespace-nowrap">{report.speed}</td>
+                <td className="py-3 px-4 whitespace-nowrap">
                   {report.heading}
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td className="py-3 px-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <Icon
                       icon="material-symbols:north-rounded"
-                      className={`text-[#367AF2]`}
+                      className="text-[#367AF2] shrink-0"
                       style={{
-                        transform: `rotate(${
-                          ((report.heading % 360) + 360) % 360
-                        }deg)`,
+                        transform: `rotate(${((report.heading % 360) + 360) % 360}deg)`,
                       }}
-                      width={24}
-                      height={24}
+                      width={20}
+                      height={20}
                     />
-                    <div>{convertDegreesToDirection(report.heading)}</div>
+                    <span>{convertDegreesToDirection(report.heading)}</span>
                   </div>
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td className="py-3 px-4 whitespace-nowrap">
                   {getStatusBadge(report.status)}
                 </td>
               </tr>

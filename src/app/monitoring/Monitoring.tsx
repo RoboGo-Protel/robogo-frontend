@@ -29,7 +29,7 @@ export default function Monitoring() {
 
   return (
     <div
-      className="bg-white flex flex-row items-center justify-center gap-4 text-black h-screen p-5"
+      className="bg-white flex flex-col md:flex-row items-start justify-center gap-4 text-black min-h-screen md:h-screen p-5"
       style={{
         paddingTop: topNavbarHeight,
         paddingBottom: bottomNavbarHeight + 20,

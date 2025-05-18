@@ -123,26 +123,26 @@ export default function UltrasonicSensorTable({
 
   return (
     <>
-      <div className="bg-white overflow-x-auto">
-        <table className="min-w-full bg-white">
+      <div className="overflow-x-auto w-full bg-white rounded-xl shadow-sm">
+        <table className="min-w-[800px] w-full bg-white border-collapse">
           <thead>
             <tr className="bg-[#367AF2]/10 border-b border-gray-200">
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
                 No
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
                 Timestamp
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
                 Distance (cm)
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
                 Alert Level
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
                 Image
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
                 Action
               </th>
             </tr>
@@ -150,17 +150,17 @@ export default function UltrasonicSensorTable({
           <tbody className="divide-y divide-gray-200">
             {reports.map((report, index) => (
               <tr key={report.id} className="hover:bg-gray-50">
-                <td className="py-4 px-4 text-sm text-gray-900">{index + 1}</td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td className="py-3 px-4 text-sm text-gray-900">{index + 1}</td>
+                <td className="py-3 px-4 text-sm text-gray-900">
                   {getTimeOnlyWithoutDate(report.timestamp)}
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td className="py-3 px-4 text-sm text-gray-900">
                   {report.distance}
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td className="py-3 px-4 text-sm text-gray-900">
                   {getAlertBadge(report.alertLevel)}
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td className="py-3 px-4 text-sm text-gray-900">
                   {report.image && (
                     <div
                       className="h-10 w-16 bg-gray-200 rounded cursor-pointer"
@@ -185,7 +185,7 @@ export default function UltrasonicSensorTable({
                     </div>
                   )}
                 </td>
-                <td className="py-4 px-4 text-sm space-x-2">
+                <td className="py-3 px-4 text-sm space-x-2">
                   <button
                     disabled
                     className="border border-gray-300 text-gray-600 rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"

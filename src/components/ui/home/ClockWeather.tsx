@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
+import { motion } from "framer-motion";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 function getCurrentTime() {
   const now = new Date();
-  const hours = now.getHours();
-  const isAM = hours < 12;
-  const hour12 = hours % 12 || 12;
+  const hours = now.getHours().toString().padStart(2, "0");
   const minutes = now.getMinutes().toString().padStart(2, "0");
   const seconds = now.getSeconds().toString().padStart(2, "0");
 
   return {
-    time: `${hour12}:${minutes}:${seconds}`,
-    period: isAM ? "AM" : "PM",
-    date: now.toLocaleDateString("en-US", {
+    time: `${hours}:${minutes}:${seconds}`,
+    date: now.toLocaleDateString("id-ID", {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -29,17 +29,19 @@ export default function ClockWeather() {
     location: string;
     icon: string;
   } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  // Update jam tiap detik
+  // Update time every second
   useEffect(() => {
     const interval = setInterval(() => {
       setClock(getCurrentTime());
     }, 1000);
-    return () => clearInterval(interval);
+
+    return () => clearInterval(interval); // Cleanup on component unmount
   }, []);
 
-  // Ambil cuaca berdasarkan koordinat
-  useEffect(() => {
+  const getWeatherData = React.useCallback(async () => {
     if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(async (position) => {
@@ -70,11 +72,26 @@ export default function ClockWeather() {
           location: locationName,
           icon: getWeatherIcon(data.weather[0].main),
         });
+        const updatedTime = new Date();
+        setLastUpdated(
+          updatedTime.toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        );
+        setLoading(false);
       } catch (err) {
         console.error("Gagal ambil data cuaca:", err);
+        setLoading(false);
       }
     });
   }, []);
+
+  useEffect(() => {
+    getWeatherData();
+    const interval = setInterval(getWeatherData, 60);
+    return () => clearInterval(interval);
+  }, [getWeatherData]);
 
   const getWeatherIcon = (condition: string): string => {
     switch (condition.toLowerCase()) {
@@ -94,35 +111,70 @@ export default function ClockWeather() {
   };
 
   return (
-    <div className="flex flex-col items-start justify-start w-full gap-4 h-fit">
-      {/* Clock */}
-      <div className="flex flex-col items-start justify-start w-full gap-1 px-5 py-4 border-2 border-[#ECECEC] rounded-xl">
-        <p className="text-xl font-semibold">
-          {clock.time} <span className="text-sm">{clock.period}</span>
-        </p>
-        <p>{clock.date}</p>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="w-full max-w-5xl mx-auto"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Time Card */}
+        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-center">
+          {loading ? (
+            <>
+              <Skeleton width={140} height={36} />
+              <Skeleton width={180} height={20} className="mt-2" />
+            </>
+          ) : (
+            <>
+              <p className="text-4xl font-semibold text-gray-900 dark:text-white tabular-nums mb-2">
+                {clock.time}
+              </p>
+
+              <p className="text-md text-gray-500 dark:text-gray-400">
+                {clock.date}
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* Weather Card */}
+        <div className="bg-gradient-to-br from-[#e0f2ff] to-[#f0f7ff] dark:from-[#1e3a8a] dark:to-[#0f172a] shadow-md rounded-2xl p-6 flex flex-col justify-center">
+          {loading || !weather ? (
+            <>
+              <Skeleton width={130} height={24} />
+              <Skeleton width={110} height={18} className="mt-2" />
+              <Skeleton width={80} height={42} className="mt-4" />
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <Icon
+                  icon={weather.icon}
+                  width={32}
+                  height={32}
+                  className="text-[#367AF2]"
+                />
+                <p className="text-xl font-medium text-gray-800 dark:text-white">
+                  {weather.condition}
+                </p>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {weather.location}
+              </p>
+              <p className="text-5xl font-extrabold text-[#367AF2] dark:text-white mt-4">
+                {weather.temperature}°C
+              </p>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Weather */}
-      {weather && (
-        <div className="flex flex-row items-center justify-between w-full px-5 py-4 border-2 border-[#ECECEC] rounded-xl">
-          <div className="flex flex-col items-start justify-center gap-1.5">
-            <div className="flex flex-row items-center justify-start gap-2.5">
-              <Icon
-                icon={weather.icon}
-                width={24}
-                height={24}
-                className="text-[#367AF2]"
-              />
-              <p className="text-xl font-semibold">{weather.condition}</p>
-            </div>
-            <p>{weather.location}</p>
-          </div>
-          <p className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] bg-clip-text text-transparent text-3xl font-bold">
-            {weather.temperature}°C
-          </p>
-        </div>
+      {lastUpdated && (
+        <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-4">
+          Terakhir diperbarui: {lastUpdated}
+        </p>
       )}
-    </div>
+    </motion.div>
   );
 }

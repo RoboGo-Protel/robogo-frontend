@@ -35,8 +35,8 @@ body {
 }
 
 [data-theme="dark"] {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #112133;
+  --foreground: #FFFFFF;
 }
 
 @theme inline {

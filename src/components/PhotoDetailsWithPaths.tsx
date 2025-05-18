@@ -11,18 +11,18 @@ type SensorKey = "ultrasonic" | "battery" | "gps" | "obstacle";
 
 interface Metadata {
   ultrasonic: number;
-  heading: number;
+  heading?: number;
   direction?: string;
   accelerationMagnitude?: number;
   rotationRate?: number;
   distanceTraveled?: number;
   linearAcceleration?: number;
-  distances: {
+  distances?: {
     distTotal: number;
     distX: number;
     distY: number;
   };
-  velocity: {
+  velocity?: {
     velocity?: number;
     velocityX?: number;
     velocityY?: number;
@@ -35,7 +35,7 @@ interface Metadata {
     magnetometerY: number;
     magnetometerZ: number;
   };
-  position: {
+  position?: {
     positionX?: number;
     positionY?: number;
     posX?: number;
@@ -52,7 +52,7 @@ interface PhotoDetailsProps {
     date: string;
     fileName: string;
     dateTime: string;
-    metadata: Metadata;
+    metadata?: Metadata;
   };
   onClose: () => void;
 }
@@ -97,7 +97,7 @@ function TabMenu({ activeIndex, onTabChange }: TabMenuProps) {
   return (
     <nav
       id="reports-navbar"
-      className="flex items-center justify-around w-full bg-white"
+      className="flex items-center justify-around w-full bg-white mb-2.5"
     >
       {menuItems.map((item, index) => {
         const isActive = activeIndex === index;
@@ -174,7 +174,8 @@ export default function PhotoDetailsWithPaths({
 
   return (
     <motion.div
-      className="fixed top-0 left-0 w-full h-full bg-black/70 z-[9999] flex items-center justify-center p-5"
+      className="fixed top-0 left-0 w-full bg-black/70 z-[9999] flex items-center justify-center p-5"
+      style={{ height: "100vh", overflowY: "auto" }}
       variants={backdropVariants}
       initial="hidden"
       animate="visible"
@@ -182,12 +183,14 @@ export default function PhotoDetailsWithPaths({
       transition={{ duration: 0.3 }}
     >
       <motion.div
-        className="bg-white rounded-2xl shadow-lg w-full max-w-[1000px] mx-auto flex md:hidden flex-col items-center justify-center relative border border-[#CFCFCF]"
+        className={`bg-white rounded-2xl shadow-lg w-full ${
+          activeTab === 0 ? "h-full" : "h-fit"
+        } max-w-[1000px] mx-auto flex md:hidden flex-col items-center justify-center relative border border-[#CFCFCF]`}
         variants={modalVariants}
         transition={{ duration: 0.4 }}
       >
         {/* Scrollable Content */}
-        <div className="w-full max-h-screen overflow-y-auto p-5">
+        <div className="w-full h-full overflow-y-auto p-5">
           {/* Header */}
           <div className="flex flex-row items-center justify-center w-full mb-2">
             <div className="p-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md mr-3">
@@ -206,8 +209,10 @@ export default function PhotoDetailsWithPaths({
             </div>
           </div>
 
-          <hr className="w-full border-[#000000] opacity-15" />
-          <TabMenu activeIndex={activeTab} onTabChange={setActiveTab} />
+          <hr className="w-full border-[#000000] opacity-15 mb-2.5" />
+          {details.metadata && Object.keys(details.metadata).length > 0 && (
+            <TabMenu activeIndex={activeTab} onTabChange={setActiveTab} />
+          )}
 
           <AnimatePresence mode="wait">
             {activeTab === 0 ? (
@@ -317,96 +322,104 @@ export default function PhotoDetailsWithPaths({
 
                 {/* Stats */}
                 <div className="flex flex-col md:flex-row gap-4 items-center w-full h-fit">
-                  <StatCardList
-                    variant="distance"
-                    infoItems={[
-                      {
-                        title: "Distance",
-                        value: `${details.metadata.distances.distTotal.toFixed(
-                          2
-                        )} cm`,
-                      },
-                      {
-                        title: "Distance X",
-                        value: `${details.metadata.distances.distX.toFixed(
-                          2
-                        )} cm`,
-                      },
-                      {
-                        title: "Distance Y",
-                        value: `${details.metadata.distances.distY.toFixed(
-                          2
-                        )} cm`,
-                      },
-                    ]}
-                  />
-                  <StatCardList
-                    variant="velocity"
-                    infoItems={[
-                      {
-                        title: "Velocity",
-                        value:
-                          details.metadata.velocity.velocity !== undefined
-                            ? `${details.metadata.velocity.velocity.toFixed(
-                                2
-                              )} m/s`
-                            : "N/A",
-                      },
-                      {
-                        title: "Velocity X",
-                        value:
-                          details.metadata.velocity.velocityX !== undefined
-                            ? `${details.metadata.velocity.velocityX.toFixed(
-                                2
-                              )} m/s`
-                            : "N/A",
-                      },
-                      {
-                        title: "Velocity Y",
-                        value:
-                          details.metadata.velocity.velocityY !== undefined
-                            ? `${details.metadata.velocity.velocityY.toFixed(
-                                2
-                              )} m/s`
-                            : "N/A",
-                      },
-                    ]}
-                  />
+                  {details.metadata?.distances && (
+                    <StatCardList
+                      variant="distance"
+                      infoItems={[
+                        {
+                          title: "Distance",
+                          value: `${details.metadata.distances.distTotal.toFixed(
+                            2
+                          )} cm`,
+                        },
+                        {
+                          title: "Distance X",
+                          value: `${details.metadata.distances.distX.toFixed(
+                            2
+                          )} cm`,
+                        },
+                        {
+                          title: "Distance Y",
+                          value: `${details.metadata.distances.distY.toFixed(
+                            2
+                          )} cm`,
+                        },
+                      ]}
+                    />
+                  )}
+                  {details.metadata?.velocity && (
+                    <StatCardList
+                      variant="velocity"
+                      infoItems={[
+                        {
+                          title: "Velocity",
+                          value:
+                            details.metadata.velocity.velocity !== undefined
+                              ? `${details.metadata.velocity.velocity.toFixed(
+                                  2
+                                )} m/s`
+                              : "N/A",
+                        },
+                        {
+                          title: "Velocity X",
+                          value:
+                            details.metadata.velocity.velocityX !== undefined
+                              ? `${details.metadata.velocity.velocityX.toFixed(
+                                  2
+                                )} m/s`
+                              : "N/A",
+                        },
+                        {
+                          title: "Velocity Y",
+                          value:
+                            details.metadata.velocity.velocityY !== undefined
+                              ? `${details.metadata.velocity.velocityY.toFixed(
+                                  2
+                                )} m/s`
+                              : "N/A",
+                        },
+                      ]}
+                    />
+                  )}
                 </div>
 
                 {/* Sensor Monitoring */}
-                <div className="flex flex-col md:flex-row gap-4 items-center w-full">
-                  <MonitoringInfo<SensorKey>
-                    infoItems={[
-                      {
-                        key: "ultrasonic",
-                        icon: "mdi:proximity-sensor",
-                        status: "normal",
-                        title: "Ultrasonic Reading",
-                        value: `${details.metadata.ultrasonic.toFixed(2)} cm`,
-                      },
-                      {
-                        key: "gps",
-                        icon: "fa6-solid:compass",
-                        status: "normal",
-                        title: "IMU Heading Direction",
-                        value: `${details.metadata.heading.toFixed(2)}° ${
-                          details.metadata.direction
-                        }`,
-                      },
-                      {
-                        key: "obstacle",
-                        icon: "mynaui:danger-triangle-solid",
-                        status: `${
-                          categoryStatusAlert(details.metadata.ultrasonic) ||
-                          "normal"
-                        }`,
-                        title: "Obstacle Detection Alert",
-                        value: `${categoryAlert(details.metadata.ultrasonic)}`,
-                      },
-                    ]}
-                  />
-                </div>
+                {details.metadata?.ultrasonic && details.metadata?.heading && (
+                  <div className="flex flex-col md:flex-row gap-4 items-center w-full">
+                    <MonitoringInfo<SensorKey>
+                      infoItems={[
+                        {
+                          key: "ultrasonic",
+                          icon: "mdi:proximity-sensor",
+                          status: "normal",
+                          title: "Ultrasonic Reading",
+                          value: `${details.metadata.ultrasonic.toFixed(2)} cm`,
+                        },
+                        {
+                          key: "gps",
+                          icon: "fa6-solid:compass",
+                          status: "normal",
+                          title: "IMU Heading Direction",
+                          value: `${
+                            details.metadata.heading !== undefined
+                              ? `${details.metadata.heading.toFixed(2)}° ${details.metadata.direction ?? ""}`
+                              : "N/A"
+                          }`,
+                        },
+                        {
+                          key: "obstacle",
+                          icon: "mynaui:danger-triangle-solid",
+                          status: `${
+                            categoryStatusAlert(details.metadata.ultrasonic) ||
+                            "normal"
+                          }`,
+                          title: "Obstacle Detection Alert",
+                          value: `${categoryAlert(details.metadata.ultrasonic)}`,
+                        },
+                      ]}
+                    />
+                  </div>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -427,13 +440,13 @@ export default function PhotoDetailsWithPaths({
 
           {/* Buttons */}
           <div className="flex flex-col md:flex-row gap-4 items-center justify-center w-full h-fit mt-7">
-            <button className="flex flex-row gap-2 items-center justify-center border-[#E2E2E2] px-6 py-3 border-2 rounded-xl w-full">
-              <p className="text-[#5D6383] font-semibold text-sm">Delete</p>
+            <button className="flex flex-row gap-2 items-center justify-center border-red-200 px-6 py-3 border-2 rounded-xl w-full">
+              <p className="text-red-500 font-semibold text-sm">Delete</p>
               <Icon
                 icon="material-symbols:delete-outline"
                 width={20}
                 height={20}
-                className="text-[#5D6383]"
+                className="text-red-500"
               />
             </button>
             <button className="flex flex-row gap-2 items-center justify-center border-[#367AF2]/20 px-6 py-3 border-2 rounded-xl w-full">
@@ -483,7 +496,9 @@ export default function PhotoDetailsWithPaths({
         <hr className="w-full border-[#000000] opacity-15" />
 
         {/* Tab Menu */}
-        <TabMenu activeIndex={activeTab} onTabChange={setActiveTab} />
+        {details.metadata && Object.keys(details.metadata).length > 0 && (
+          <TabMenu activeIndex={activeTab} onTabChange={setActiveTab} />
+        )}
 
         {/* AnimatePresence untuk transisi antar konten tab */}
         <AnimatePresence mode="wait">
@@ -497,11 +512,12 @@ export default function PhotoDetailsWithPaths({
               transition={{ duration: 0.4 }}
               className="w-full flex flex-col gap-4"
             >
-              <div className="w-full flex items-center justify-center gap-3">
+              <div className="w-full flex items-stretch justify-start gap-3">
                 <img
                   src={details.src}
                   alt={details.alt}
-                  className="w-[420px] h-auto rounded-xl border-2 border-gray-200"
+                  className="w-[420px] object-cover rounded-xl border-2 border-gray-200"
+                  style={{ height: "auto", maxHeight: "100%" }}
                 />
                 <div className="flex flex-col gap-5 items-start justify-start w-96 p-4 border border-[#DFDFDF] rounded-xl break-words">
                   <div className="flex flex-col gap-1 w-full">
@@ -575,92 +591,99 @@ export default function PhotoDetailsWithPaths({
                   </div>
                 </div>
               </div>
-              <div className="flex flex-row gap-4 items-center w-full h-fit">
-                <StatCardList
-                  variant="distance"
-                  infoItems={[
-                    {
-                      title: "Distance",
-                      value: `${details.metadata.distances.distTotal.toFixed(
-                        2
-                      )} cm`,
-                    },
-                    {
-                      title: "Distance X",
-                      value: `${details.metadata.distances.distX.toFixed(
-                        2
-                      )} cm`,
-                    },
-                    {
-                      title: "Distance Y",
-                      value: `${details.metadata.distances.distY.toFixed(
-                        2
-                      )} cm`,
-                    },
-                  ]}
-                />
-                <StatCardList
-                  variant="velocity"
-                  infoItems={[
-                    {
-                      title: "Velocity",
-                      value: `${
-                        details.metadata.velocity.velocity !== undefined
-                          ? `${details.metadata.velocity.velocity.toFixed(2)}`
-                          : "N/A"
-                      } m/s`,
-                    },
-                    {
-                      title: "Velocity X",
-                      value: `${
-                        details.metadata.velocity.velocityX !== undefined
-                          ? `${details.metadata.velocity.velocityX.toFixed(2)}`
-                          : "N/A"
-                      } m/s`,
-                    },
-                    {
-                      title: "Velocity Y",
-                      value: `${
-                        details.metadata.velocity.velocityY !== undefined
-                          ? `${details.metadata.velocity.velocityY.toFixed(2)}`
-                          : "N/A"
-                      } m/s`,
-                    },
-                  ]}
-                />
-              </div>
-              <div className="w-full">
-                <MonitoringInfo<SensorKey>
-                  infoItems={[
-                    {
-                      key: "ultrasonic",
-                      icon: "mdi:proximity-sensor",
-                      status: "normal",
-                      title: "Ultrasonic Reading",
-                      value: `${details.metadata.ultrasonic.toFixed(2)} cm`,
-                    },
-                    {
-                      key: "gps",
-                      icon: "fa6-solid:compass",
-                      status: "normal",
-                      title: "IMU Heading Direction",
-                      value: `${details.metadata.heading.toFixed(2)}° ${
-                        details.metadata.direction
-                      }`,
-                    },
-                    {
-                      key: "obstacle",
-                      icon: "mynaui:danger-triangle-solid",
-                      status: `${
-                        categoryStatusAlert(details.metadata.ultrasonic) ||
-                        "normal"
-                      }`,
-                      title: "Obstacle Detection Alert",
-                      value: `${categoryAlert(details.metadata.ultrasonic)}`,
-                    },
-                  ]}
-                />
-              </div>
+
+              {details.metadata?.distances && details.metadata?.velocity && (
+                <div className="flex flex-col md:flex-row gap-4 items-center w-full h-fit">
+                  <StatCardList
+                    variant="distance"
+                    infoItems={[
+                      {
+                        title: "Distance",
+                        value: `${details.metadata.distances.distTotal.toFixed(
+                          2
+                        )} cm`,
+                      },
+                      {
+                        title: "Distance X",
+                        value: `${details.metadata.distances.distX.toFixed(
+                          2
+                        )} cm`,
+                      },
+                      {
+                        title: "Distance Y",
+                        value: `${details.metadata.distances.distY.toFixed(
+                          2
+                        )} cm`,
+                      },
+                    ]}
+                  />
+                  <StatCardList
+                    variant="velocity"
+                    infoItems={[
+                      {
+                        title: "Velocity",
+                        value: `${
+                          details.metadata.velocity.velocity !== undefined
+                            ? `${details.metadata.velocity.velocity.toFixed(2)}`
+                            : "N/A"
+                        } m/s`,
+                      },
+                      {
+                        title: "Velocity X",
+                        value: `${
+                          details.metadata.velocity.velocityX !== undefined
+                            ? `${details.metadata.velocity.velocityX.toFixed(2)}`
+                            : "N/A"
+                        } m/s`,
+                      },
+                      {
+                        title: "Velocity Y",
+                        value: `${
+                          details.metadata.velocity.velocityY !== undefined
+                            ? `${details.metadata.velocity.velocityY.toFixed(2)}`
+                            : "N/A"
+                        } m/s`,
+                      },
+                    ]}
+                  />
+                </div>
+              )}
+              {details.metadata && Object.keys(details.metadata).length > 0 && (
+                <div className="flex flex-col md:flex-row gap-4 items-center w-full">
+                  <MonitoringInfo<SensorKey>
+                    infoItems={[
+                      {
+                        key: "ultrasonic",
+                        icon: "mdi:proximity-sensor",
+                        status: "normal",
+                        title: "Ultrasonic Reading",
+                        value: `${details.metadata.ultrasonic.toFixed(2)} cm`,
+                      },
+                      {
+                        key: "gps",
+                        icon: "fa6-solid:compass",
+                        status: "normal",
+                        title: "IMU Heading Direction",
+                        value: `${
+                          details.metadata.heading !== undefined
+                            ? `${details.metadata.heading.toFixed(2)}° ${details.metadata.direction ?? ""}`
+                            : "N/A"
+                        }`,
+                      },
+                      {
+                        key: "obstacle",
+                        icon: "mynaui:danger-triangle-solid",
+                        status: `${
+                          categoryStatusAlert(details.metadata.ultrasonic) ||
+                          "normal"
+                        }`,
+                        title: "Obstacle Detection Alert",
+                        value: `${categoryAlert(details.metadata.ultrasonic)}`,
+                      },
+                    ]}
+                  />
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -670,9 +693,9 @@ export default function PhotoDetailsWithPaths({
               animate="visible"
               exit="exit"
               transition={{ duration: 0.4 }}
-              className="w-full flex flex-col items-center justify-center"
+              className="w-full flex flex-col items-start justify-start"
             >
-              <div className="w-full h-full rounded-xl border border-[#DFDFDF] flex items-center justify-center relative overflow-hidden">
+              <div className="w-full h-full rounded-xl border border-[#DFDFDF] flex items-start justify-start relative overflow-hidden">
                 <TunnelPath showStartpoint showEndpoint />
               </div>
             </motion.div>
@@ -680,13 +703,13 @@ export default function PhotoDetailsWithPaths({
         </AnimatePresence>
 
         <div className="flex flex-row gap-4 items-center justify-center w-full h-fit mt-7">
-          <button className="flex flex-row gap-2 items-center justify-center border-[#E2E2E2] px-6 py-3 border-2 rounded-xl w-full">
-            <p className="text-[#5D6383] font-semibold text-sm">Delete</p>
+          <button className="flex flex-row gap-2 items-center justify-center border-red-200 px-6 py-3 border-2 rounded-xl w-full">
+            <p className="text-red-500 font-semibold text-sm">Delete</p>
             <Icon
               icon="material-symbols:delete-outline"
               width={20}
               height={20}
-              className="text-[#5D6383]"
+              className="text-red-500"
             />
           </button>
           <button className="flex flex-row gap-2 items-center justify-center border-[#367AF2]/20 px-6 py-3 border-2 rounded-xl w-full">

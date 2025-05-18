@@ -27,22 +27,22 @@ interface LogsCardProps {
 
 const LogsCard: React.FC<LogsCardProps> = ({ logsItems }) => {
   return (
-    <div
-      className={`flex flex-col items-center justify-start w-full px-5 py-4 border-2 border-[#ECECEC] rounded-xl flex-1 overflow-hidden`}
-    >
-      <div className="flex flex-row items-center justify-start w-full gap-2">
-        <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md">
-          <Icon
-            icon="fluent:data-usage-32-filled"
-            width={20}
-            height={20}
-            className="text-white"
-          />
+    <div className="flex flex-col items-center justify-start w-full px-5 pb-4 border-2 border-[#ECECEC] rounded-xl flex-1 max-h-[250px] md:max-h-[400px] overflow-y-auto">
+      <div className="sticky top-0 z-10 w-full bg-white pt-4 pb-2">
+        <div className="flex flex-row items-center justify-start w-full gap-2">
+          <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md">
+            <Icon
+              icon="fluent:data-usage-32-filled"
+              width={20}
+              height={20}
+              className="text-white"
+            />
+          </div>
+          <p className="font-semibold text-base">Logs</p>
         </div>
-        <p className="font-semibold text-base">Logs</p>
       </div>
 
-      <div className="flex flex-col items-start justify-start w-full gap-2 mt-3 overflow-y-auto pr-2">
+      <div className="flex flex-col items-start justify-start w-full gap-2 mt-3">
         {logsItems.map((item, index) => (
           <div
             key={index}

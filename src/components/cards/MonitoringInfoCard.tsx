@@ -42,23 +42,44 @@ function MonitoringInfo<K extends string = string>({
   const [dragBounds, setDragBounds] = useState({ left: 0, right: 0 });
   const x = useMotionValue(0);
 
-  useEffect(() => {
+  const updateDragBounds = () => {
     const wrapper = wrapperRef.current;
     if (wrapper) {
       const scrollWidth = wrapper.scrollWidth;
       const clientWidth = wrapper.clientWidth;
-
       const gapSize = 16;
       const sidePadding = 10;
 
       const maxDrag = scrollWidth - clientWidth + sidePadding + gapSize;
-      console.log({ scrollWidth, clientWidth, maxDrag });
 
       setDragBounds({
-        left: -maxDrag,
+        left: -Math.max(0, maxDrag),
         right: 0,
       });
     }
+  };
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    const updateAllBounds = () => {
+      updateDragBounds();
+    };
+
+    updateDragBounds();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateDragBounds();
+    });
+
+    resizeObserver.observe(wrapper);
+    window.addEventListener("resize", updateAllBounds);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateAllBounds);
+    };
   }, [infoItems]);
 
   return (

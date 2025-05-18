@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { distance } from "@/utils/distance";
@@ -13,12 +13,11 @@ export default function MidArea_Monitoring() {
   const [recordingState, setRecordingState] = useState<"idle" | "recording">(
     "idle"
   );
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [flashOn, setFlashOn] = useState(false);
-  const [fps, setFps] = useState(0);
-  const [resolution, setResolution] = useState({ width: 0, height: 0 });
-  const [deviceCamera, setDeviceCamera] = useState("None");
-  const [isStreamActive, setIsStreamActive] = useState(false);
+  const [fps] = useState(0);
+  const [resolution] = useState({ width: 0, height: 0 });
+  const [deviceCamera] = useState("None");
+  const [isStreamActive] = useState(false);
   const [imuHeading, setImuHeading] = useState(380);
 
   useEffect(() => {
@@ -29,7 +28,7 @@ export default function MidArea_Monitoring() {
     return () => clearInterval(interval);
   }, []);
 
-  const lastFrameTimeRef = useRef(Date.now());
+  // const lastFrameTimeRef = useRef(Date.now());
 
   const handleRecordClick = async () => {
     try {
@@ -94,87 +93,44 @@ export default function MidArea_Monitoring() {
     },
   ];
 
-  useEffect(() => {
-    let socket: WebSocket;
-    let reconnectTimer: NodeJS.Timeout;
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     const now = Date.now();
+  //     const timeSinceLastFrame = now - lastFrameTimeRef.current;
 
-    const connectSocket = () => {
-      socket = new WebSocket("ws://localhost:3001/ws");
+  //     if (timeSinceLastFrame > 5000) {
+  //       setIsStreamActive(false);
+  //     }
+  //   }, 2000);
 
-      socket.onopen = () => {
-        console.log("🔌 WebSocket Connected");
-      };
+  //   return () => clearInterval(interval);
+  // }, []);
 
-      socket.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          if (message.type === "frame") {
-            setImageSrc(message.data);
-            setIsStreamActive(true);
-            lastFrameTimeRef.current = Date.now();
-          }
-        } catch (error) {
-          console.error("WebSocket message parsing error:", error);
-        }
-      };
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     fetch("http://localhost:3001/info")
+  //       .then((res) => res.json())
+  //       .then((data) => {
+  //         if (data) {
+  //           setFps(data.fps);
+  //           const [w, h] = data.resolution.split("x").map(Number);
+  //           setResolution({ width: w, height: h });
+  //           setDeviceCamera(data.device);
+  //         }
+  //       });
+  //   }, 3000);
 
-      socket.onerror = (err) => {
-        console.error("WebSocket error:", err);
-      };
-
-      socket.onclose = () => {
-        console.warn("⚠️ WebSocket closed, retrying in 3s...");
-        setIsStreamActive(false);
-        reconnectTimer = setTimeout(connectSocket, 3000);
-      };
-    };
-
-    connectSocket();
-
-    return () => {
-      clearTimeout(reconnectTimer);
-      socket?.close();
-    };
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const timeSinceLastFrame = now - lastFrameTimeRef.current;
-
-      if (timeSinceLastFrame > 5000) {
-        setIsStreamActive(false);
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetch("http://localhost:3001/info")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data) {
-            setFps(data.fps);
-            const [w, h] = data.resolution.split("x").map(Number);
-            setResolution({ width: w, height: h });
-            setDeviceCamera(data.device);
-          }
-        });
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
-    <div className="flex flex-col items-start justify-start h-full gap-4 border-2 border-[#ECECEC] rounded-xl p-5 w-full">
-      <div className="flex flex-row gap-4 items-center w-full h-fit">
+    <div className="flex flex-col items-start justify-start h-full gap-4 border-2 border-[#ECECEC] rounded-xl p-4 sm:p-5 w-full">
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch w-full h-fit">
         <StatCardList variant="distance" infoItems={distance} />
         <StatCardList variant="velocity" infoItems={velocity} />
       </div>
 
-      <div className="relative flex-1 w-full h-full rounded-2xl overflow-hidden">
+      <div className="relative flex-1 w-full h-[300px] sm:h-full rounded-2xl overflow-hidden">
         <AnimatePresence mode="wait">
           {isStreamActive ? (
             <motion.div
@@ -230,7 +186,7 @@ export default function MidArea_Monitoring() {
               </div>
 
               <img
-                src={imageSrc!}
+                src="http://localhost:4000/api/v1/monitoring/camera-stream"
                 alt="Live Camera Stream"
                 className="w-full h-full object-cover"
               />
@@ -263,14 +219,14 @@ export default function MidArea_Monitoring() {
         </AnimatePresence>
       </div>
 
-      <div className="flex flex-row w-full gap-4">
+      <div className="flex flex-col sm:flex-row w-full gap-4">
         <DirectionalControl onDirectionClick={(dir) => console.log(dir)} />
         <div className="flex flex-col w-full gap-2.5">
           <div className="flex flex-row items-center justify-center gap-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] w-full h-fit rounded-xl px-4 py-2 text-white">
             <Icon icon="mingcute:settings-1-fill" width={20} height={20} />
             <span className="font-semibold text-base">Tools</span>
           </div>
-          <div className="grid grid-cols-2 gap-2.5 w-full h-fit">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full h-fit">
             {listButtons.map((item, index) => (
               <button
                 key={index}

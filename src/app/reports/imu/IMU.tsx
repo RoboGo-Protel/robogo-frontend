@@ -282,15 +282,15 @@ export default function IMU() {
         </div>
       ) : (
         <>
-          <div className="flex w-full gap-4 items-stretch">
+          <div className="flex flex-col md:flex-row w-full gap-4">
             <div className="flex-1 flex flex-col">
               <ShortSummary
                 summaryItems={summaryItems}
-                layout="grid grid-cols-4 gap-4"
+                layout="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 items-stretch"
               />
             </div>
 
-            <div className="flex items-center">
+            <div className="flex flex-row gap-4 items-stretch md:items-center">
               <Select
                 options={dateWithSessions.map((d) => ({
                   value: d.value,
@@ -310,9 +310,8 @@ export default function IMU() {
                   }
                 }}
                 isSearchable={false}
+                className="flex-1"
               />
-            </div>
-            <div className="flex items-center">
               <Select
                 options={
                   selectedDate
@@ -326,6 +325,7 @@ export default function IMU() {
                 onChange={setSelectedSession}
                 isSearchable={false}
                 isDisabled={!selectedDate}
+                className="flex-1"
               />
             </div>
           </div>

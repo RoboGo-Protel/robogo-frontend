@@ -93,7 +93,7 @@ export default function LeftArea_Monitoring() {
     };
     const fetchImages = async () => {
       try {
-        const response = await fetch("/api/reports/images");
+        const response = await fetch("/api/monitoring/realtime/images");
         const data = await response.json();
         setListPhotoWithDate(data.data || []);
         console.log("Images data:", data.data);
@@ -108,7 +108,7 @@ export default function LeftArea_Monitoring() {
 
   return (
     <>
-      <div className="flex flex-col items-start justify-start min-w-[450px] max-w-none gap-4 h-full">
+      <div className="flex flex-col items-start justify-start w-full md:min-w-[450px] md:w-1/4 gap-4 h-full">
         <div
           className={`flex flex-col items-center justify-start w-full px-5 py-4 border-2 ${
             theme === "dark" ? "" : "border-[#ECECEC]"

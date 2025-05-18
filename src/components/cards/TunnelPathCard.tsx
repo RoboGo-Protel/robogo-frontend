@@ -96,7 +96,7 @@ export default function TunnelPath({
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
-            <div className="absolute z-50 top-3 right-3 flex gap-2">
+            <div className="absolute z-30 top-3 right-3 flex gap-2">
               <button
                 onClick={() => zoomIn()}
                 className="bg-blue-500 text-white px-3 py-1 rounded-md"

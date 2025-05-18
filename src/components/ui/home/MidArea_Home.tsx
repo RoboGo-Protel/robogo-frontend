@@ -25,7 +25,8 @@ const pathData = [
       x: 2.5,
       y: 1,
     },
-    imageUrl: "https://t3.ftcdn.net/jpg/01/80/46/56/360_F_180465639_UAJJt5COMPSSDuMS8w0NuHFqF7wvteCE.jpg",
+    imageUrl:
+      "https://t3.ftcdn.net/jpg/01/80/46/56/360_F_180465639_UAJJt5COMPSSDuMS8w0NuHFqF7wvteCE.jpg",
     speed: 2.5,
     heading: 90,
     status: "Moving",
@@ -48,13 +49,31 @@ const pathData = [
 
 export default function MidArea_Home() {
   return (
-    <div className="flex flex-col items-start justify-start h-full gap-4 border-2 border-[#ECECEC] rounded-xl p-5 w-full">
-      <div className="flex flex-row gap-2.5 items-center justify-center bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 w-full h-fit rounded-xl border-2 border-[#3BD5FF]/20 px-4 py-2">
-        <p className="font-semibold text-base bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text">
+    <div
+      className="
+        flex flex-col items-start justify-start
+        h-full w-full max-w-full
+        gap-4
+        border-2 border-[#ECECEC]
+        rounded-xl p-5
+      "
+    >
+      <div
+        className="
+          flex flex-row gap-2.5 items-center justify-center
+          bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10
+          w-full h-fit
+          rounded-xl border-2 border-[#3BD5FF]/20
+          px-4 py-2
+          text-center
+        "
+      >
+        <p className="font-semibold text-base bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text w-full">
           Last Activity - March 24th, 2024
         </p>
       </div>
 
+      {/* Pastikan TunnelPathCard juga responsive */}
       <TunnelPath showStartpoint showEndpoint pathData={pathData} />
 
       <ShortSummary

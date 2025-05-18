@@ -90,35 +90,44 @@ export default function IMUTable({ reports }: IMUTableProps) {
   };
 
   const getNotesBadge = (level: string) => {
+    const baseStyle =
+      "text-white text-sm py-2 px-3 rounded-full inline-flex items-center gap-x-1";
+
+    const iconStyle = "w-4 h-4 shrink-0";
+
     switch (level) {
       case "IMU Calibrated":
         return (
-          <span className="bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon icon="tabler:rotate-2" className="w-4 h-4 mr-1" />
+          <span
+            className={`bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] ${baseStyle}`}
+          >
+            <Icon icon="tabler:rotate-2" className={iconStyle} />
             {level}
           </span>
         );
       case "Turn Detected":
         return (
-          <span className="bg-gradient-to-br from-[#FFC107] to-[#FF9800] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
+          <span
+            className={`bg-gradient-to-br from-[#FFC107] to-[#FF9800] ${baseStyle}`}
+          >
             <Icon
               icon="f7:arrow-uturn-right-circle-fill"
-              className="w-4 h-4 mr-1"
+              className={iconStyle}
             />
             {level}
           </span>
         );
       case "Normal":
         return (
-          <span className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon
-              icon="material-symbols:check-circle"
-              className="w-4 h-4 mr-1"
-            />
+          <span
+            className={`bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] ${baseStyle}`}
+          >
+            <Icon icon="material-symbols:check-circle" className={iconStyle} />
             {level}
           </span>
         );
       default:
+        return null;
     }
   };
 
@@ -134,11 +143,10 @@ export default function IMUTable({ reports }: IMUTableProps) {
 
   return (
     <>
-      <div className="bg-white overflow-x-auto">
-        <table className="table-fixed w-full border-collapse text-sm">
+      <div className="overflow-x-auto w-full bg-white rounded-xl shadow-sm">
+        <table className="w-full border-collapse text-sm sm:text-sm md:table-fixed min-w-[1000px]">
           <colgroup>
-            {/* <col className="w-10" /> */}
-            <col className="w-14" />
+            <col className="w-10" />
             <col className="w-24" />
             <col className="w-16" />
             <col className="w-16" />
@@ -154,96 +162,73 @@ export default function IMUTable({ reports }: IMUTableProps) {
 
           <thead>
             <tr className="bg-[#367AF2]/10 border-b border-gray-200">
-              {/* <th
-                rowSpan={2}
-                className="py-3 px-2 align-top text-xs font-medium text-black uppercase"
-              >
-                <div className="relative flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    // onChange={toggleSelectAll}
-                    checked={
-                      selectedItems.length === reports.length &&
-                      reports.length > 0
-                    }
-                    className="h-5 w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] cursor-pointer"
-                  />
-                  {selectedItems.length === reports.length &&
-                    reports.length > 0 && (
-                      <Icon
-                        icon="mdi:check"
-                        className="absolute text-white h-3 w-3 pointer-events-none"
-                      />
-                    )}
-                </div>
-              </th> */}
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left text-xs font-medium text-black uppercase align-top"
+                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
               >
                 No
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left text-xs font-medium text-black uppercase align-top"
+                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
               >
                 Timestamp
               </th>
               <th
                 colSpan={3}
-                className="py-3 px-2 text-center text-xs font-medium text-black uppercase tracking-wider"
+                className="py-3 px-2 text-center font-medium text-black uppercase tracking-wider"
               >
                 Acceleration (m/s²)
               </th>
               <th
                 colSpan={3}
-                className="py-3 px-2 text-center text-xs font-medium text-black uppercase tracking-wider"
+                className="py-3 px-2 text-center font-medium text-black uppercase tracking-wider"
               >
                 Gyroscope (°/s)
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left text-xs font-medium text-black uppercase align-top"
+                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
               >
                 Heading (°)
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left text-xs font-medium text-black uppercase align-top"
+                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
               >
                 Direction
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left text-xs font-medium text-black uppercase align-top"
+                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
               >
                 Notes
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left text-xs font-medium text-black uppercase align-top"
+                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
               >
                 Action
               </th>
             </tr>
 
             <tr className="bg-[#367AF2]/10 border-b border-gray-200">
-              <th className="py-2 px-2 text-center text-xs font-medium text-black uppercase">
+              <th className="py-2 px-2 text-center font-medium text-black uppercase">
                 X
               </th>
-              <th className="py-2 px-2 text-center text-xs font-medium text-black uppercase">
+              <th className="py-2 px-2 text-center font-medium text-black uppercase">
                 Y
               </th>
-              <th className="py-2 px-2 text-center text-xs font-medium text-black uppercase">
+              <th className="py-2 px-2 text-center font-medium text-black uppercase">
                 Z
               </th>
-              <th className="py-2 px-2 text-center text-xs font-medium text-black uppercase">
+              <th className="py-2 px-2 text-center font-medium text-black uppercase">
                 X
               </th>
-              <th className="py-2 px-2 text-center text-xs font-medium text-black uppercase">
+              <th className="py-2 px-2 text-center font-medium text-black uppercase">
                 Y
               </th>
-              <th className="py-2 px-2 text-center text-xs font-medium text-black uppercase">
+              <th className="py-2 px-2 text-center font-medium text-black uppercase">
                 Z
               </th>
             </tr>
@@ -252,23 +237,6 @@ export default function IMUTable({ reports }: IMUTableProps) {
           <tbody className="divide-y divide-gray-200">
             {reports.map((report, index) => (
               <tr key={report.id} className="hover:bg-gray-50">
-                {/* <td className="py-3 px-2">
-                  <div className="relative flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.includes(report.id)}
-                      onChange={() => toggleSelectItem(report.id)}
-                      className="h-5 w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] cursor-pointer"
-                    />
-                    {selectedItems.includes(report.id) && (
-                      <Icon
-                        icon="mdi:check"
-                        className="absolute text-white h-3 w-3 pointer-events-none"
-                      />
-                    )}
-                  </div>
-                </td> */}
-
                 <td className="py-3 px-2">{index + 1}</td>
                 <td className="py-3 px-2">
                   {getTimeOnlyWithoutDate(report.timestamp)}
@@ -296,49 +264,48 @@ export default function IMUTable({ reports }: IMUTableProps) {
 
                 <td className="py-3 px-2">{report.heading}°</td>
                 <td className="py-3 px-2">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-x-2 min-w-0">
                     <Icon
                       icon="material-symbols:north-rounded"
-                      className={`text-[#367AF2]`}
+                      className="text-[#367AF2] shrink-0"
                       style={{
-                        transform: `rotate(${
-                          ((report.heading % 360) + 360) % 360
-                        }deg)`,
+                        transform: `rotate(${((report.heading % 360) + 360) % 360}deg)`,
                       }}
-                      width={24}
-                      height={24}
+                      width={20}
+                      height={20}
                     />
-                    <div>{convertDegreesToDirection(report.heading)}</div>
+                    <span className="break-words">
+                      {convertDegreesToDirection(report.heading)}
+                    </span>
                   </div>
                 </td>
 
                 <td className="py-3 px-2">{getNotesBadge(report.status)}</td>
 
-                <td className="py-3 px-2 text-sm space-x-2">
-                  <button
-                    disabled
-                    className="border border-gray-300 text-gray-600 rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
-                  >
-                    <Icon
-                      icon="mage:edit-fill"
-                      className="inline mr-1"
-                      width={16}
-                      height={16}
-                    />
-                    Edit
-                  </button>
-                  <button
-                    className="border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50"
-                    // onClick={() => deleteReport(report.id)}
-                  >
-                    <Icon
-                      icon="mingcute:delete-fill"
-                      className="inline mr-1"
-                      width={16}
-                      height={16}
-                    />
-                    Delete
-                  </button>
+                <td className="py-3 px-2">
+                  <div className="flex flex-row flex-nowrap items-center space-x-2">
+                    <button
+                      disabled
+                      className="whitespace-nowrap border border-gray-300 text-gray-600 rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 min-w-[80px]"
+                    >
+                      <Icon
+                        icon="mage:edit-fill"
+                        className="inline-block mr-1 align-middle"
+                        width={16}
+                        height={16}
+                      />
+                      Edit
+                    </button>
+                    <button className="whitespace-nowrap border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50 min-w-[80px]">
+                      <Icon
+                        icon="mingcute:delete-fill"
+                        className="inline-block mr-1 align-middle"
+                        width={16}
+                        height={16}
+                      />
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

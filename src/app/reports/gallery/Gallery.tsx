@@ -105,7 +105,7 @@ export default function Gallery() {
   useEffect(() => {
     const fetchImagesList = async () => {
       try {
-        const response = await fetch("/api/reports/images");
+        const response = await fetch("/api/monitoring/realtime/images");
         const data = await response.json();
 
         setListPhotoWithDate(data.data || []);
@@ -148,7 +148,7 @@ export default function Gallery() {
     <>
       <div
         className={clsx(
-          "flex flex-col gap-4 p-5 transition-colors duration-300 bg-white text-black"
+          "flex flex-col gap-4 p-5 transition-colors duration-300 text-black"
         )}
         style={{
           paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -196,17 +196,19 @@ export default function Gallery() {
         ) : (
           Object.entries(groupedPhotos).map(([dateKey, photos]) => (
             <div key={dateKey} className="mb-4">
-              <div
-                className="sticky top-[calc(var(--top-navbar-height)+var(--reports-navbar-height))] z-10 flex flex-row items-center gap-2.5 text-lg font-semibold mb-3 px-5 py-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow"
-                style={{
-                  borderRadius: "1rem 1rem 1rem 1rem",
-                  marginBottom: "-1px",
-                }}
-              >
-                <Icon icon="tabler:calendar-filled" width={24} height={24} />
-                <p>{formatDate(dateKey)}</p>
+              <div className="w-full bg-white sticky top-[calc(var(--top-navbar-height)+var(--reports-navbar-height))] z-10 rounded-b-2xl">
+                <div
+                  className="flex flex-row items-center gap-2.5 text-lg font-semibold mb-3 px-5 py-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow"
+                  style={{
+                    borderRadius: "1rem 1rem 1rem 1rem",
+                    marginBottom: "-1px",
+                  }}
+                >
+                  <Icon icon="tabler:calendar-filled" width={24} height={24} />
+                  <p>{formatDate(dateKey)}</p>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-4 mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 mt-4">
                 {photos.map((item, idx) => (
                   <div
                     key={idx}
@@ -231,7 +233,7 @@ export default function Gallery() {
                         item.imageUrl ? item.imageUrl : "/images/no_image.png"
                       }
                       alt={item.filename}
-                      className="object-cover rounded-xl border border-2 border-gray-200 w-40 h-32"
+                      className="w-full aspect-[4/3] object-cover rounded-xl border border-gray-200"
                       loading="lazy"
                     />
                     {item.obstacle && (

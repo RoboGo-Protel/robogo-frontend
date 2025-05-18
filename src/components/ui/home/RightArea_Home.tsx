@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { Icon } from "@iconify/react";
 import Image from "next/image";
 import { infoItems } from "@/utils/info";
@@ -7,90 +7,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import ShortInfo from "@/components/cards/ShortInfoCard";
 
 export default function RightArea_Home() {
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [flashOn, setFlashOn] = useState(false);
-  const [fps, setFps] = useState(0);
-  const [resolution, setResolution] = useState({ width: 0, height: 0 });
-  const [deviceCamera, setDeviceCamera] = useState("None");
-  const [isStreamActive, setIsStreamActive] = useState(false);
-
-  const lastFrameTimeRef = useRef(Date.now());
-
-  useEffect(() => {
-    let socket: WebSocket;
-    let reconnectTimer: NodeJS.Timeout;
-
-    const connectSocket = () => {
-      socket = new WebSocket("ws://localhost:3001/ws");
-
-      socket.onopen = () => {
-        console.log("🔌 WebSocket Connected");
-      };
-
-      socket.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          if (message.type === "frame") {
-            setImageSrc(message.data);
-            setIsStreamActive(true);
-            lastFrameTimeRef.current = Date.now();
-          }
-        } catch (error) {
-          console.error("WebSocket message parsing error:", error);
-        }
-      };
-
-      socket.onerror = (err) => {
-        console.error("WebSocket error:", err);
-      };
-
-      socket.onclose = () => {
-        console.warn("⚠️ WebSocket closed, retrying in 3s...");
-        setIsStreamActive(false);
-        reconnectTimer = setTimeout(connectSocket, 3000);
-      };
-    };
-
-    connectSocket();
-
-    return () => {
-      clearTimeout(reconnectTimer);
-      socket?.close();
-    };
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const timeSinceLastFrame = now - lastFrameTimeRef.current;
-
-      if (timeSinceLastFrame > 5000) {
-        setIsStreamActive(false);
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetch("http://localhost:3001/info")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data) {
-            setFps(data.fps);
-            const [w, h] = data.resolution.split("x").map(Number);
-            setResolution({ width: w, height: h });
-            setDeviceCamera(data.device);
-          }
-        });
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const [fps] = useState(0);
+  const [resolution] = useState({ width: 0, height: 0 });
+  const [deviceCamera] = useState("None");
+  const [isStreamActive] = useState(false);
 
   return (
-    <div className="flex flex-col items-start justify-start min-w-[450px] h-full gap-4 border-2 border-[#ECECEC] rounded-xl p-5">
+    <div className="flex flex-col items-start justify-start w-full max-w-[450px] sm:max-w-[450px] h-full gap-4 border-2 border-[#ECECEC] rounded-xl p-4 sm:p-5">
       <div className="flex flex-col items-center justify-center w-full gap-4">
         <h1 className="text-2xl font-bold">RoboGo G1</h1>
         <Image
@@ -98,12 +22,13 @@ export default function RightArea_Home() {
           alt="RoboGo G1"
           width={180}
           height={180}
+          className="select-none"
         />
       </div>
 
       <ShortInfo infoItems={infoItems} />
 
-      <div className="h-full w-full rounded-2xl flex items-center justify-center relative">
+      <div className="h-full w-full rounded-2xl flex items-center justify-center relative min-h-[300px]">
         <AnimatePresence mode="wait">
           {isStreamActive ? (
             <motion.div
@@ -151,9 +76,9 @@ export default function RightArea_Home() {
               </div>
 
               <img
-                src={imageSrc!}
+                src="http://localhost:4000/api/v1/monitoring/camera-stream"
                 alt="Live Camera Stream"
-                className="rounded-2xl w-auto h-full object-cover"
+                className="rounded-2xl w-auto h-full object-cover max-h-[400px]"
               />
             </motion.div>
           ) : (
@@ -163,7 +88,7 @@ export default function RightArea_Home() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="flex flex-col gap-2.5 p-4 items-center justify-center bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 w-full h-full rounded-2xl border-2 border-[#3BD5FF]/20"
+              className="flex flex-col gap-2.5 p-4 items-center justify-center bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 w-full h-full rounded-2xl border-2 border-[#3BD5FF]/20 min-h-[300px]"
             >
               <div className="p-2 rounded-xl shadow-md bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
                 <Icon
@@ -173,11 +98,11 @@ export default function RightArea_Home() {
                   className="text-white"
                 />
               </div>
-              <p className="font-semibold text-lg bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text">
+              <p className="font-semibold text-lg bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text text-center">
                 Video Stream Unavailable!
               </p>
               <div className="flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-full text-white text-sm text-center">
-                Please check RoboGo connection or camera stream.
+                Please check RoboGo connection!
               </div>
             </motion.div>
           )}
