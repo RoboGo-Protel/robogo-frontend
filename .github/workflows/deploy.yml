@@ -42,6 +42,7 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             cd /mnt/sdcard/RoboGo_Dashboard/client
             pm2 stop robogo_fe
+            git pull
             npm install
             npm run build
             pm2 restart robogo_fe
