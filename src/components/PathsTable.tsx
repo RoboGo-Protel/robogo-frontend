@@ -102,37 +102,37 @@ export default function PathsTable({ reports }: PathsTableProps) {
             }`}
           >
             <tr>
-              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+              <th className="py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 No
               </th>
-              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+              <th className="py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Pos (x, y)
               </th>
-              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+              <th className="py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Timestamp
               </th>
-              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+              <th className="py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Speed (m/s)
               </th>
-              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+              <th className="py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Heading (°)
               </th>
-              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+              <th className="py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Direction
               </th>
-              <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+              <th className="py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 Status
               </th>
             </tr>
           </thead>
-          <tbody className={`divide-y ${isDark ? "divide-gray-700" : "divide-gray-200"}`}>
+          <tbody
+            className={`divide-y ${isDark ? "divide-gray-700" : "divide-gray-200"}`}
+          >
             {reports.map((report) => (
               <tr
                 key={report.id}
                 className={`transition-colors ${
-                  isDark
-                    ? "hover:bg-[#1a2b44]"
-                    : "hover:bg-gray-50"
+                  isDark ? "hover:bg-[#1a2b44]" : "hover:bg-gray-50"
                 }`}
               >
                 <td className="py-3 px-4 whitespace-nowrap">

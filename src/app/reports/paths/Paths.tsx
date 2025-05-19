@@ -156,7 +156,7 @@ export default function IMU() {
   return (
     <div
       className={clsx(
-        "flex flex-col lg:flex-row gap-4 p-4 sm:p-5 transition-colors duration-300 w-full",
+        "flex flex-col md:flex-row gap-4 p-4 md:p-5 transition-colors duration-300 w-full",
         isDark ? "text-white bg-[#112133]" : "text-black"
       )}
       style={{
@@ -221,8 +221,8 @@ export default function IMU() {
             <TunnelPath showStartpoint showEndpoint pathData={reports} />
 
             {/* Legends Section */}
-            <div className="flex flex-col lg:flex-row gap-4 w-full">
-              <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl text-white justify-center lg:justify-start">
+            <div className="flex flex-col md:flex-row gap-4 w-full">
+              <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl text-white justify-center md:justify-start">
                 <Icon icon="mdi:map-legend" width={24} height={24} />
                 <p>Legends</p>
               </div>
@@ -274,7 +274,7 @@ export default function IMU() {
 
           {/* Dropdown + Table Section */}
           <div className="flex flex-col w-full gap-4 items-stretch mt-4">
-            <div className="flex flex-col sm:flex-row gap-4 w-full">
+            <div className="flex flex-col md:flex-row gap-4 w-full">
               <Select
                 options={dateWithSessions.map((d) => ({
                   value: d.value,

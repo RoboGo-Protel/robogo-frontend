@@ -16,7 +16,7 @@ const ShortInfo: React.FC<ShortInfoProps> = ({ infoItems }) => {
   const { isDark } = useDarkMode();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full h-fit">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full h-fit">
       {infoItems.map((item, index) => {
         const isActive = item.status === "ON";
 

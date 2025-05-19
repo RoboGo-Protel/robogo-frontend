@@ -260,7 +260,12 @@ export default function IMU() {
             size={15}
             margin={5}
           />
-          <p className={clsx("mt-4 text-lg", isDark ? "text-gray-300" : "text-gray-500")}>
+          <p
+            className={clsx(
+              "mt-4 text-lg",
+              isDark ? "text-gray-300" : "text-gray-500"
+            )}
+          >
             Loading IMU reports, please wait...
           </p>
         </div>
@@ -282,7 +287,12 @@ export default function IMU() {
             height={48}
             className={clsx(isDark ? "text-gray-500" : "text-gray-400")}
           />
-          <p className={clsx("mt-4 text-lg", isDark ? "text-gray-300" : "text-gray-500")}>
+          <p
+            className={clsx(
+              "mt-4 text-lg",
+              isDark ? "text-gray-300" : "text-gray-500"
+            )}
+          >
             No IMU reports available. Please check back later.
           </p>
         </div>
@@ -292,7 +302,7 @@ export default function IMU() {
             <div className="flex-1 flex flex-col">
               <ShortSummary
                 summaryItems={summaryItems}
-                layout="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 items-stretch"
+                layout="grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-4 items-stretch"
               />
             </div>
 

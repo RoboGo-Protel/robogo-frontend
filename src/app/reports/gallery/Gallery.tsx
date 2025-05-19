@@ -231,7 +231,7 @@ export default function Gallery() {
                   <p>{formatDate(dateKey)}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 mt-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 mt-4">
                 {photos.map((item, idx) => (
                   <div
                     key={idx}

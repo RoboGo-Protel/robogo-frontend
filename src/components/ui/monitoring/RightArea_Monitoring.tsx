@@ -78,9 +78,9 @@ export default function RightArea_Monitoring() {
   };
 
   return (
-    <div className="flex flex-col items-start justify-start w-full sm:w-auto max-w-none sm:min-w-[450px] gap-4 h-full">
+    <div className="flex flex-col items-start justify-start w-full md:w-auto max-w-none md:min-w-[450px] gap-4 h-full">
       <div
-        className={`flex flex-col items-center justify-start w-full px-4 sm:px-5 py-4 rounded-xl flex-1 border-2 gap-3 ${
+        className={`flex flex-col items-center justify-start w-full px-4 md:px-5 py-4 rounded-xl flex-1 border-2 gap-3 ${
           isDark
             ? "border-[#113541] bg-[#0F1B2B] text-white"
             : "border-[#ECECEC] bg-white text-black"
@@ -95,7 +95,7 @@ export default function RightArea_Monitoring() {
               className="text-white"
             />
           </div>
-          <p className="font-semibold text-sm sm:text-base truncate">
+          <p className="font-semibold text-sm md:text-base truncate">
             Real-time Monitoring
           </p>
         </div>

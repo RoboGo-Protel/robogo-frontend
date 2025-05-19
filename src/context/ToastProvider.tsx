@@ -80,9 +80,9 @@ export function ToastProvider({
   const positionClasses = {
     "top-right": "top-4 right-4",
     "top-left": "top-4 left-4",
-    "bottom-right": "sm:bottom-4 right-4",
-    "bottom-left": "sm:bottom-4 left-4",
-    "bottom-center": "sm:bottom-4 left-1/2 transform -translate-x-1/2",
+    "bottom-right": "md:bottom-4 right-4",
+    "bottom-left": "md:bottom-4 left-4",
+    "bottom-center": "md:bottom-4 left-1/2 transform -translate-x-1/2",
     "top-center": "top-4 left-1/2 transform -translate-x-1/2",
     center: "top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
   };
@@ -131,7 +131,7 @@ export function ToastProvider({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.3 }}
-                  className={`w-fit mx-4 sm:mx-0 px-4 py-3 rounded-xl shadow-lg flex items-start gap-3 break-words ${
+                  className={`w-fit mx-4 md:mx-0 px-4 py-3 rounded-xl shadow-lg flex items-start gap-3 break-words ${
                     toastClassName || defaultClass(toast.type)
                   }`}
                 >

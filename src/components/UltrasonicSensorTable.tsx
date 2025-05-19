@@ -139,32 +139,32 @@ export default function UltrasonicSensorTable({
               className={`${isDark ? "bg-[#1a3350] border-[#223c5c]" : "bg-[#367AF2]/10 border-gray-200"} border-b`}
             >
               <th
-                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
                 No
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
                 Timestamp
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
                 Distance (cm)
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
                 Alert Level
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
                 Image
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
                 Action
               </th>

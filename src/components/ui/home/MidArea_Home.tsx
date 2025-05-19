@@ -69,7 +69,7 @@ export default function MidArea_Home() {
 
       <ShortSummary
         summaryItems={summaryItems}
-        layout="grid grid-cols-1 sm:grid-cols-2 gap-4"
+        layout="grid grid-cols-1 md:grid-cols-2 gap-4"
       />
     </div>
   );

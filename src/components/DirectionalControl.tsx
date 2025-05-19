@@ -36,7 +36,7 @@ export default function DirectionalControl({
   onDirectionClick?: (dir: string) => void;
 }) {
   return (
-    <div className="grid grid-rows-3 grid-cols-3 gap-x-4 gap-y-1 place-items-center w-fit mx-auto">
+    <div className="grid grid-rows-3 grid-cols-3 gap-x-4 gap-y-4 md:gap-y-1 place-items-center w-fit mx-auto">
       {directions.map((dir) =>
         dir.isCenter ? (
           <div

@@ -74,7 +74,7 @@ const LogsCard: React.FC = () => {
         <p className="font-semibold text-base">Logs</p>
       </div>
 
-      <div className="flex flex-col items-start justify-start w-full gap-2 mt-3 overflow-y-auto pr-2 max-h-[300px] sm:max-h-[400px]">
+      <div className="flex flex-col items-start justify-start w-full gap-2 mt-3 overflow-y-auto pr-2 max-h-[300px] md:max-h-[400px]">
         {isLoadingLogs ? (
           <div className="w-full flex items-center justify-center mt-10">
             <ClipLoader size={24} color={isDark ? "#3BD5FF" : "#367AF2"} />

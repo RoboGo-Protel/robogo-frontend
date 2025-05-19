@@ -18,7 +18,7 @@ export default function RightArea_Home() {
 
   return (
     <div
-      className={`flex flex-col items-start justify-start w-full max-w-[450px] sm:max-w-[450px] h-full gap-4 rounded-xl p-4 sm:p-5 border-2 transition-colors ${
+      className={`flex flex-col items-start justify-start w-full max-w-[450px] md:max-w-[450px] h-full gap-4 rounded-xl p-4 md:p-5 border-2 transition-colors ${
         isDark
           ? "border-[#3BD5FF]/10 bg-[#112133] text-white"
           : "border-[#ECECEC] bg-white text-black"
@@ -37,9 +37,7 @@ export default function RightArea_Home() {
       </div>
 
       {/* Info Cards */}
-      <ShortInfo
-        infoItems={infoItems}
-      />
+      <ShortInfo infoItems={infoItems} />
 
       {/* Camera Stream */}
       <div className="h-full w-full rounded-2xl flex items-center justify-center relative min-h-[300px]">

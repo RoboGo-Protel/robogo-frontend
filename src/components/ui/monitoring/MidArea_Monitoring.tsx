@@ -95,18 +95,13 @@ export default function MidArea_Monitoring() {
 
   return (
     <div
-      className={`flex flex-col items-start justify-start h-full gap-4 rounded-xl p-4 sm:p-5 w-full border-2 ${
+      className={`flex flex-col items-start justify-start h-full gap-4 rounded-xl p-4 md:p-5 w-full border-2 ${
         isDark
           ? "border-[#113541] bg-[#0F1B2B] text-white"
           : "border-[#ECECEC] bg-white text-black"
       }`}
     >
-      <div className="flex flex-col sm:flex-row gap-4 items-stretch w-full h-fit">
-        <StatCardList variant="distance" infoItems={distance} />
-        <StatCardList variant="velocity" infoItems={velocity} />
-      </div>
-
-      <div className="relative flex-1 w-full h-[300px] sm:h-full rounded-2xl overflow-hidden">
+      <div className="relative flex-1 w-full h-[300px] md:h-full rounded-2xl overflow-hidden">
         <AnimatePresence mode="wait">
           {isStreamActive ? (
             <motion.div
@@ -194,14 +189,19 @@ export default function MidArea_Monitoring() {
                 Video Stream Unavailable!
               </p>
               <div className="flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-full text-white text-sm text-center">
-                Please check RoboGo connection or camera stream.
+                Please check RoboGo connection!
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <div className="flex flex-col sm:flex-row w-full gap-4">
+      <div className="flex flex-row gap-4 items-stretch w-full h-fit">
+        <StatCardList variant="distance" infoItems={distance} />
+        <StatCardList variant="velocity" infoItems={velocity} />
+      </div>
+
+      <div className="flex flex-col md:flex-row w-full gap-4">
         <DirectionalControl onDirectionClick={(dir) => console.log(dir)} />
         <div className="flex flex-col w-full gap-2.5">
           <div
@@ -214,7 +214,7 @@ export default function MidArea_Monitoring() {
             <Icon icon="mingcute:settings-1-fill" width={20} height={20} />
             <span className="font-semibold text-base">Tools</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full h-fit">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 w-full h-fit">
             {listButtons.map((item, index) => (
               <button
                 key={index}

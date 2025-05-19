@@ -32,7 +32,7 @@ export default function Home() {
   return (
     <div
       className={clsx(
-        "flex flex-col sm:flex-row items-start sm:items-center justify-center gap-4 min-h-screen sm:h-screen p-5 overflow-auto transition-colors duration-300",
+        "flex flex-col md:flex-row items-start md:items-center justify-center gap-4 min-h-screen md:h-screen p-5 overflow-auto transition-colors duration-300",
         isDark ? "bg-[#112133] text-white" : "bg-white text-black"
       )}
       style={{

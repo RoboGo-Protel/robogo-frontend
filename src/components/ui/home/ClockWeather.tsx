@@ -119,11 +119,11 @@ export default function ClockWeather() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className="w-full max-w-5xl mx-auto"
     >
-      <div className="flex flex-col-reverse sm:flex-row gap-4">
+      <div className="flex flex-col-reverse md:flex-row gap-4">
         {/* Time Card */}
         <div
           className={clsx(
-            "shadow-md rounded-2xl p-6 flex flex-col justify-center text-center sm:text-left w-full",
+            "shadow-md rounded-2xl p-6 flex flex-col justify-center text-center md:text-left w-full",
             isDark
               ? "bg-gradient-to-br from-[#104f61] to-[#092047]"
               : "bg-gradient-to-br from-[#28a7ca] to-[#2865ce]"
@@ -152,7 +152,7 @@ export default function ClockWeather() {
         {/* Weather Card */}
         <div
           className={clsx(
-            "shadow-md rounded-2xl p-6 flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-start w-full",
+            "shadow-md rounded-2xl p-6 flex flex-row md:flex-col justify-between md:justify-start items-center md:items-start w-full",
             isDark
               ? "bg-gradient-to-br from-[#1d7c96] to-[#0f2d61]"
               : "bg-gradient-to-br from-[#28a7ca] to-[#2865ce]"
@@ -166,7 +166,7 @@ export default function ClockWeather() {
             </>
           ) : (
             <>
-              <div className="flex sm:flex-col sm:items-start items-center justify-between gap-4 w-full">
+              <div className="flex md:flex-col md:items-start items-center justify-between gap-4 w-full">
                 <div className="flex flex-col items-start">
                   <div className="flex items-center gap-3">
                     <Icon
@@ -189,7 +189,7 @@ export default function ClockWeather() {
                   </p>
                 </div>
                 <p
-                  className={clsx("text-5xl font-extrabold sm:mt-4 text-white")}
+                  className={clsx("text-5xl font-extrabold md:mt-4 text-white")}
                 >
                   {weather.temperature}°C
                 </p>

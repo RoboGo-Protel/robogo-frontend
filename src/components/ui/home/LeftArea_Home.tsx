@@ -77,7 +77,7 @@ export default function LeftArea_Home() {
   return (
     <>
       <div
-        className={`flex flex-col items-start justify-start w-full sm:min-w-[450px] sm:max-w-[450px] gap-4 h-full ${
+        className={`flex flex-col items-start justify-start w-full md:min-w-[450px] md:max-w-[450px] gap-4 h-full ${
           isDark ? "bg-[#112133] text-white" : "bg-white text-black"
         }`}
       >

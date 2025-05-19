@@ -94,7 +94,7 @@ export default function TopNavbar() {
             onClick={() => setConnected(!connected)}
             className="w-fit flex items-center justify-center gap-2 px-5 py-2.5 text-white bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl transition duration-200 ease-in-out min-h-12 cursor-pointer"
           >
-            <p>Connect</p>
+            <p className="md:block hidden">Connect</p>
             <Icon
               icon="clarity:connect-solid"
               fontSize={24}

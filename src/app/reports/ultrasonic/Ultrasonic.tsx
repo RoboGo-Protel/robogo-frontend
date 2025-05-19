@@ -254,7 +254,12 @@ export default function Ultrasonic() {
             size={15}
             margin={5}
           />
-          <p className={clsx("mt-4 text-lg", isDark ? "text-gray-400" : "text-gray-500")}>
+          <p
+            className={clsx(
+              "mt-4 text-lg",
+              isDark ? "text-gray-400" : "text-gray-500"
+            )}
+          >
             Loading ultrasonic reports, please wait...
           </p>
         </div>
@@ -276,7 +281,12 @@ export default function Ultrasonic() {
             height={48}
             className={isDark ? "text-gray-600" : "text-gray-400"}
           />
-          <p className={clsx("mt-4 text-lg", isDark ? "text-gray-400" : "text-gray-500")}>
+          <p
+            className={clsx(
+              "mt-4 text-lg",
+              isDark ? "text-gray-400" : "text-gray-500"
+            )}
+          >
             No ultrasonic reports available. Please check back later.
           </p>
         </div>
@@ -286,7 +296,7 @@ export default function Ultrasonic() {
             <div className="flex-1 flex flex-col">
               <ShortSummary
                 summaryItems={summaryItems}
-                layout="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 items-stretch"
+                layout="grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-4 items-stretch"
               />
             </div>
 

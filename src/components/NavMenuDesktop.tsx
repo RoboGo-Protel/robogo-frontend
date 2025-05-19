@@ -28,7 +28,7 @@ const menuItems = [
   },
   {
     label: "Reports",
-    href: basePath,
+    href: `${basePath}/`,
     icon: {
       active: "ph:read-cv-logo-fill",
       inactive: "ph:read-cv-logo",
@@ -89,9 +89,9 @@ export default function NavMenuDesktop() {
   };
 
   return (
-    <div className="hidden sm:flex items-center justify-center w-full h-full">
+    <div className="hidden md:flex items-center justify-center w-full h-full">
       <div
-        className={`flex items-center gap-4 rounded-full relative ${
+        className={`flex items-center rounded-full relative ${
           isDark ? "bg-[#17293d]" : "bg-[#e6f5fe]"
         }`}
       >

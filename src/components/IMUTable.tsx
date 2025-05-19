@@ -150,7 +150,9 @@ export default function IMUTable({ reports }: IMUTableProps) {
           isDark ? "bg-[#112133]" : "bg-white"
         }`}
       >
-        <table className={`w-full border-collapse text-sm sm:text-sm md:table-fixed min-w-[1000px] ${isDark ? "text-white" : "text-black"}`}>
+        <table
+          className={`w-full border-collapse text-sm md:text-sm md:table-fixed min-w-[1000px] ${isDark ? "text-white" : "text-black"}`}
+        >
           <colgroup>
             <col className="w-10" />
             <col className="w-24" />
@@ -167,7 +169,9 @@ export default function IMUTable({ reports }: IMUTableProps) {
           </colgroup>
 
           <thead>
-            <tr className={`${isDark ? "bg-[#1a3350] border-[#223c5c]" : "bg-[#367AF2]/10 border-gray-200"} border-b`}>
+            <tr
+              className={`${isDark ? "bg-[#1a3350] border-[#223c5c]" : "bg-[#367AF2]/10 border-gray-200"} border-b`}
+            >
               <th
                 rowSpan={2}
                 className={`py-3 px-2 text-left font-medium uppercase align-top ${isDark ? "text-white" : "text-black"}`}
@@ -218,23 +222,37 @@ export default function IMUTable({ reports }: IMUTableProps) {
               </th>
             </tr>
 
-            <tr className={`${isDark ? "bg-[#1a3350] border-[#223c5c]" : "bg-[#367AF2]/10 border-gray-200"} border-b`}>
-              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
+            <tr
+              className={`${isDark ? "bg-[#1a3350] border-[#223c5c]" : "bg-[#367AF2]/10 border-gray-200"} border-b`}
+            >
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
                 X
               </th>
-              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
                 Y
               </th>
-              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
                 Z
               </th>
-              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
                 X
               </th>
-              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
                 Y
               </th>
-              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
                 Z
               </th>
             </tr>
@@ -242,7 +260,10 @@ export default function IMUTable({ reports }: IMUTableProps) {
 
           <tbody className={isDark ? "divide-[#223c5c]" : "divide-gray-200"}>
             {reports.map((report, index) => (
-              <tr key={report.id} className={isDark ? "hover:bg-[#1a3350]" : "hover:bg-gray-50"}>
+              <tr
+                key={report.id}
+                className={isDark ? "hover:bg-[#1a3350]" : "hover:bg-gray-50"}
+              >
                 <td className="py-3 px-2">{index + 1}</td>
                 <td className="py-3 px-2">
                   {getTimeOnlyWithoutDate(report.timestamp)}
