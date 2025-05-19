@@ -6,6 +6,7 @@ import PathsTable from "@/components/PathsTable";
 import TunnelPath from "@/components/cards/TunnelPathCard";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { PulseLoader } from "react-spinners";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface OptionType {
   value: string;
@@ -29,6 +30,7 @@ interface PathData {
 }
 
 export default function IMU() {
+  const { isDark } = useDarkMode();
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
   const [reportsNavbarHeight, setReportsNavbarHeight] = useState(0);
@@ -154,7 +156,8 @@ export default function IMU() {
   return (
     <div
       className={clsx(
-        "flex flex-col lg:flex-row gap-4 p-4 sm:p-5 transition-colors duration-300 bg-white text-black w-full"
+        "flex flex-col lg:flex-row gap-4 p-4 sm:p-5 transition-colors duration-300 w-full",
+        isDark ? "text-white bg-[#112133]" : "text-black"
       )}
       style={{
         paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -176,13 +179,21 @@ export default function IMU() {
             size={15}
             margin={5}
           />
-          <p className="mt-4 text-lg text-gray-500 text-center">
+          <p
+            className={clsx(
+              "mt-4 text-lg text-center",
+              isDark ? "text-gray-300" : "text-gray-500"
+            )}
+          >
             Loading path reports, please wait...
           </p>
         </div>
       ) : reports.length === 0 ? (
         <div
-          className="flex flex-col justify-center items-center w-full p-4 border-2 border-gray-300 rounded-xl"
+          className={clsx(
+            "flex flex-col justify-center items-center w-full p-4 border-2 rounded-xl",
+            isDark ? "border-gray-700" : "border-gray-300"
+          )}
           style={{
             height: `calc(100vh - ${
               topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
@@ -193,9 +204,14 @@ export default function IMU() {
             icon="tabler:photo-off"
             width={48}
             height={48}
-            className="text-gray-400"
+            className={clsx(isDark ? "text-gray-600" : "text-gray-400")}
           />
-          <p className="mt-4 text-lg text-gray-500 text-center">
+          <p
+            className={clsx(
+              "mt-4 text-lg text-center",
+              isDark ? "text-gray-300" : "text-gray-500"
+            )}
+          >
             No path reports available. Please check back later.
           </p>
         </div>
@@ -210,7 +226,12 @@ export default function IMU() {
                 <Icon icon="mdi:map-legend" width={24} height={24} />
                 <p>Legends</p>
               </div>
-              <div className="flex flex-wrap justify-between w-full gap-4 px-4 py-2 rounded-xl border-2 border-[#DCDCDC]">
+              <div
+                className={clsx(
+                  "flex flex-wrap justify-between w-full gap-4 px-4 py-2 rounded-xl border-2",
+                  isDark ? "border-[#223355]" : "border-[#DCDCDC]"
+                )}
+              >
                 {/* Each legend item */}
                 <div className="flex items-center gap-2 min-w-[130px]">
                   <div className="flex items-center justify-center bg-gradient-to-br from-[#FF623B] to-[#CD2323] rounded-full p-1.5 shadow">
@@ -274,6 +295,16 @@ export default function IMU() {
                 }}
                 isSearchable={false}
                 className="flex-1"
+                theme={(theme) => ({
+                  ...theme,
+                  colors: {
+                    ...theme.colors,
+                    primary25: isDark ? "#23272f" : "#e3f2fd",
+                    primary: isDark ? "#3BD5FF" : "#367AF2",
+                    neutral0: isDark ? "#23272f" : "#fff",
+                    neutral80: isDark ? "#fff" : "#333",
+                  },
+                })}
               />
               <Select
                 options={
@@ -289,6 +320,16 @@ export default function IMU() {
                 isSearchable={false}
                 isDisabled={!selectedDate}
                 className="flex-1"
+                theme={(theme) => ({
+                  ...theme,
+                  colors: {
+                    ...theme.colors,
+                    primary25: isDark ? "#23272f" : "#e3f2fd",
+                    primary: isDark ? "#3BD5FF" : "#367AF2",
+                    neutral0: isDark ? "#23272f" : "#fff",
+                    neutral80: isDark ? "#fff" : "#333",
+                  },
+                })}
               />
             </div>
             <PathsTable reports={reports} />

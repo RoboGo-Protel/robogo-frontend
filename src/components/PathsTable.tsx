@@ -1,5 +1,6 @@
 "use client";
 import { Icon } from "@iconify/react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface Position {
   x: number;
@@ -22,6 +23,7 @@ interface PathsTableProps {
 }
 
 export default function PathsTable({ reports }: PathsTableProps) {
+  const { isDark } = useDarkMode();
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Start":
@@ -84,9 +86,21 @@ export default function PathsTable({ reports }: PathsTableProps) {
 
   return (
     <>
-      <div className="bg-white overflow-x-auto rounded-xl shadow-sm">
-        <table className="min-w-[700px] w-full text-sm text-left text-gray-900">
-          <thead className="bg-[#367AF2]/10 border-b border-gray-200">
+      <div
+        className={`overflow-x-auto rounded-xl shadow-sm ${
+          isDark ? "bg-[#112133]" : "bg-white"
+        }`}
+      >
+        <table
+          className={`min-w-[700px] w-full text-sm text-left ${
+            isDark ? "text-gray-100" : "text-gray-900"
+          }`}
+        >
+          <thead
+            className={`border-b border-gray-200 ${
+              isDark ? "bg-[#367AF2]/10" : "bg-[#367AF2]/10"
+            }`}
+          >
             <tr>
               <th className="py-3 px-4 text-xs sm:text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 No
@@ -111,11 +125,15 @@ export default function PathsTable({ reports }: PathsTableProps) {
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className={`divide-y ${isDark ? "divide-gray-700" : "divide-gray-200"}`}>
             {reports.map((report) => (
               <tr
                 key={report.id}
-                className="hover:bg-gray-50 transition-colors"
+                className={`transition-colors ${
+                  isDark
+                    ? "hover:bg-[#1a2b44]"
+                    : "hover:bg-gray-50"
+                }`}
               >
                 <td className="py-3 px-4 whitespace-nowrap">
                   {reports.indexOf(report) + 1}

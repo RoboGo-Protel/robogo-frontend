@@ -3,6 +3,7 @@
 import { Icon } from "@iconify/react";
 import React, { useEffect, useRef, useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { useDarkMode } from "@/context/DarkModeContext"; // ✅ Tambahkan ini
 
 const maxX = 10;
 const maxY = 6;
@@ -14,6 +15,7 @@ const pathData = [
 ];
 
 export default function CurrentPositionCard() {
+  const { isDark } = useDarkMode(); // ✅ Gunakan dark mode
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
 
@@ -53,8 +55,13 @@ export default function CurrentPositionCard() {
   return (
     <div
       ref={wrapperRef}
-      className="relative w-full h-full rounded-xl overflow-hidden border border-[#ECECEC]"
+      className={`relative w-full h-full rounded-xl overflow-hidden border-2 ${
+        isDark
+          ? "border-[#113541] bg-[#0F1B2B] text-white"
+          : "border-[#ECECEC] bg-white text-black"
+      }`}
     >
+      {/* Header */}
       <div className="absolute top-4 left-4 z-30 flex flex-row items-center gap-2">
         <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow">
           <Icon
@@ -64,9 +71,16 @@ export default function CurrentPositionCard() {
             className="text-white rotate-45"
           />
         </div>
-        <p className="font-semibold text-base text-black">Current Position</p>
+        <p
+          className={`font-semibold text-base ${
+            isDark ? "text-white" : "text-black"
+          }`}
+        >
+          Current Position
+        </p>
       </div>
 
+      {/* Peta */}
       <TransformWrapper
         initialScale={1}
         minScale={0.5}
@@ -84,14 +98,20 @@ export default function CurrentPositionCard() {
               height: dimensions.height,
             }}
           >
+            {/* Grid background */}
             <div
-              className="absolute inset-0 bg-[length:20px_20px] z-0 opacity-60"
+              className={`absolute inset-0 z-0 opacity-60 pointer-events-none`}
               style={{
-                backgroundImage:
-                  "linear-gradient(to right, #e0e0e0 1px, transparent 1px), linear-gradient(to bottom, #e0e0e0 1px, transparent 1px)",
+                backgroundImage: `linear-gradient(to right, ${
+                  isDark ? "#1f2e40" : "#e0e0e0"
+                } 1px, transparent 1px), linear-gradient(to bottom, ${
+                  isDark ? "#1f2e40" : "#e0e0e0"
+                } 1px, transparent 1px)`,
+                backgroundSize: "20px 20px",
               }}
             />
 
+            {/* Polyline Path */}
             <svg
               viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
               className="absolute top-0 left-0 w-full h-full z-10"
@@ -111,6 +131,7 @@ export default function CurrentPositionCard() {
               </defs>
             </svg>
 
+            {/* Pointer */}
             {(() => {
               const last = pathData[pathData.length - 1];
               const pos = convertToPixelPosition(last.x, last.y);
@@ -121,7 +142,6 @@ export default function CurrentPositionCard() {
                 const dx = b.x - a.x;
                 const dy = -(b.y - a.y);
                 angleDeg = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-                console.log("Angle:", angleDeg);
               }
 
               return (

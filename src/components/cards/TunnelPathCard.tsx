@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import { useDarkMode } from "@/context/DarkModeContext";
 import { Icon } from "@iconify/react";
 import React, { useRef, useState, useEffect } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -36,6 +37,7 @@ export default function TunnelPath({
   showStartpoint = false,
   showEndpoint = false,
 }: TunnelPathProps) {
+  const { isDark } = useDarkMode();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
 
@@ -83,7 +85,9 @@ export default function TunnelPath({
   return (
     <div
       ref={wrapperRef}
-      className="relative w-full h-[500px] rounded-xl overflow-hidden"
+      className={`relative w-full h-[600px] rounded-xl overflow-hidden ${
+        isDark ? "bg-[#112133]" : "bg-white"
+      }`}
     >
       <TransformWrapper
         initialScale={1}
@@ -96,6 +100,7 @@ export default function TunnelPath({
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
+            {/* Control Buttons */}
             <div className="absolute z-30 top-3 right-3 flex gap-2">
               <button
                 onClick={() => zoomIn()}
@@ -111,7 +116,11 @@ export default function TunnelPath({
               </button>
               <button
                 onClick={() => resetTransform()}
-                className="bg-gray-300 text-black px-3 py-1 rounded-md"
+                className={`px-3 py-1 rounded-md ${
+                  isDark
+                    ? "bg-[#1E334A] text-white hover:bg-[#2A435C]"
+                    : "bg-gray-300 text-black hover:bg-gray-200"
+                }`}
               >
                 Reset
               </button>
@@ -122,14 +131,17 @@ export default function TunnelPath({
                 className="relative"
                 style={{ width: dimensions.width, height: dimensions.height }}
               >
+                {/* Grid background */}
                 <div
                   className="absolute inset-0 bg-[length:20px_20px] z-0"
                   style={{
-                    backgroundImage:
-                      "linear-gradient(to right, #e0e0e0 1px, transparent 1px), linear-gradient(to bottom, #e0e0e0 1px, transparent 1px)",
+                    backgroundImage: isDark
+                      ? "linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)"
+                      : "linear-gradient(to right, #e0e0e0 1px, transparent 1px), linear-gradient(to bottom, #e0e0e0 1px, transparent 1px)",
                   }}
                 />
 
+                {/* Polyline layer */}
                 <svg
                   viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
                   className="absolute top-0 left-0 w-full h-full z-10"
@@ -155,11 +167,25 @@ export default function TunnelPath({
                   </defs>
                 </svg>
 
+                {/* Markers & Cards */}
                 {pathData.map((point, idx) => {
                   const pos = getMarkerPosition(
                     point.position.x,
                     point.position.y
                   );
+                  const cardHeight = 120;
+                  const shouldPlaceAbove =
+                    dimensions.height > 0
+                      ? pos.top + cardHeight > dimensions.height
+                      : false;
+
+                  // Dynamic card style
+                  const cardClass = `rounded-xl border p-1 shadow-md hover:shadow-lg transition ${
+                    isDark
+                      ? "bg-[#1E334A] border-[#2A435C] text-white"
+                      : "bg-white border-gray-300 text-black"
+                  }`;
+
                   if (idx === 0 && showStartpoint) {
                     return (
                       <div
@@ -169,7 +195,7 @@ export default function TunnelPath({
                         onClick={() => handleClick(point.position)}
                       >
                         <div className="rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center">
-                          <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800] flex items-center justify-center" />
+                          <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]" />
                         </div>
                       </div>
                     );
@@ -186,17 +212,11 @@ export default function TunnelPath({
                         onClick={() => handleClick(point.position)}
                       >
                         <div className="rounded-full w-8 h-8 bg-gradient-to-br from-[#FF623B]/30 to-[#CD2323]/30 flex items-center justify-center">
-                          <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323] flex items-center justify-center" />
+                          <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323]" />
                         </div>
                       </div>
                     );
                   } else {
-                    const cardHeight = 120;
-                    const shouldPlaceAbove =
-                      dimensions.height > 0
-                        ? pos.top + cardHeight > dimensions.height
-                        : false;
-
                     return (
                       <div
                         key={idx}
@@ -208,6 +228,7 @@ export default function TunnelPath({
                         }}
                       >
                         <>
+                          {/* Top card */}
                           <div
                             onClick={
                               shouldPlaceAbove
@@ -218,14 +239,10 @@ export default function TunnelPath({
                               shouldPlaceAbove
                                 ? "cursor-pointer"
                                 : "invisible cursor-default"
-                            } rounded-xl border border-gray-300 bg-white shadow-md p-1 hover:shadow-lg transition`}
+                            } ${cardClass}`}
                           >
                             <img
-                              src={
-                                point.imageUrl
-                                  ? point.imageUrl
-                                  : "/images/no_image.png"
-                              }
+                              src={point.imageUrl || "/images/no_image.png"}
                               className="w-40 h-24 object-cover rounded-md"
                               alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
                             />
@@ -233,6 +250,8 @@ export default function TunnelPath({
                               x: {point.position.x} – y: {point.position.y}
                             </p>
                           </div>
+
+                          {/* Middle icon */}
                           <div className="flex items-center justify-center bg-gradient-to-br from-[#FF623B] to-[#CD2323] rounded-full p-1.5 my-1 shadow">
                             <Icon
                               icon="mynaui:danger-triangle-solid"
@@ -241,6 +260,8 @@ export default function TunnelPath({
                               height={24}
                             />
                           </div>
+
+                          {/* Bottom card */}
                           <div
                             onClick={
                               shouldPlaceAbove
@@ -251,14 +272,10 @@ export default function TunnelPath({
                               shouldPlaceAbove
                                 ? "invisible cursor-default"
                                 : "cursor-pointer"
-                            } rounded-xl border border-gray-300 bg-white shadow-md p-1 hover:shadow-lg transition`}
+                            } ${cardClass}`}
                           >
                             <img
-                              src={
-                                point.imageUrl
-                                  ? point.imageUrl
-                                  : "/images/no_image.png"
-                              }
+                              src={point.imageUrl || "/images/no_image.png"}
                               className="w-40 h-24 object-cover rounded-md"
                               alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
                             />

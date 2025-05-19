@@ -3,8 +3,10 @@ import React, { useEffect, useState } from "react";
 import LeftArea_Monitoring from "@/components/ui/monitoring/LeftArea_Monitoring";
 import MidArea_Monitoring from "@/components/ui/monitoring/MidArea_Monitoring";
 import RightArea_Monitoring from "@/components/ui/monitoring/RightArea_Monitoring";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 export default function Monitoring() {
+  const { isDark } = useDarkMode();
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
 
@@ -20,16 +22,15 @@ export default function Monitoring() {
       if (bottom) setBottomNavbarHeight(bottom.clientHeight);
     };
 
-    console.log("Top Navbar Height:", topNavbarHeight);
-    console.log("Bottom Navbar Height:", bottomNavbarHeight);
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [topNavbarHeight, bottomNavbarHeight]);
+  }, []);
 
   return (
     <div
-      className="bg-white flex flex-col md:flex-row items-start justify-center gap-4 text-black min-h-screen md:h-screen p-5"
+      className={`flex flex-col md:flex-row items-start justify-center gap-4 min-h-screen md:h-screen p-5 ${
+        isDark ? "bg-[#112133] text-white" : "bg-white text-black"
+      }`}
       style={{
         paddingTop: topNavbarHeight,
         paddingBottom: bottomNavbarHeight + 20,

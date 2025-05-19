@@ -3,6 +3,8 @@ import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import { useDarkMode } from "@/context/DarkModeContext";
+import clsx from "clsx";
 
 function getCurrentTime() {
   const now = new Date();
@@ -12,7 +14,7 @@ function getCurrentTime() {
 
   return {
     time: `${hours}:${minutes}:${seconds}`,
-    date: now.toLocaleDateString("id-ID", {
+    date: now.toLocaleDateString("en-US", {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -22,6 +24,7 @@ function getCurrentTime() {
 }
 
 export default function ClockWeather() {
+  const { isDark } = useDarkMode();
   const [clock, setClock] = useState(getCurrentTime());
   const [weather, setWeather] = useState<{
     condition: string;
@@ -30,15 +33,14 @@ export default function ClockWeather() {
     icon: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  // const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  // Update time every second
   useEffect(() => {
     const interval = setInterval(() => {
       setClock(getCurrentTime());
     }, 1000);
 
-    return () => clearInterval(interval); // Cleanup on component unmount
+    return () => clearInterval(interval);
   }, []);
 
   const getWeatherData = React.useCallback(async () => {
@@ -72,13 +74,13 @@ export default function ClockWeather() {
           location: locationName,
           icon: getWeatherIcon(data.weather[0].main),
         });
-        const updatedTime = new Date();
-        setLastUpdated(
-          updatedTime.toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        );
+        // const updatedTime = new Date();
+        // setLastUpdated(
+        //   updatedTime.toLocaleTimeString("id-ID", {
+        //     hour: "2-digit",
+        //     minute: "2-digit",
+        //   })
+        // );
         setLoading(false);
       } catch (err) {
         console.error("Gagal ambil data cuaca:", err);
@@ -89,7 +91,7 @@ export default function ClockWeather() {
 
   useEffect(() => {
     getWeatherData();
-    const interval = setInterval(getWeatherData, 60);
+    const interval = setInterval(getWeatherData, 600000);
     return () => clearInterval(interval);
   }, [getWeatherData]);
 
@@ -117,9 +119,16 @@ export default function ClockWeather() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className="w-full max-w-5xl mx-auto"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="flex flex-col-reverse sm:flex-row gap-4">
         {/* Time Card */}
-        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-center">
+        <div
+          className={clsx(
+            "shadow-md rounded-2xl p-6 flex flex-col justify-center text-center sm:text-left w-full",
+            isDark
+              ? "bg-gradient-to-br from-[#104f61] to-[#092047]"
+              : "bg-gradient-to-br from-[#28a7ca] to-[#2865ce]"
+          )}
+        >
           {loading ? (
             <>
               <Skeleton width={140} height={36} />
@@ -127,19 +136,28 @@ export default function ClockWeather() {
             </>
           ) : (
             <>
-              <p className="text-4xl font-semibold text-gray-900 dark:text-white tabular-nums mb-2">
+              <p
+                className={clsx(
+                  "text-4xl font-semibold tabular-nums mb-2 text-white"
+                )}
+              >
                 {clock.time}
               </p>
 
-              <p className="text-md text-gray-500 dark:text-gray-400">
-                {clock.date}
-              </p>
+              <p className={clsx("text-md text-white")}>{clock.date}</p>
             </>
           )}
         </div>
 
         {/* Weather Card */}
-        <div className="bg-gradient-to-br from-[#e0f2ff] to-[#f0f7ff] dark:from-[#1e3a8a] dark:to-[#0f172a] shadow-md rounded-2xl p-6 flex flex-col justify-center">
+        <div
+          className={clsx(
+            "shadow-md rounded-2xl p-6 flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-start w-full",
+            isDark
+              ? "bg-gradient-to-br from-[#1d7c96] to-[#0f2d61]"
+              : "bg-gradient-to-br from-[#28a7ca] to-[#2865ce]"
+          )}
+        >
           {loading || !weather ? (
             <>
               <Skeleton width={130} height={24} />
@@ -148,33 +166,38 @@ export default function ClockWeather() {
             </>
           ) : (
             <>
-              <div className="flex items-center gap-3">
-                <Icon
-                  icon={weather.icon}
-                  width={32}
-                  height={32}
-                  className="text-[#367AF2]"
-                />
-                <p className="text-xl font-medium text-gray-800 dark:text-white">
-                  {weather.condition}
+              <div className="flex sm:flex-col sm:items-start items-center justify-between gap-4 w-full">
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      icon={weather.icon}
+                      width={32}
+                      height={32}
+                      className="text-white"
+                    />
+                    <p className={clsx("text-xl font-medium text-white")}>
+                      {weather.condition}
+                    </p>
+                  </div>
+                  <p
+                    className={clsx(
+                      "text-sm mt-1",
+                      isDark ? "text-gray-400" : "text-gray-200"
+                    )}
+                  >
+                    {weather.location}
+                  </p>
+                </div>
+                <p
+                  className={clsx("text-5xl font-extrabold sm:mt-4 text-white")}
+                >
+                  {weather.temperature}°C
                 </p>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {weather.location}
-              </p>
-              <p className="text-5xl font-extrabold text-[#367AF2] dark:text-white mt-4">
-                {weather.temperature}°C
-              </p>
             </>
           )}
         </div>
       </div>
-
-      {lastUpdated && (
-        <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-4">
-          Terakhir diperbarui: {lastUpdated}
-        </p>
-      )}
     </motion.div>
   );
 }

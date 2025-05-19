@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Icon } from "@iconify/react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface InfoItem {
   icon: string;
@@ -37,6 +38,7 @@ function MonitoringInfoPhotoDetails<K extends string = string>({
   infoItems,
   onSelect,
 }: MonitoringInfoPhotoDetailsProps<K>) {
+  const { isDark } = useDarkMode();
   return (
     <div className="relative w-full overflow-hidden">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
@@ -46,10 +48,16 @@ function MonitoringInfoPhotoDetails<K extends string = string>({
             <div
               key={index}
               onClick={() => onSelect?.(item.key)}
-              className="flex items-center gap-2 p-3 min-w-[180px] rounded-2xl border-2 bg-white w-full"
+              className={`flex items-center gap-2 p-3 min-w-[180px] rounded-2xl border-2 w-full transition-colors
+                ${isDark ? "bg-[#18181b] border-white/10" : "bg-white"}
+              `}
               style={{
-                borderColor: `${theme.borderColor}33`,
-                background: `linear-gradient(to bottom right, ${theme.fromColor}1A, ${theme.toColor}1A)`,
+                borderColor: isDark
+                  ? `${theme.borderColor}55`
+                  : `${theme.borderColor}33`,
+                background: isDark
+                  ? `linear-gradient(to bottom right, ${theme.fromColor}22, ${theme.toColor}22)`
+                  : `linear-gradient(to bottom right, ${theme.fromColor}1A, ${theme.toColor}1A)`,
               }}
             >
               <div
@@ -66,8 +74,20 @@ function MonitoringInfoPhotoDetails<K extends string = string>({
                 />
               </div>
               <div className="flex flex-col items-start justify-center">
-                <p className="text-sm font-semibold text-black">{item.value}</p>
-                <p className="text-xs text-black/40">{item.title}</p>
+                <p
+                  className={`text-sm font-semibold ${
+                    isDark ? "text-white" : "text-black"
+                  }`}
+                >
+                  {item.value}
+                </p>
+                <p
+                  className={`text-xs ${
+                    isDark ? "text-white/40" : "text-black/40"
+                  }`}
+                >
+                  {item.title}
+                </p>
               </div>
             </div>
           );

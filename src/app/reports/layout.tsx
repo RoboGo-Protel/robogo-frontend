@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "../globals.css";
-import ReportsNavbar from "@/components/ReportsNavbar";
+// import ReportsNavbar from "@/components/ReportsNavbar";
 
 export const metadata: Metadata = {
   title: "Reports - RoboGo",
@@ -41,7 +41,7 @@ export default function ReportsLayout({
 }) {
   return (
     <>
-      <ReportsNavbar />
+      {/* <ReportsNavbar /> */}
       {children}
     </>
   );

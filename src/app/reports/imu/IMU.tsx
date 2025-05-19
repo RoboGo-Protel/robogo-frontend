@@ -6,6 +6,7 @@ import Select, { StylesConfig } from "react-select";
 import IMUTable from "@/components/IMUTable";
 import { PulseLoader } from "react-spinners";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface OptionType {
   value: string;
@@ -37,6 +38,7 @@ interface IMULogs {
 }
 
 export default function IMU() {
+  const { isDark } = useDarkMode();
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
   const [reportsNavbarHeight, setReportsNavbarHeight] = useState(0);
@@ -235,7 +237,8 @@ export default function IMU() {
   return (
     <div
       className={clsx(
-        "flex flex-col gap-4 p-5 transition-colors duration-300 bg-white text-black"
+        "flex flex-col gap-4 p-5 transition-colors duration-300",
+        isDark ? "bg-[#112133] text-white" : "bg-white text-black"
       )}
       style={{
         paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -257,13 +260,16 @@ export default function IMU() {
             size={15}
             margin={5}
           />
-          <p className="mt-4 text-lg text-gray-500">
+          <p className={clsx("mt-4 text-lg", isDark ? "text-gray-300" : "text-gray-500")}>
             Loading IMU reports, please wait...
           </p>
         </div>
       ) : reports.length === 0 ? (
         <div
-          className="flex flex-col justify-center items-center w-full p-4 border-2 border-gray-300 rounded-xl"
+          className={clsx(
+            "flex flex-col justify-center items-center w-full p-4 border-2 rounded-xl",
+            isDark ? "border-gray-700" : "border-gray-300"
+          )}
           style={{
             height: `calc(100vh - ${
               topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
@@ -274,9 +280,9 @@ export default function IMU() {
             icon="tabler:photo-off"
             width={48}
             height={48}
-            className="text-gray-400"
+            className={clsx(isDark ? "text-gray-500" : "text-gray-400")}
           />
-          <p className="mt-4 text-lg text-gray-500">
+          <p className={clsx("mt-4 text-lg", isDark ? "text-gray-300" : "text-gray-500")}>
             No IMU reports available. Please check back later.
           </p>
         </div>

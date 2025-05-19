@@ -2,6 +2,8 @@ import ShortSummary from "@/components/cards/ShortSummaryCard";
 import TunnelPath from "@/components/cards/TunnelPathCard";
 import { summaryItems } from "@/utils/summary";
 import React from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
+import clsx from "clsx";
 
 const pathData = [
   {
@@ -48,32 +50,21 @@ const pathData = [
 ];
 
 export default function MidArea_Home() {
+  const { isDark } = useDarkMode();
+
   return (
     <div
-      className="
-        flex flex-col items-start justify-start
-        h-full w-full max-w-full
-        gap-4
-        border-2 border-[#ECECEC]
-        rounded-xl p-5
-      "
+      className={clsx(
+        "flex flex-col items-start justify-start h-full w-full max-w-full gap-4 border-2 rounded-xl p-5",
+        isDark ? "border-[#113541]" : "border-[#ECECEC]"
+      )}
     >
-      <div
-        className="
-          flex flex-row gap-2.5 items-center justify-center
-          bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10
-          w-full h-fit
-          rounded-xl border-2 border-[#3BD5FF]/20
-          px-4 py-2
-          text-center
-        "
-      >
+      <div className="flex flex-row gap-2.5 items-center justify-center bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 w-full h-fit rounded-xl border-2 border-[#3BD5FF]/20 px-4 py-2 text-center">
         <p className="font-semibold text-base bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text w-full">
           Last Activity - March 24th, 2024
         </p>
       </div>
 
-      {/* Pastikan TunnelPathCard juga responsive */}
       <TunnelPath showStartpoint showEndpoint pathData={pathData} />
 
       <ShortSummary

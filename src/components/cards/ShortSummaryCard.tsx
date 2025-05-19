@@ -1,5 +1,6 @@
 import React from "react";
 import { Icon } from "@iconify/react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface SummaryItem {
   icon: string;
@@ -16,15 +17,23 @@ const ShortSummary: React.FC<ShortSummaryProps> = ({
   summaryItems,
   layout,
 }) => {
+  const { isDark } = useDarkMode();
+
   return (
-    <div className={`w-full h-h-full ${layout}`}>
+    <div className={`w-full h-fit ${layout}`}>
       {summaryItems.map((summary, index) => {
         return (
           <div
             key={index}
-            className="flex flex-row items-center justify-start w-full h-full gap-3 p-3 border-2 rounded-2xl border-[#3BD5FF]/20 bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 h-fit"
+            className={`flex flex-row items-center justify-start w-full h-full gap-3 p-3 rounded-2xl border-2 ${
+              isDark
+                ? "border-[#3BD5FF]/10 bg-[#112133] bg-gradient-to-br from-[#3BD5FF]/5 to-[#367AF2]/5"
+                : "border-[#3BD5FF]/20 bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10"
+            }`}
           >
-            <div className="p-2 rounded-xl shadow-md bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
+            <div
+              className={`p-2 rounded-xl shadow-md bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]`}
+            >
               <Icon
                 icon={summary.icon}
                 width={24}
@@ -33,10 +42,20 @@ const ShortSummary: React.FC<ShortSummaryProps> = ({
               />
             </div>
             <div className="flex flex-col items-start justify-start w-full">
-              <p className={`text-base font-semibold text-black`}>
+              <p
+                className={`text-base font-semibold ${
+                  isDark ? "text-white" : "text-black"
+                }`}
+              >
                 {summary.summary}
               </p>
-              <p className="text-xs opacity-40">{summary.title}</p>
+              <p
+                className={`text-xs ${
+                  isDark ? "text-white/40" : "text-black/40"
+                }`}
+              >
+                {summary.title}
+              </p>
             </div>
           </div>
         );

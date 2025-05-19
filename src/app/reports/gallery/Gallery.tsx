@@ -6,6 +6,9 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { AnimatePresence } from "framer-motion";
 import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
 import SyncLoader from "react-spinners/SyncLoader";
+import { useDarkMode } from "@/context/DarkModeContext";
+import { Tooltip as ReactTooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 
 interface Image {
   id: string;
@@ -58,6 +61,7 @@ interface Metadata {
 export default function Gallery() {
   const [listPhotoWithDate, setListPhotoWithDate] = useState<Image[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isDark } = useDarkMode();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -148,7 +152,8 @@ export default function Gallery() {
     <>
       <div
         className={clsx(
-          "flex flex-col gap-4 p-5 transition-colors duration-300 text-black"
+          "flex flex-col gap-4 p-5 transition-colors duration-300",
+          isDark ? "bg-[#112133] text-white" : "bg-white text-black"
         )}
         style={{
           paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -170,7 +175,12 @@ export default function Gallery() {
               size={15}
               margin={5}
             />
-            <p className="mt-4 text-lg text-gray-500">
+            <p
+              className={clsx(
+                "mt-4 text-lg",
+                isDark ? "text-gray-400" : "text-gray-500"
+              )}
+            >
               Loading photos, please wait...
             </p>
           </div>
@@ -189,16 +199,29 @@ export default function Gallery() {
               height={48}
               className="text-gray-400"
             />
-            <p className="mt-4 text-lg text-gray-500">
+            <p
+              className={clsx(
+                "mt-4 text-lg",
+                isDark ? "text-gray-400" : "text-gray-500"
+              )}
+            >
               No photos available. Please check back later.
             </p>
           </div>
         ) : (
           Object.entries(groupedPhotos).map(([dateKey, photos]) => (
             <div key={dateKey} className="mb-4">
-              <div className="w-full bg-white sticky top-[calc(var(--top-navbar-height)+var(--reports-navbar-height))] z-10 rounded-b-2xl">
+              <div
+                className={clsx(
+                  "w-full sticky top-[calc(var(--top-navbar-height)+var(--reports-navbar-height))] z-10 rounded-b-2xl",
+                  isDark ? "bg-[#112133] text-white" : "bg-white text-black"
+                )}
+              >
                 <div
-                  className="flex flex-row items-center gap-2.5 text-lg font-semibold mb-3 px-5 py-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow"
+                  className={clsx(
+                    "flex flex-row items-center gap-2.5 text-lg font-semibold mb-3 px-5 py-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow",
+                    "rounded-xl"
+                  )}
                   style={{
                     borderRadius: "1rem 1rem 1rem 1rem",
                     marginBottom: "-1px",
@@ -216,9 +239,7 @@ export default function Gallery() {
                     onClick={() =>
                       setSelectedPhoto({
                         id: item.id,
-                        src: item.imageUrl
-                          ? item.imageUrl
-                          : "/images/no_image.png",
+                        src: item.imageUrl || "/images/no_image.png",
                         alt: item.filename,
                         obstacles: item.obstacle ?? false,
                         date: item.timestamp,
@@ -229,22 +250,63 @@ export default function Gallery() {
                     }
                   >
                     <img
-                      src={
-                        item.imageUrl ? item.imageUrl : "/images/no_image.png"
-                      }
+                      src={item.imageUrl || "/images/no_image.png"}
                       alt={item.filename}
-                      className="w-full aspect-[4/3] object-cover rounded-xl border border-gray-200"
+                      className={clsx(
+                        "w-full aspect-[4/3] object-cover rounded-xl",
+                        isDark
+                          ? "border border-gray-700"
+                          : "border border-gray-200"
+                      )}
                       loading="lazy"
                     />
-                    {item.obstacle && (
-                      <span className="absolute top-2 right-2 bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs p-1 rounded-lg">
-                        <Icon
-                          icon="fluent:scan-object-24-filled"
-                          width={20}
-                          height={20}
-                        />
-                      </span>
-                    )}
+
+                    <div className="flex items-center gap-2 absolute top-2 right-2">
+                      {item.metadata &&
+                        Object.keys(item.metadata).length > 0 && (
+                          <>
+                            <span
+                              className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white text-xs p-1 rounded-lg shadow-md"
+                              data-tooltip-id={`metadata-${idx}`}
+                              data-tooltip-content="There is metadata on this image!"
+                            >
+                              <Icon
+                                icon="fluent:document-data-16-filled"
+                                width={24}
+                                height={24}
+                              />
+                            </span>
+                            <ReactTooltip
+                              id={`metadata-${idx}`}
+                              place="top"
+                              variant="info"
+                              className="z-40"
+                            />
+                          </>
+                        )}
+
+                      {item.obstacle && (
+                        <>
+                          <span
+                            className="bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs p-1 rounded-lg shadow-md"
+                            data-tooltip-id={`obstacle-${idx}`}
+                            data-tooltip-content="This image contains an obstacle!"
+                          >
+                            <Icon
+                              icon="fluent:scan-object-24-filled"
+                              width={24}
+                              height={24}
+                            />
+                          </span>
+                          <ReactTooltip
+                            id={`obstacle-${idx}`}
+                            place="top"
+                            variant="error"
+                            className="z-40"
+                          />
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -7,6 +7,7 @@ import { monitoringItems } from "@/utils/monitoring";
 import { AnimatePresence, motion } from "framer-motion";
 import CurrentPosition from "@/components/cards/CurrentPositionCard";
 import Table from "@/components/Table";
+import { useDarkMode } from "@/context/DarkModeContext"; // ✅ Import dark mode context
 
 type SensorKey = "ultrasonic" | "battery" | "gps" | "obstacle";
 
@@ -70,6 +71,7 @@ const sensorConfigs: Record<
 
 export default function RightArea_Monitoring() {
   const [selectedKey, setSelectedKey] = useState<SensorKey>("ultrasonic");
+  const { isDark } = useDarkMode(); // ✅ Gunakan dark mode context
 
   const handleSelect = (key: SensorKey) => {
     setSelectedKey(key);
@@ -77,7 +79,13 @@ export default function RightArea_Monitoring() {
 
   return (
     <div className="flex flex-col items-start justify-start w-full sm:w-auto max-w-none sm:min-w-[450px] gap-4 h-full">
-      <div className="flex flex-col items-center justify-start w-full px-4 sm:px-5 py-4 rounded-xl flex-1 border-2 border-[#ECECEC] gap-3">
+      <div
+        className={`flex flex-col items-center justify-start w-full px-4 sm:px-5 py-4 rounded-xl flex-1 border-2 gap-3 ${
+          isDark
+            ? "border-[#113541] bg-[#0F1B2B] text-white"
+            : "border-[#ECECEC] bg-white text-black"
+        }`}
+      >
         <div className="flex flex-row items-center justify-start w-full gap-2 z-10">
           <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md">
             <Icon

@@ -1,5 +1,6 @@
 import React from "react";
 import { Icon } from "@iconify/react";
+import { useDarkMode } from "@/context/DarkModeContext"; // ✅ Import dark mode context
 
 interface InfoItem {
   title: string;
@@ -27,6 +28,7 @@ const VARIANT_MAP = {
 };
 
 const StatCardList: React.FC<StatCardListProps> = ({ infoItems, variant }) => {
+  const { isDark } = useDarkMode(); // ✅ Ambil status dark mode
   const theme = VARIANT_MAP[variant];
 
   return (
@@ -34,10 +36,14 @@ const StatCardList: React.FC<StatCardListProps> = ({ infoItems, variant }) => {
       {infoItems.map((item, index) => (
         <div
           key={index}
-          className="flex items-center gap-2 p-2 rounded-2xl border-2"
+          className={`flex items-center gap-2 p-2 rounded-2xl border-2 ${
+            isDark ? "text-white" : "text-black"
+          }`}
           style={{
             borderColor: `${theme.borderColor}33`,
-            background: `linear-gradient(to bottom right, ${theme.fromColor}1A, ${theme.toColor}1A)`,
+            background: isDark
+              ? `linear-gradient(to bottom right, ${theme.fromColor}22, ${theme.toColor}22)`
+              : `linear-gradient(to bottom right, ${theme.fromColor}1A, ${theme.toColor}1A)`,
           }}
         >
           <div
@@ -54,8 +60,16 @@ const StatCardList: React.FC<StatCardListProps> = ({ infoItems, variant }) => {
             />
           </div>
           <div className="flex flex-col items-start justify-center">
-            <p className="text-[13px] font-semibold text-black">{item.value}</p>
-            <p className="text-[10px] text-black/40">{item.title}</p>
+            <p
+              className={`text-[13px] font-semibold ${isDark ? "text-white" : "text-black"}`}
+            >
+              {item.value}
+            </p>
+            <p
+              className={`text-[10px] ${isDark ? "text-white/40" : "text-black/40"}`}
+            >
+              {item.title}
+            </p>
           </div>
         </div>
       ))}

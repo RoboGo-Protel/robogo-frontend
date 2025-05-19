@@ -1,11 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import StatCardList from "./cards/StatsCard";
 import MonitoringInfo from "./cards/MonitoringInfoCard_PhotoDetails";
 import TunnelPath from "./cards/TunnelPathCard";
+import { useDarkMode } from "@/context/DarkModeContext";
+import clsx from "clsx";
 
 type SensorKey = "ultrasonic" | "battery" | "gps" | "obstacle";
 
@@ -94,10 +96,13 @@ interface TabMenuProps {
 }
 
 function TabMenu({ activeIndex, onTabChange }: TabMenuProps) {
+  const { isDark } = useDarkMode();
   return (
     <nav
       id="reports-navbar"
-      className="flex items-center justify-around w-full bg-white mb-2.5"
+      className={`flex items-center justify-around w-full mb-2.5 ${
+        isDark ? "bg-[#112133]" : "bg-white"
+      }`}
     >
       {menuItems.map((item, index) => {
         const isActive = activeIndex === index;
@@ -105,15 +110,17 @@ function TabMenu({ activeIndex, onTabChange }: TabMenuProps) {
         const baseClass =
           "flex flex-row gap-3 items-center justify-center text-base font-medium transition duration-200 ease-in-out rounded-xl py-3 px-4 w-full cursor-pointer";
         const activeClass =
-          "text-white bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] cursor-default pointer-events-none w-full";
-        const inactiveClass = "text-black hover:bg-white/20";
+          "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] cursor-default pointer-events-none w-full";
+        const inactiveClass = isDark
+          ? "text-white hover:bg-white/10"
+          : "text-black hover:bg-white/20";
 
         return (
           <div key={index} className="w-full">
             <div
               onClick={() => onTabChange(index)}
-              className={`${baseClass} ${
-                isActive ? activeClass : inactiveClass
+              className={`${baseClass} ${isActive ? activeClass : inactiveClass} ${
+                isActive ? "text-white" : isDark ? "text-white" : "text-black"
               }`}
             >
               <Icon icon={icon} width={24} height={24} />
@@ -144,8 +151,18 @@ export default function PhotoDetailsWithPaths({
   details,
   onClose,
 }: PhotoDetailsProps) {
-  const [activeTab, setActiveTab] = useState(0);
+  useEffect(() => {
+    // Ketika komponen dimount (popup muncul)
+    document.body.style.overflow = "hidden";
 
+    return () => {
+      // Ketika komponen di-unmount (popup ditutup)
+      document.body.style.overflow = "auto";
+    };
+  }, []);
+
+  const [activeTab, setActiveTab] = useState(0);
+  const { isDark } = useDarkMode();
   const categoryAlert = (ultrasonic: number | string) => {
     if (typeof ultrasonic === "number") {
       if (ultrasonic < 10) {
@@ -174,8 +191,11 @@ export default function PhotoDetailsWithPaths({
 
   return (
     <motion.div
-      className="fixed top-0 left-0 w-full bg-black/70 z-[9999] flex items-center justify-center p-5"
-      style={{ height: "100vh", overflowY: "auto" }}
+      className={clsx(
+        "fixed top-0 left-0 w-full z-[9999] flex items-center justify-center p-5 h-[100dvh]",
+        isDark ? "bg-[#112133]/70" : "bg-black/70"
+      )}
+      style={{ overflowY: "auto" }}
       variants={backdropVariants}
       initial="hidden"
       animate="visible"
@@ -183,15 +203,21 @@ export default function PhotoDetailsWithPaths({
       transition={{ duration: 0.3 }}
     >
       <motion.div
-        className={`bg-white rounded-2xl shadow-lg w-full ${
-          activeTab === 0 ? "h-full" : "h-fit"
-        } max-w-[1000px] mx-auto flex md:hidden flex-col items-center justify-center relative border border-[#CFCFCF]`}
+        className={clsx(
+          "rounded-2xl shadow-lg w-full",
+          activeTab === 0 ? "h-full" : "h-fit",
+          "max-w-[1000px] mx-auto flex md:hidden flex-col items-center justify-center relative border max-h-[85dvh]",
+          isDark ? "bg-[#112133] border-[#27426C]" : "bg-white border-[#CFCFCF]"
+        )}
         variants={modalVariants}
         transition={{ duration: 0.4 }}
       >
-        {/* Scrollable Content */}
-        <div className="w-full h-full overflow-y-auto p-5">
-          {/* Header */}
+        <div
+          className={clsx(
+            "w-full h-full overflow-y-auto p-5",
+            isDark ? "text-white" : "text-black"
+          )}
+        >
           <div className="flex flex-row items-center justify-center w-full mb-2">
             <div className="p-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md mr-3">
               <Icon
@@ -202,14 +228,31 @@ export default function PhotoDetailsWithPaths({
               />
             </div>
             <div className="w-full flex flex-col items-start justify-start">
-              <h2 className="text-lg font-bold">Photo Details</h2>
-              <p className="text-black/50 text-sm">
+              <h2
+                className={clsx(
+                  "text-lg font-bold",
+                  isDark ? "text-white" : "text-black"
+                )}
+              >
+                Photo Details
+              </h2>
+              <p
+                className={clsx(
+                  "text-sm",
+                  isDark ? "text-white/70" : "text-black/50"
+                )}
+              >
                 See the details of the captured photo
               </p>
             </div>
           </div>
 
-          <hr className="w-full border-[#000000] opacity-15 mb-2.5" />
+          <hr
+            className={clsx(
+              "w-full mb-2.5",
+              isDark ? "border-white/15" : "border-black/15"
+            )}
+          />
           {details.metadata && Object.keys(details.metadata).length > 0 && (
             <TabMenu activeIndex={activeTab} onTabChange={setActiveTab} />
           )}
@@ -225,17 +268,30 @@ export default function PhotoDetailsWithPaths({
                 transition={{ duration: 0.4 }}
                 className="w-full flex flex-col gap-4"
               >
-                {/* Image + Details */}
                 <div className="w-full flex flex-col md:flex-row items-center md:items-start justify-center gap-4">
                   <img
                     src={details.src}
                     alt={details.alt}
-                    className="w-full md:w-[420px] h-auto rounded-xl border-2 border-gray-200"
+                    className={clsx(
+                      "w-full md:w-[420px] h-auto rounded-xl border-2",
+                      isDark ? "border-[#27426C]" : "border-gray-200"
+                    )}
                   />
-                  <div className="flex flex-col gap-5 items-start justify-start w-full md:w-96 p-4 border border-[#DFDFDF] rounded-xl">
-                    {/* ID */}
+                  <div
+                    className={clsx(
+                      "flex flex-col gap-5 items-start justify-start w-full md:w-96 p-4 border rounded-xl",
+                      isDark
+                        ? "border-[#27426C] bg-[#1A2B48] text-white"
+                        : "border-[#DFDFDF] bg-white text-black"
+                    )}
+                  >
                     <div className="flex flex-col gap-1 w-full">
-                      <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                      <div
+                        className={clsx(
+                          "flex flex-row items-center gap-2 text-sm font-bold",
+                          isDark ? "text-white" : "text-black"
+                        )}
+                      >
                         <Icon
                           icon="material-symbols:info-rounded"
                           width={16}
@@ -243,13 +299,24 @@ export default function PhotoDetailsWithPaths({
                         />
                         <p>ID</p>
                       </div>
-                      <p className="text-sm text-black">{details.id}</p>
+                      <p
+                        className={clsx(
+                          "text-sm",
+                          isDark ? "text-white" : "text-black"
+                        )}
+                      >
+                        {details.id}
+                      </p>
                     </div>
 
-                    {/* File Name */}
                     {details.fileName && (
                       <div className="flex flex-col gap-1 w-full">
-                        <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                        <div
+                          className={clsx(
+                            "flex flex-row items-center gap-2 text-sm font-bold",
+                            isDark ? "text-white" : "text-black"
+                          )}
+                        >
                           <Icon
                             icon="ic:round-drive-file-rename-outline"
                             width={16}
@@ -257,15 +324,24 @@ export default function PhotoDetailsWithPaths({
                           />
                           <p>File Name</p>
                         </div>
-                        <p className="text-sm text-black break-words">
+                        <p
+                          className={clsx(
+                            "text-sm break-words",
+                            isDark ? "text-white" : "text-black"
+                          )}
+                        >
                           {details.fileName}
                         </p>
                       </div>
                     )}
 
-                    {/* Date & Time */}
                     <div className="flex flex-col gap-1 w-full">
-                      <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                      <div
+                        className={clsx(
+                          "flex flex-row items-center gap-2 text-sm font-bold",
+                          isDark ? "text-white" : "text-black"
+                        )}
+                      >
                         <Icon
                           icon="mingcute:time-fill"
                           width={16}
@@ -273,14 +349,23 @@ export default function PhotoDetailsWithPaths({
                         />
                         <p>Date & Time</p>
                       </div>
-                      <p className="text-sm text-black">
+                      <p
+                        className={clsx(
+                          "text-sm",
+                          isDark ? "text-white" : "text-black"
+                        )}
+                      >
                         {formatDateTime(details.dateTime)}
                       </p>
                     </div>
 
-                    {/* Categories */}
                     <div className="flex flex-col gap-1 w-full">
-                      <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                      <div
+                        className={clsx(
+                          "flex flex-row items-center gap-2 text-sm font-bold",
+                          isDark ? "text-white" : "text-black"
+                        )}
+                      >
                         <Icon icon="solar:tag-bold" width={16} height={16} />
                         <p>Categories</p>
                       </div>
@@ -305,9 +390,13 @@ export default function PhotoDetailsWithPaths({
                       )}
                     </div>
 
-                    {/* Camera */}
                     <div className="flex flex-col gap-1 w-full">
-                      <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                      <div
+                        className={clsx(
+                          "flex flex-row items-center gap-2 text-sm font-bold",
+                          isDark ? "text-white" : "text-black"
+                        )}
+                      >
                         <Icon
                           icon="mingcute:camera-2-ai-fill"
                           width={16}
@@ -315,12 +404,18 @@ export default function PhotoDetailsWithPaths({
                         />
                         <p>Shot with</p>
                       </div>
-                      <p className="text-sm text-black">ESP32-CAM</p>
+                      <p
+                        className={clsx(
+                          "text-sm",
+                          isDark ? "text-white" : "text-black"
+                        )}
+                      >
+                        ESP32-CAM
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Stats */}
                 <div className="flex flex-col md:flex-row gap-4 items-center w-full h-fit">
                   {details.metadata?.distances && (
                     <StatCardList
@@ -383,7 +478,6 @@ export default function PhotoDetailsWithPaths({
                   )}
                 </div>
 
-                {/* Sensor Monitoring */}
                 {details.metadata?.ultrasonic && details.metadata?.heading && (
                   <div className="flex flex-col md:flex-row gap-4 items-center w-full">
                     <MonitoringInfo<SensorKey>
@@ -431,17 +525,28 @@ export default function PhotoDetailsWithPaths({
                 transition={{ duration: 0.4 }}
                 className="w-full flex flex-col items-center justify-center"
               >
-                <div className="w-full h-full rounded-xl border border-[#DFDFDF] flex items-center justify-center relative overflow-hidden">
+                <div
+                  className={clsx(
+                    "w-full h-full rounded-xl border flex items-center justify-center relative overflow-hidden",
+                    isDark
+                      ? "border-[#27426C] bg-[#1A2B48]"
+                      : "border-[#DFDFDF] bg-white"
+                  )}
+                >
                   <TunnelPath showStartpoint showEndpoint />
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Buttons */}
           <div className="flex flex-col md:flex-row gap-4 items-center justify-center w-full h-fit mt-7">
-            <button className="flex flex-row gap-2 items-center justify-center border-red-200 px-6 py-3 border-2 rounded-xl w-full">
-              <p className="text-red-500 font-semibold text-sm">Delete</p>
+            <button
+              className={clsx(
+                "flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl w-full",
+                "border-red-500/30 text-red-500 hover:bg-red-200/20 hover:border-red-500 transition"
+              )}
+            >
+              <p className="font-semibold text-sm">Delete</p>
               <Icon
                 icon="material-symbols:delete-outline"
                 width={20}
@@ -449,7 +554,7 @@ export default function PhotoDetailsWithPaths({
                 className="text-red-500"
               />
             </button>
-            <button className="flex flex-row gap-2 items-center justify-center border-[#367AF2]/20 px-6 py-3 border-2 rounded-xl w-full">
+            <button className="flex flex-row gap-2 items-center justify-center border-[#367AF2]/20 px-6 py-3 border-2 rounded-xl w-full hover:bg-blue-200/20 hover:border-[#3BD5FF] transition">
               <p className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text font-semibold text-sm">
                 Download
               </p>
@@ -463,17 +568,24 @@ export default function PhotoDetailsWithPaths({
           </div>
         </div>
 
-        {/* Close Button (fixed outside scroll area) */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 bg-[#e5e7ec] text-[#98A2B3] p-1 rounded-full hover:bg-red-500 hover:text-white transition-all duration-300 cursor-pointer"
+          className={clsx(
+            "absolute top-3 right-3 p-1 rounded-full transition-all duration-300 cursor-pointer",
+            isDark
+              ? "bg-[#27426C] text-white hover:bg-red-500 hover:text-white"
+              : "bg-[#e5e7ec] text-[#98A2B3] hover:bg-red-500 hover:text-white"
+          )}
         >
           <Icon icon="tabler:x" width={20} height={20} />
         </button>
       </motion.div>
 
       <motion.div
-        className="bg-white rounded-2xl shadow-lg p-5 w-fit mx-auto hidden md:flex flex-col gap-4 items-center justify-center relative border-[1px] border-[#CFCFCF]"
+        className={clsx(
+          "rounded-2xl shadow-lg p-5 w-fit mx-auto hidden md:flex flex-col gap-4 items-center justify-center relative border-[1px]",
+          isDark ? "bg-[#112133] border-[#27426C]" : "bg-white border-[#CFCFCF]"
+        )}
         variants={modalVariants}
         transition={{ duration: 0.4 }}
       >
@@ -487,20 +599,35 @@ export default function PhotoDetailsWithPaths({
             />
           </div>
           <div className="w-full flex flex-col items-start justify-start">
-            <h2 className="text-lg font-bold">Photo Details</h2>
-            <p className="text-black/50 text-sm">
+            <h2
+              className={clsx(
+                "text-lg font-bold",
+                isDark ? "text-white" : "text-black"
+              )}
+            >
+              Photo Details
+            </h2>
+            <p
+              className={clsx(
+                "text-sm",
+                isDark ? "text-white/70" : "text-black/50"
+              )}
+            >
               See the details of the captured photo
             </p>
           </div>
         </div>
-        <hr className="w-full border-[#000000] opacity-15" />
+        <hr
+          className={clsx(
+            "w-full",
+            isDark ? "border-white/15" : "border-black/15"
+          )}
+        />
 
-        {/* Tab Menu */}
         {details.metadata && Object.keys(details.metadata).length > 0 && (
           <TabMenu activeIndex={activeTab} onTabChange={setActiveTab} />
         )}
 
-        {/* AnimatePresence untuk transisi antar konten tab */}
         <AnimatePresence mode="wait">
           {activeTab === 0 ? (
             <motion.div
@@ -516,12 +643,27 @@ export default function PhotoDetailsWithPaths({
                 <img
                   src={details.src}
                   alt={details.alt}
-                  className="w-[420px] object-cover rounded-xl border-2 border-gray-200"
+                  className={clsx(
+                    "w-[420px] object-cover rounded-xl border-2",
+                    isDark ? "border-[#27426C]" : "border-[#DFDFDF]"
+                  )}
                   style={{ height: "auto", maxHeight: "100%" }}
                 />
-                <div className="flex flex-col gap-5 items-start justify-start w-96 p-4 border border-[#DFDFDF] rounded-xl break-words">
+                <div
+                  className={clsx(
+                    "flex flex-col gap-5 items-start justify-start w-96 p-4 border rounded-xl break-words",
+                    isDark
+                      ? "border-[#27426C] bg-[#1A2B48] text-white"
+                      : "border-[#DFDFDF] bg-white text-black"
+                  )}
+                >
                   <div className="flex flex-col gap-1 w-full">
-                    <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                    <div
+                      className={clsx(
+                        "flex flex-row items-center gap-2 text-sm font-bold",
+                        isDark ? "text-white" : "text-black"
+                      )}
+                    >
                       <Icon
                         icon="material-symbols:info-rounded"
                         width={16}
@@ -529,11 +671,23 @@ export default function PhotoDetailsWithPaths({
                       />
                       <p>ID</p>
                     </div>
-                    <p className="text-sm text-black">{details.id}</p>
+                    <p
+                      className={clsx(
+                        "text-sm",
+                        isDark ? "text-white" : "text-black"
+                      )}
+                    >
+                      {details.id}
+                    </p>
                   </div>
                   {details.fileName && (
                     <div className="flex flex-col gap-1 w-full">
-                      <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                      <div
+                        className={clsx(
+                          "flex flex-row items-center gap-2 text-sm font-bold",
+                          isDark ? "text-white" : "text-black"
+                        )}
+                      >
                         <Icon
                           icon="ic:round-drive-file-rename-outline"
                           width={16}
@@ -541,20 +695,42 @@ export default function PhotoDetailsWithPaths({
                         />
                         <p>File Name</p>
                       </div>
-                      <p className="text-sm text-black">{details.fileName}</p>
+                      <p
+                        className={clsx(
+                          "text-sm",
+                          isDark ? "text-white" : "text-black"
+                        )}
+                      >
+                        {details.fileName}
+                      </p>
                     </div>
                   )}
                   <div className="flex flex-col gap-1 w-full">
-                    <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                    <div
+                      className={clsx(
+                        "flex flex-row items-center gap-2 text-sm font-bold",
+                        isDark ? "text-white" : "text-black"
+                      )}
+                    >
                       <Icon icon="mingcute:time-fill" width={16} height={16} />
                       <p>Date & Time</p>
                     </div>
-                    <p className="text-sm text-black">
+                    <p
+                      className={clsx(
+                        "text-sm",
+                        isDark ? "text-white" : "text-black"
+                      )}
+                    >
                       {formatDateTime(details.dateTime)}
                     </p>
                   </div>
                   <div className="flex flex-col gap-1 w-full">
-                    <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                    <div
+                      className={clsx(
+                        "flex flex-row items-center gap-2 text-sm font-bold",
+                        isDark ? "text-white" : "text-black"
+                      )}
+                    >
                       <Icon icon="solar:tag-bold" width={16} height={16} />
                       <p>Categories</p>
                     </div>
@@ -579,7 +755,12 @@ export default function PhotoDetailsWithPaths({
                     )}
                   </div>
                   <div className="flex flex-col gap-1 w-full">
-                    <div className="flex flex-row items-center gap-2 text-sm font-bold text-black">
+                    <div
+                      className={clsx(
+                        "flex flex-row items-center gap-2 text-sm font-bold",
+                        isDark ? "text-white" : "text-black"
+                      )}
+                    >
                       <Icon
                         icon="mingcute:camera-2-ai-fill"
                         width={16}
@@ -587,7 +768,14 @@ export default function PhotoDetailsWithPaths({
                       />
                       <p>Shot with</p>
                     </div>
-                    <p className="text-sm text-black">ESP32-CAM</p>
+                    <p
+                      className={clsx(
+                        "text-sm",
+                        isDark ? "text-white" : "text-black"
+                      )}
+                    >
+                      ESP32-CAM
+                    </p>
                   </div>
                 </div>
               </div>
@@ -695,7 +883,14 @@ export default function PhotoDetailsWithPaths({
               transition={{ duration: 0.4 }}
               className="w-full flex flex-col items-start justify-start"
             >
-              <div className="w-full h-full rounded-xl border border-[#DFDFDF] flex items-start justify-start relative overflow-hidden">
+              <div
+                className={clsx(
+                  "w-full h-full rounded-xl border flex items-start justify-start relative overflow-hidden",
+                  isDark
+                    ? "border-[#27426C] bg-[#1A2B48]"
+                    : "border-[#DFDFDF] bg-white"
+                )}
+              >
                 <TunnelPath showStartpoint showEndpoint />
               </div>
             </motion.div>
@@ -703,8 +898,13 @@ export default function PhotoDetailsWithPaths({
         </AnimatePresence>
 
         <div className="flex flex-row gap-4 items-center justify-center w-full h-fit mt-7">
-          <button className="flex flex-row gap-2 items-center justify-center border-red-200 px-6 py-3 border-2 rounded-xl w-full">
-            <p className="text-red-500 font-semibold text-sm">Delete</p>
+          <button
+            className={clsx(
+              "flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl w-full",
+              "border-red-500/30 text-red-500 hover:bg-red-200/20 hover:border-red-500 transition"
+            )}
+          >
+            <p className="font-semibold text-sm">Delete</p>
             <Icon
               icon="material-symbols:delete-outline"
               width={20}
@@ -712,7 +912,8 @@ export default function PhotoDetailsWithPaths({
               className="text-red-500"
             />
           </button>
-          <button className="flex flex-row gap-2 items-center justify-center border-[#367AF2]/20 px-6 py-3 border-2 rounded-xl w-full">
+
+          <button className="flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl w-full border-[#367AF2]/20 hover:bg-blue-200/20 hover:border-[#3BD5FF] transition">
             <p className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text font-semibold text-sm">
               Download
             </p>
@@ -724,9 +925,15 @@ export default function PhotoDetailsWithPaths({
             />
           </button>
         </div>
+
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 bg-[#e5e7ec] text-[#98A2B3] p-1 rounded-full hover:bg-red-500 hover:text-white transition-all duration-300 cursor-pointer"
+          className={clsx(
+            "absolute top-3 right-3 p-1 rounded-full transition-all duration-300 cursor-pointer",
+            isDark
+              ? "bg-[#27426C] text-white hover:bg-red-500 hover:text-white"
+              : "bg-[#e5e7ec] text-[#98A2B3] hover:bg-red-500 hover:text-white"
+          )}
         >
           <Icon icon="tabler:x" width={20} height={20} />
         </button>

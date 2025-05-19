@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface ReportData {
   id: string;
@@ -121,49 +122,86 @@ export default function UltrasonicSensorTable({
     return date.toLocaleTimeString("id-ID", options).replace(/:/g, ".");
   };
 
+  const { isDark } = useDarkMode();
+
   return (
     <>
-      <div className="overflow-x-auto w-full bg-white rounded-xl shadow-sm">
-        <table className="min-w-[800px] w-full bg-white border-collapse">
+      <div
+        className={`overflow-x-auto w-full rounded-xl shadow-sm ${
+          isDark ? "bg-[#112133]" : "bg-white"
+        }`}
+      >
+        <table
+          className={`min-w-[800px] w-full border-collapse ${isDark ? "text-white" : "text-black"}`}
+        >
           <thead>
-            <tr className="bg-[#367AF2]/10 border-b border-gray-200">
-              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
+            <tr
+              className={`${isDark ? "bg-[#1a3350] border-[#223c5c]" : "bg-[#367AF2]/10 border-gray-200"} border-b`}
+            >
+              <th
+                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+              >
                 No
               </th>
-              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
+              <th
+                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+              >
                 Timestamp
               </th>
-              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
+              <th
+                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+              >
                 Distance (cm)
               </th>
-              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
+              <th
+                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+              >
                 Alert Level
               </th>
-              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
+              <th
+                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+              >
                 Image
               </th>
-              <th className="py-3 px-4 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider">
+              <th
+                className={`py-3 px-4 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+              >
                 Action
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className={isDark ? "divide-[#223c5c]" : "divide-gray-200"}>
             {reports.map((report, index) => (
-              <tr key={report.id} className="hover:bg-gray-50">
-                <td className="py-3 px-4 text-sm text-gray-900">{index + 1}</td>
-                <td className="py-3 px-4 text-sm text-gray-900">
+              <tr
+                key={report.id}
+                className={isDark ? "hover:bg-[#1a3350]" : "hover:bg-gray-50"}
+              >
+                <td
+                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                >
+                  {index + 1}
+                </td>
+                <td
+                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                >
                   {getTimeOnlyWithoutDate(report.timestamp)}
                 </td>
-                <td className="py-3 px-4 text-sm text-gray-900">
+                <td
+                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                >
                   {report.distance}
                 </td>
-                <td className="py-3 px-4 text-sm text-gray-900">
+                <td
+                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                >
                   {getAlertBadge(report.alertLevel)}
                 </td>
-                <td className="py-3 px-4 text-sm text-gray-900">
+                <td
+                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                >
                   {report.image && (
                     <div
-                      className="h-10 w-16 bg-gray-200 rounded cursor-pointer"
+                      className={`h-10 w-16 rounded cursor-pointer ${isDark ? "bg-[#23262F]" : "bg-gray-200"}`}
                       onClick={() =>
                         setSelectedPhoto({
                           id: report.id.toString(),
@@ -188,7 +226,9 @@ export default function UltrasonicSensorTable({
                 <td className="py-3 px-4 text-sm space-x-2">
                   <button
                     disabled
-                    className="border border-gray-300 text-gray-600 rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
+                    className={`border rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15
+                      ${isDark ? "border-[#23262F] text-[#DFDFDF] hover:bg-[#23262F]" : "border-gray-300 text-gray-600"}
+                    `}
                     onClick={() => console.log(`Edit report ${report.id}`)}
                   >
                     <Icon
@@ -199,7 +239,9 @@ export default function UltrasonicSensorTable({
                     />
                     Edit
                   </button>
-                  <button className="border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50">
+                  <button
+                    className={`border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50 ${isDark ? "hover:bg-[#23262F]" : ""}`}
+                  >
                     <Icon
                       icon="mingcute:delete-fill"
                       className="inline mr-1"

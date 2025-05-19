@@ -2,49 +2,27 @@
 
 import { Icon } from "@iconify/react";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
+import NavMenuDesktop from "./NavMenuDesktop";
+import { useToast } from "@/context/ToastProvider";
 
 export default function TopNavbar() {
-  const [theme, setTheme] = useState("light");
+  const { isDark, toggleDark } = useDarkMode();
   const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("theme") as "dark" | "light" | null;
-
-    if (saved) {
-      setTheme(saved);
-      document.documentElement.setAttribute("data-theme", saved);
-    } else {
-      // hanya kalau belum pernah diset
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      const fallback = prefersDark ? "dark" : "light";
-      setTheme(fallback);
-      localStorage.setItem("theme", fallback);
-      document.documentElement.setAttribute("data-theme", fallback);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-
-    // 🔥 Broadcast event ke seluruh app
-    window.dispatchEvent(new Event("theme-change"));
-  };
+  const { showToast } = useToast();
 
   return (
     <nav
       id="top-navbar"
-      className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between gap-3 p-5 h-[80px] transition-colors duration-300
-      ${theme === "dark" ? "bg-[#112133] text-white" : "bg-white text-black"}`}
+      className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between gap-3 p-5 h-[80px] transition-colors duration-300 ${
+        isDark ? "bg-[#112133] text-white" : "bg-white text-black"
+      }`}
     >
+      {/* Kiri */}
       <div className="flex items-center gap-2 w-fit">
-        {theme === "dark" ? (
-          <Icon icon="ph:boat-fill" className={`text-3xl text-white`} />
+        {isDark ? (
+          <Icon icon="ph:boat-fill" className="text-3xl text-white" />
         ) : (
           <Image
             src="/images/robogo_logo.png"
@@ -53,15 +31,24 @@ export default function TopNavbar() {
             height={32}
           />
         )}
-        <p className="font-bold text-2xl text-[var(--foreground)]">RoboGo</p>
+        <p
+          className={`font-bold text-2xl ${isDark ? "text-white" : "text-black"}`}
+        >
+          RoboGo
+        </p>
       </div>
+
+      {/* Tengah */}
+      <div className="absolute left-1/2 transform -translate-x-1/2">
+        <NavMenuDesktop />
+      </div>
+
+      {/* Kanan */}
       <div className="flex items-center justify-end gap-3">
         {connected && (
           <div
             className={`flex items-center gap-3 px-4 py-2 border-2 rounded-xl ${
-              theme === "dark"
-                ? "bg-[#314559] border-[#4D647D]"
-                : "bg-white border-gray-300"
+              isDark ? "border-gray-700" : "border-gray-200"
             }`}
           >
             <div className="p-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md">
@@ -70,18 +57,30 @@ export default function TopNavbar() {
                 className="text-base text-white"
               />
             </div>
-            <p className="font-bold text-lg text-[var(--foreground)]">88%</p>
+            <p
+              className={`font-bold text-lg ${isDark ? "text-white" : "text-black"}`}
+            >
+              88%
+            </p>
           </div>
         )}
+
         <button
-          onClick={toggleTheme}
+          onClick={() => {
+            toggleDark();
+            showToast(
+              `Theme changed to ${isDark ? "light" : "dark"}!`,
+              "success"
+            );
+          }}
           className="flex items-center justify-center gap-1 text-white bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl transition duration-200 ease-in-out min-w-12 min-h-12 cursor-pointer"
         >
           <Icon
-            icon={theme === "dark" ? "mage:sun-fill" : "mage:moon-fill"}
+            icon={isDark ? "mage:sun-fill" : "mage:moon-fill"}
             className="text-2xl"
           />
         </button>
+
         {connected ? (
           <button
             onClick={() => setConnected(!connected)}

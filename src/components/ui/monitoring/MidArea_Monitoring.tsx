@@ -8,11 +8,13 @@ import { velocity } from "@/utils/velocity";
 import DirectionalControl from "@/components/DirectionalControl";
 import CompassHUD from "@/components/CompassHUD";
 import BoatOrientationHUD from "@/components/OrientationHUD";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 export default function MidArea_Monitoring() {
   const [recordingState, setRecordingState] = useState<"idle" | "recording">(
     "idle"
   );
+  const { isDark } = useDarkMode();
   const [flashOn, setFlashOn] = useState(false);
   const [fps] = useState(0);
   const [resolution] = useState({ width: 0, height: 0 });
@@ -27,8 +29,6 @@ export default function MidArea_Monitoring() {
 
     return () => clearInterval(interval);
   }, []);
-
-  // const lastFrameTimeRef = useRef(Date.now());
 
   const handleRecordClick = async () => {
     try {
@@ -93,38 +93,14 @@ export default function MidArea_Monitoring() {
     },
   ];
 
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     const now = Date.now();
-  //     const timeSinceLastFrame = now - lastFrameTimeRef.current;
-
-  //     if (timeSinceLastFrame > 5000) {
-  //       setIsStreamActive(false);
-  //     }
-  //   }, 2000);
-
-  //   return () => clearInterval(interval);
-  // }, []);
-
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     fetch("http://localhost:3001/info")
-  //       .then((res) => res.json())
-  //       .then((data) => {
-  //         if (data) {
-  //           setFps(data.fps);
-  //           const [w, h] = data.resolution.split("x").map(Number);
-  //           setResolution({ width: w, height: h });
-  //           setDeviceCamera(data.device);
-  //         }
-  //       });
-  //   }, 3000);
-
-  //   return () => clearInterval(interval);
-  // }, []);
-
   return (
-    <div className="flex flex-col items-start justify-start h-full gap-4 border-2 border-[#ECECEC] rounded-xl p-4 sm:p-5 w-full">
+    <div
+      className={`flex flex-col items-start justify-start h-full gap-4 rounded-xl p-4 sm:p-5 w-full border-2 ${
+        isDark
+          ? "border-[#113541] bg-[#0F1B2B] text-white"
+          : "border-[#ECECEC] bg-white text-black"
+      }`}
+    >
       <div className="flex flex-col sm:flex-row gap-4 items-stretch w-full h-fit">
         <StatCardList variant="distance" infoItems={distance} />
         <StatCardList variant="velocity" infoItems={velocity} />
@@ -134,12 +110,16 @@ export default function MidArea_Monitoring() {
         <AnimatePresence mode="wait">
           {isStreamActive ? (
             <motion.div
-              key="stream-on"
+              key="stream-off"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="absolute inset-0 bg-black flex items-center justify-center"
+              className={`flex flex-col gap-2.5 p-4 items-center justify-center w-full h-full rounded-2xl border-2 ${
+                isDark
+                  ? "bg-[#0F1B2B] border-[#113541]"
+                  : "bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 border-[#3BD5FF]/20"
+              }`}
             >
               <CompassHUD heading={imuHeading} />
               <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
@@ -175,11 +155,13 @@ export default function MidArea_Monitoring() {
                   type="button"
                   aria-label="Flash"
                   title="Flash"
-                  className={`${
+                  className={`text-white text-sm font-semibold p-2.5 rounded-xl shadow-md transition-all ${
                     flashOn
                       ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]"
-                      : "bg-white/20"
-                  } text-white text-sm font-semibold p-2.5 rounded-xl shadow-md hover:bg-[#285ec9] transition-all`}
+                      : isDark
+                        ? "bg-white/10 hover:bg-white/20"
+                        : "bg-white/20 hover:bg-[#285ec9]"
+                  }`}
                 >
                   <Icon icon="fluent:flash-32-filled" width={20} height={20} />
                 </button>
@@ -222,7 +204,13 @@ export default function MidArea_Monitoring() {
       <div className="flex flex-col sm:flex-row w-full gap-4">
         <DirectionalControl onDirectionClick={(dir) => console.log(dir)} />
         <div className="flex flex-col w-full gap-2.5">
-          <div className="flex flex-row items-center justify-center gap-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] w-full h-fit rounded-xl px-4 py-2 text-white">
+          <div
+            className={`flex flex-row items-center justify-center gap-2.5 w-full h-fit rounded-xl px-4 py-2 ${
+              isDark
+                ? "bg-[#113541] text-white"
+                : "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
+            }`}
+          >
             <Icon icon="mingcute:settings-1-fill" width={20} height={20} />
             <span className="font-semibold text-base">Tools</span>
           </div>
@@ -231,16 +219,26 @@ export default function MidArea_Monitoring() {
               <button
                 key={index}
                 onClick={item.onClick}
-                className="flex flex-row gap-2 items-center justify-center border-[#367AF2]/20 px-6 py-3 border-2 rounded-xl"
+                className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl ${
+                  isDark
+                    ? "border-[#3BD5FF]/10 bg-[#0A1625] text-white"
+                    : "border-[#367AF2]/20 bg-white text-black"
+                }`}
               >
-                <p className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text font-semibold text-sm">
+                <p
+                  className={`font-semibold text-sm ${
+                    isDark
+                      ? "text-white"
+                      : "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text"
+                  }`}
+                >
                   {item.text}
                 </p>
                 <Icon
                   icon={item.icon}
                   width={20}
                   height={20}
-                  className="text-[#39A9F9]"
+                  className={isDark ? "text-[#3BD5FF]" : "text-[#39A9F9]"}
                 />
               </button>
             ))}

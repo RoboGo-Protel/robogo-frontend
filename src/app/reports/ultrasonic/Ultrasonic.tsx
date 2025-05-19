@@ -6,6 +6,7 @@ import Select, { StylesConfig } from "react-select";
 import UltrasonicSensorTable from "@/components/UltrasonicSensorTable";
 import { PulseLoader } from "react-spinners";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface OptionType {
   value: string;
@@ -58,6 +59,7 @@ interface Ultrasonic {
 }
 
 export default function Ultrasonic() {
+  const { isDark } = useDarkMode();
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
   const [reportsNavbarHeight, setReportsNavbarHeight] = useState(0);
@@ -229,7 +231,8 @@ export default function Ultrasonic() {
   return (
     <div
       className={clsx(
-        "flex flex-col gap-4 p-4 md:p-5 transition-colors duration-300 bg-white text-black"
+        "flex flex-col gap-4 p-4 md:p-5 transition-colors duration-300",
+        isDark ? "bg-[#112133] text-white" : "bg-white text-black"
       )}
       style={{
         paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -246,18 +249,21 @@ export default function Ultrasonic() {
           }}
         >
           <PulseLoader
-            color="#367AF2"
+            color={isDark ? "#3BD5FF" : "#367AF2"}
             loading={isLoading}
             size={15}
             margin={5}
           />
-          <p className="mt-4 text-lg text-gray-500">
+          <p className={clsx("mt-4 text-lg", isDark ? "text-gray-400" : "text-gray-500")}>
             Loading ultrasonic reports, please wait...
           </p>
         </div>
       ) : reports.length === 0 ? (
         <div
-          className="flex flex-col justify-center items-center w-full p-4 border-2 border-gray-300 rounded-xl text-center"
+          className={clsx(
+            "flex flex-col justify-center items-center w-full p-4 border-2 rounded-xl text-center",
+            isDark ? "border-gray-700" : "border-gray-300"
+          )}
           style={{
             height: `calc(100vh - ${
               topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
@@ -268,9 +274,9 @@ export default function Ultrasonic() {
             icon="tabler:photo-off"
             width={48}
             height={48}
-            className="text-gray-400"
+            className={isDark ? "text-gray-600" : "text-gray-400"}
           />
-          <p className="mt-4 text-lg text-gray-500">
+          <p className={clsx("mt-4 text-lg", isDark ? "text-gray-400" : "text-gray-500")}>
             No ultrasonic reports available. Please check back later.
           </p>
         </div>
@@ -305,6 +311,16 @@ export default function Ultrasonic() {
                 }}
                 isSearchable={false}
                 className="flex-1"
+                theme={(theme) => ({
+                  ...theme,
+                  colors: {
+                    ...theme.colors,
+                    primary25: isDark ? "#23272f" : "#e3f2fd",
+                    primary: isDark ? "#3BD5FF" : "#367AF2",
+                    neutral0: isDark ? "#23272f" : "#fff",
+                    neutral80: isDark ? "#fff" : "#333",
+                  },
+                })}
               />
               <Select
                 options={
@@ -320,6 +336,16 @@ export default function Ultrasonic() {
                 isSearchable={false}
                 isDisabled={!selectedDate}
                 className="flex-1"
+                theme={(theme) => ({
+                  ...theme,
+                  colors: {
+                    ...theme.colors,
+                    primary25: isDark ? "#23272f" : "#e3f2fd",
+                    primary: isDark ? "#3BD5FF" : "#367AF2",
+                    neutral0: isDark ? "#23272f" : "#fff",
+                    neutral80: isDark ? "#fff" : "#333",
+                  },
+                })}
               />
             </div>
           </div>

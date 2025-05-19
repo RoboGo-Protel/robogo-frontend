@@ -5,8 +5,11 @@ import Image from "next/image";
 import { infoItems } from "@/utils/info";
 import { motion, AnimatePresence } from "framer-motion";
 import ShortInfo from "@/components/cards/ShortInfoCard";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 export default function RightArea_Home() {
+  const { isDark } = useDarkMode();
+
   const [flashOn, setFlashOn] = useState(false);
   const [fps] = useState(0);
   const [resolution] = useState({ width: 0, height: 0 });
@@ -14,7 +17,14 @@ export default function RightArea_Home() {
   const [isStreamActive] = useState(false);
 
   return (
-    <div className="flex flex-col items-start justify-start w-full max-w-[450px] sm:max-w-[450px] h-full gap-4 border-2 border-[#ECECEC] rounded-xl p-4 sm:p-5">
+    <div
+      className={`flex flex-col items-start justify-start w-full max-w-[450px] sm:max-w-[450px] h-full gap-4 rounded-xl p-4 sm:p-5 border-2 transition-colors ${
+        isDark
+          ? "border-[#3BD5FF]/10 bg-[#112133] text-white"
+          : "border-[#ECECEC] bg-white text-black"
+      }`}
+    >
+      {/* Header */}
       <div className="flex flex-col items-center justify-center w-full gap-4">
         <h1 className="text-2xl font-bold">RoboGo G1</h1>
         <Image
@@ -26,8 +36,12 @@ export default function RightArea_Home() {
         />
       </div>
 
-      <ShortInfo infoItems={infoItems} />
+      {/* Info Cards */}
+      <ShortInfo
+        infoItems={infoItems}
+      />
 
+      {/* Camera Stream */}
       <div className="h-full w-full rounded-2xl flex items-center justify-center relative min-h-[300px]">
         <AnimatePresence mode="wait">
           {isStreamActive ? (
@@ -65,11 +79,13 @@ export default function RightArea_Home() {
                   type="button"
                   aria-label="Flash"
                   title="Flash"
-                  className={`${
+                  className={`text-sm font-semibold p-2.5 rounded-xl shadow-md transition-all ${
                     flashOn
                       ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]"
-                      : "bg-white/20"
-                  } text-white text-sm font-semibold p-2.5 rounded-xl shadow-md hover:bg-[#285ec9] transition-all`}
+                      : isDark
+                        ? "bg-white/10 hover:bg-white/20"
+                        : "bg-white/20 hover:bg-[#285ec9]"
+                  } text-white`}
                 >
                   <Icon icon="fluent:flash-32-filled" width={20} height={20} />
                 </button>
@@ -88,7 +104,11 @@ export default function RightArea_Home() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="flex flex-col gap-2.5 p-4 items-center justify-center bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 w-full h-full rounded-2xl border-2 border-[#3BD5FF]/20 min-h-[300px]"
+              className={`flex flex-col gap-2.5 p-4 items-center justify-center w-full h-full rounded-2xl border-2 min-h-[300px] transition-all ${
+                isDark
+                  ? "bg-gradient-to-br from-[#3BD5FF]/5 to-[#367AF2]/5 border-[#3BD5FF]/10"
+                  : "bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 border-[#3BD5FF]/20"
+              }`}
             >
               <div className="p-2 rounded-xl shadow-md bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
                 <Icon

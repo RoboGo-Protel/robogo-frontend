@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { motion, useMotionValue } from "framer-motion";
+import { useDarkMode } from "@/context/DarkModeContext"; // ✅ Import context
 
 interface InfoItem {
   icon: string;
@@ -41,6 +42,7 @@ function MonitoringInfo<K extends string = string>({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [dragBounds, setDragBounds] = useState({ left: 0, right: 0 });
   const x = useMotionValue(0);
+  const { isDark } = useDarkMode(); // ✅ Gunakan dark mode context
 
   const updateDragBounds = () => {
     const wrapper = wrapperRef.current;
@@ -93,14 +95,19 @@ function MonitoringInfo<K extends string = string>({
       >
         {infoItems.map((item, index) => {
           const theme = statusTheme[item.status];
+
           return (
             <div
               key={index}
               onClick={() => onSelect?.(item.key)}
-              className={`shrink-0 flex items-center gap-2 p-3 min-w-[180px] rounded-2xl border-2 bg-white`}
+              className={`shrink-0 flex items-center gap-2 p-3 min-w-[180px] rounded-2xl border-2 ${
+                isDark ? "text-white" : "text-black"
+              }`}
               style={{
                 borderColor: `${theme.borderColor}33`,
-                background: `linear-gradient(to bottom right, ${theme.fromColor}1A, ${theme.toColor}1A)`,
+                background: isDark
+                  ? `linear-gradient(to bottom right, ${theme.fromColor}26, ${theme.toColor}26)`
+                  : `linear-gradient(to bottom right, ${theme.fromColor}1A, ${theme.toColor}1A)`,
               }}
             >
               <div
@@ -117,8 +124,20 @@ function MonitoringInfo<K extends string = string>({
                 />
               </div>
               <div className="flex flex-col items-start justify-center text-nowrap">
-                <p className="text-sm font-semibold text-black">{item.value}</p>
-                <p className="text-xs text-black/40">{item.title}</p>
+                <p
+                  className={`text-sm font-semibold ${
+                    isDark ? "text-white" : "text-black"
+                  }`}
+                >
+                  {item.value}
+                </p>
+                <p
+                  className={`text-xs ${
+                    isDark ? "text-white/50" : "text-black/40"
+                  }`}
+                >
+                  {item.title}
+                </p>
               </div>
             </div>
           );

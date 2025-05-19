@@ -2,6 +2,7 @@
 // import { useState } from "react";
 import { Icon } from "@iconify/react";
 // import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface Acceleration {
   x: number;
@@ -32,6 +33,7 @@ interface IMUTableProps {
 }
 
 export default function IMUTable({ reports }: IMUTableProps) {
+  const { isDark } = useDarkMode();
   // const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   // const [selectedPhoto, setSelectedPhoto] = useState<null | {
@@ -143,8 +145,12 @@ export default function IMUTable({ reports }: IMUTableProps) {
 
   return (
     <>
-      <div className="overflow-x-auto w-full bg-white rounded-xl shadow-sm">
-        <table className="w-full border-collapse text-sm sm:text-sm md:table-fixed min-w-[1000px]">
+      <div
+        className={`overflow-x-auto w-full rounded-xl shadow-sm ${
+          isDark ? "bg-[#112133]" : "bg-white"
+        }`}
+      >
+        <table className={`w-full border-collapse text-sm sm:text-sm md:table-fixed min-w-[1000px] ${isDark ? "text-white" : "text-black"}`}>
           <colgroup>
             <col className="w-10" />
             <col className="w-24" />
@@ -161,82 +167,82 @@ export default function IMUTable({ reports }: IMUTableProps) {
           </colgroup>
 
           <thead>
-            <tr className="bg-[#367AF2]/10 border-b border-gray-200">
+            <tr className={`${isDark ? "bg-[#1a3350] border-[#223c5c]" : "bg-[#367AF2]/10 border-gray-200"} border-b`}>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
+                className={`py-3 px-2 text-left font-medium uppercase align-top ${isDark ? "text-white" : "text-black"}`}
               >
                 No
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
+                className={`py-3 px-2 text-left font-medium uppercase align-top ${isDark ? "text-white" : "text-black"}`}
               >
                 Timestamp
               </th>
               <th
                 colSpan={3}
-                className="py-3 px-2 text-center font-medium text-black uppercase tracking-wider"
+                className={`py-3 px-2 text-center font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
                 Acceleration (m/s²)
               </th>
               <th
                 colSpan={3}
-                className="py-3 px-2 text-center font-medium text-black uppercase tracking-wider"
+                className={`py-3 px-2 text-center font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
                 Gyroscope (°/s)
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
+                className={`py-3 px-2 text-left font-medium uppercase align-top ${isDark ? "text-white" : "text-black"}`}
               >
                 Heading (°)
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
+                className={`py-3 px-2 text-left font-medium uppercase align-top ${isDark ? "text-white" : "text-black"}`}
               >
                 Direction
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
+                className={`py-3 px-2 text-left font-medium uppercase align-top ${isDark ? "text-white" : "text-black"}`}
               >
                 Notes
               </th>
               <th
                 rowSpan={2}
-                className="py-3 px-2 text-left font-medium text-black uppercase align-top"
+                className={`py-3 px-2 text-left font-medium uppercase align-top ${isDark ? "text-white" : "text-black"}`}
               >
                 Action
               </th>
             </tr>
 
-            <tr className="bg-[#367AF2]/10 border-b border-gray-200">
-              <th className="py-2 px-2 text-center font-medium text-black uppercase">
+            <tr className={`${isDark ? "bg-[#1a3350] border-[#223c5c]" : "bg-[#367AF2]/10 border-gray-200"} border-b`}>
+              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
                 X
               </th>
-              <th className="py-2 px-2 text-center font-medium text-black uppercase">
+              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
                 Y
               </th>
-              <th className="py-2 px-2 text-center font-medium text-black uppercase">
+              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
                 Z
               </th>
-              <th className="py-2 px-2 text-center font-medium text-black uppercase">
+              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
                 X
               </th>
-              <th className="py-2 px-2 text-center font-medium text-black uppercase">
+              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
                 Y
               </th>
-              <th className="py-2 px-2 text-center font-medium text-black uppercase">
+              <th className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}>
                 Z
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-200">
+          <tbody className={isDark ? "divide-[#223c5c]" : "divide-gray-200"}>
             {reports.map((report, index) => (
-              <tr key={report.id} className="hover:bg-gray-50">
+              <tr key={report.id} className={isDark ? "hover:bg-[#1a3350]" : "hover:bg-gray-50"}>
                 <td className="py-3 px-2">{index + 1}</td>
                 <td className="py-3 px-2">
                   {getTimeOnlyWithoutDate(report.timestamp)}
@@ -286,7 +292,11 @@ export default function IMUTable({ reports }: IMUTableProps) {
                   <div className="flex flex-row flex-nowrap items-center space-x-2">
                     <button
                       disabled
-                      className="whitespace-nowrap border border-gray-300 text-gray-600 rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 min-w-[80px]"
+                      className={`whitespace-nowrap border rounded-full px-3 py-2 text-sm min-w-[80px] ${
+                        isDark
+                          ? "border-[#223c5c] text-[#b0b8c1] bg-[#112133]/15 hover:bg-[#1a3350]"
+                          : "border-gray-300 text-gray-600 hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
+                      }`}
                     >
                       <Icon
                         icon="mage:edit-fill"
@@ -296,7 +306,13 @@ export default function IMUTable({ reports }: IMUTableProps) {
                       />
                       Edit
                     </button>
-                    <button className="whitespace-nowrap border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50 min-w-[80px]">
+                    <button
+                      className={`whitespace-nowrap border rounded-full px-3 py-2 text-sm min-w-[80px] ${
+                        isDark
+                          ? "border-[#EB0C0F]/40 text-[#EB0C0F] bg-[#112133]/15 hover:bg-[#1a3350]"
+                          : "border-red-300 text-red-600 hover:bg-red-50"
+                      }`}
+                    >
                       <Icon
                         icon="mingcute:delete-fill"
                         className="inline-block mr-1 align-middle"

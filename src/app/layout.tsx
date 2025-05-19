@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import BottomNavbar from "@/components/BottomNavbar";
-import TopNavbar from "@/components/TopNavbar";
-import { ThemeProvider } from "@/context/ThemeContext";
+import { DarkModeProvider } from "@/context/DarkModeContext";
+import AppWrapper from "@/components/AppWrapper";
+import { ToastProvider } from "@/context/ToastProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -19,17 +19,20 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${poppins.className} antialiased`}>
-        <ThemeProvider>
-          <TopNavbar />
-          <main className="min-h-screen flex flex-col">{children}</main>
-          <BottomNavbar />
-        </ThemeProvider>
+        <DarkModeProvider>
+          <ToastProvider
+            position="bottom-center"
+            toastClassName="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow-lg"
+          >
+            <AppWrapper>{children}</AppWrapper>
+          </ToastProvider>
+        </DarkModeProvider>
       </body>
     </html>
   );
