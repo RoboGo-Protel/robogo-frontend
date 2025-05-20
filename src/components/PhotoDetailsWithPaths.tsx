@@ -191,10 +191,7 @@ export default function PhotoDetailsWithPaths({
 
   const handleDownload = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(
-        `${apiUrl}/reports/gallery/download/${details.id}`
-      );
+      const res = await fetch(`/api/reports/gallery/download/${details.id}`);
       if (!res.ok) {
         throw new Error("Failed to get image download URL");
       }

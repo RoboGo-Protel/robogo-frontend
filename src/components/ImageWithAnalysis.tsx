@@ -56,22 +56,41 @@ function ImageWithAnalysis({ details, isDark }: PhotoDetailsProps) {
   const [loading, setLoading] = useState(false);
   const [obstacle, setObstacle] = useState<null | boolean>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // NEW
 
   const handleAnalyze = async () => {
     setLoading(true);
     setObstacle(null);
+    setError(null); // Reset error
     try {
       const response = await fetch("/api/analyze/obstacle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageUrl: details.src }),
       });
+
+      if (!response.ok) {
+        throw new Error(`Server returned status ${response.status}`);
+      }
+
       const data = await response.json();
+      if (!data?.data) {
+        throw new Error("Invalid response format");
+      }
+
       setObstacle(data.data.obstacle);
       setImageBase64(data.data.image || null);
     } catch (error) {
       console.error("Error analyzing image:", error);
       setObstacle(null);
+      setImageBase64(null);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else if (typeof error === "string") {
+        setError(error);
+      } else {
+        setError("Unknown error occurred");
+      }
     } finally {
       setLoading(false);
     }
@@ -133,7 +152,7 @@ function ImageWithAnalysis({ details, isDark }: PhotoDetailsProps) {
           )}
         </button>
 
-        {obstacle !== null && (
+        {(obstacle !== null || error) && (
           <motion.div
             className="ml-2 flex items-center gap-2"
             initial={{ opacity: 0, scale: 0.8 }}
@@ -142,19 +161,34 @@ function ImageWithAnalysis({ details, isDark }: PhotoDetailsProps) {
           >
             <Icon
               icon={
-                obstacle
-                  ? "line-md:alert-circle-twotone-loop"
-                  : "line-md:circle-to-confirm-circle-twotone-transition"
+                error
+                  ? "line-md:alert-circle"
+                  : obstacle
+                    ? "line-md:alert-circle-twotone-loop"
+                    : "line-md:circle-to-confirm-circle-twotone-transition"
               }
               className={clsx(
                 "text-xl",
-                obstacle ? "text-red-400" : "text-green-400"
+                error
+                  ? "text-yellow-400"
+                  : obstacle
+                    ? "text-red-400"
+                    : "text-green-400"
               )}
             />
             <span
-              className={clsx(obstacle ? "text-red-400" : "text-green-400")}
+              className={clsx(
+                "text-sm",
+                error
+                  ? "text-yellow-400"
+                  : obstacle
+                    ? "text-red-400"
+                    : "text-green-400"
+              )}
             >
-              Obstacle: {obstacle ? "Yes" : "No"}
+              {error
+                ? `Error: ${error}`
+                : `Obstacle: ${obstacle ? "Yes" : "No"}`}
             </span>
           </motion.div>
         )}
