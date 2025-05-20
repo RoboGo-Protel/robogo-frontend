@@ -13,16 +13,25 @@ import { AnimatePresence, motion } from "framer-motion";
 import React from "react";
 import { Icon } from "@iconify/react";
 
-type ToastType = "success" | "error" | "info";
+type ToastType = "success" | "error" | "info" | "loading";
 
 type Toast = {
   id: string;
   message: string;
   type: ToastType;
+  persistent?: boolean;
 };
 
 type ToastContextType = {
   showToast: (message: string, type?: ToastType) => void;
+  promise: <T>(
+    promise: Promise<T>,
+    messages: {
+      loading: string;
+      success: string | ((result: T) => string);
+      error: string | ((err: unknown) => string);
+    }
+  ) => Promise<T>;
 };
 
 type ToastProviderProps = {
@@ -77,6 +86,65 @@ export function ToastProvider({
     }, 3000);
   }, []);
 
+  const updateToast = useCallback((id: string, updatedData: Partial<Toast>) => {
+    setToasts((prev) =>
+      prev.map((toast) =>
+        toast.id === id ? { ...toast, ...updatedData } : toast
+      )
+    );
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const toastPromise = useCallback(
+    async <T,>(
+      promise: Promise<T>,
+      {
+        loading,
+        success,
+        error,
+      }: {
+        loading: string;
+        success: string | ((result: T) => string);
+        error: string | ((err: unknown) => string);
+      }
+    ): Promise<T> => {
+      const id = uuidv4();
+
+      // Show loading toast
+      setToasts((prev) => [
+        ...prev,
+        { id, message: loading, type: "loading", persistent: true },
+      ]);
+
+      try {
+        const result = await promise;
+
+        // Update to success
+        updateToast(id, {
+          message: typeof success === "function" ? success(result) : success,
+          type: "success",
+          persistent: false,
+        });
+
+        setTimeout(() => removeToast(id), 3000);
+        return result;
+      } catch (err) {
+        updateToast(id, {
+          message: typeof error === "function" ? error(err) : error,
+          type: "error",
+          persistent: false,
+        });
+
+        setTimeout(() => removeToast(id), 3000);
+        throw err;
+      }
+    },
+    [updateToast, removeToast]
+  );
+
   const positionClasses = {
     "top-right": "top-4 right-4",
     "top-left": "top-4 left-4",
@@ -90,12 +158,13 @@ export function ToastProvider({
   const defaultClass = (type: ToastType) => {
     switch (type) {
       case "success":
-        return "bg-green-600 text-white";
+        return "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow-lg";
       case "error":
-        return "bg-red-600 text-white";
+        return "bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white";
       case "info":
-      default:
         return "bg-blue-600 text-white";
+      case "loading":
+        return "bg-gray-700 text-white";
     }
   };
 
@@ -103,15 +172,16 @@ export function ToastProvider({
     success: "line-md:confirm-circle",
     error: "line-md:alert-circle",
     info: "line-md:info-circle",
+    loading: "line-md:loading-loop",
   };
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={{ showToast, promise: toastPromise }}>
       {children}
       {mounted &&
         createPortal(
           <div
-            className={`fixed z-50 w-full flex flex-col items-center space-y-2 ${positionClasses[position]}`}
+            className={`fixed z-[99999] w-full flex flex-col items-center space-y-2 ${positionClasses[position]}`}
             style={
               (position === "bottom-center" ||
                 position === "bottom-left" ||
@@ -131,12 +201,17 @@ export function ToastProvider({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.3 }}
-                  className={`w-fit mx-4 md:mx-0 px-4 py-3 rounded-xl shadow-lg flex items-start gap-3 break-words ${
+                  className={`w-fit mx-4 md:mx-0 px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 break-words ${
                     toastClassName || defaultClass(toast.type)
                   }`}
                 >
                   <div className="pt-0.5 shrink-0">
-                    <Icon icon={iconMap[toast.type]} width={20} height={20} />
+                    <Icon
+                      icon={iconMap[toast.type]}
+                      width={20}
+                      height={20}
+                      className={toast.type === "loading" ? "animate-spin" : ""}
+                    />
                   </div>
                   <span className="text-sm leading-snug">{toast.message}</span>
                 </motion.div>

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
+import ClipLoader from "react-spinners/ClipLoader";
 import { useDarkMode } from "@/context/DarkModeContext";
 import clsx from "clsx";
 
@@ -33,13 +32,11 @@ export default function ClockWeather() {
     icon: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  // const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setClock(getCurrentTime());
     }, 1000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -62,7 +59,6 @@ export default function ClockWeather() {
       const provinsi = adminInfo.find(
         (a: { adminLevel: number }) => a.adminLevel === 4
       )?.name;
-
       const locationName = [kecamatan, provinsi].filter(Boolean).join(", ");
 
       try {
@@ -74,13 +70,6 @@ export default function ClockWeather() {
           location: locationName,
           icon: getWeatherIcon(data.weather[0].main),
         });
-        // const updatedTime = new Date();
-        // setLastUpdated(
-        //   updatedTime.toLocaleTimeString("id-ID", {
-        //     hour: "2-digit",
-        //     minute: "2-digit",
-        //   })
-        // );
         setLoading(false);
       } catch (err) {
         console.error("Gagal ambil data cuaca:", err);
@@ -112,6 +101,8 @@ export default function ClockWeather() {
     }
   };
 
+  const loaderColor = isDark ? "#ffffff" : "#f1f1f1";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -123,78 +114,62 @@ export default function ClockWeather() {
         {/* Time Card */}
         <div
           className={clsx(
-            "shadow-md rounded-2xl p-6 flex flex-col justify-center text-center md:text-left w-full",
+            "shadow-md rounded-2xl p-6 flex justify-center items-center text-center md:text-left w-full min-h-[120px]",
             isDark
               ? "bg-gradient-to-br from-[#104f61] to-[#092047]"
               : "bg-gradient-to-br from-[#28a7ca] to-[#2865ce]"
           )}
         >
           {loading ? (
-            <>
-              <Skeleton width={140} height={36} />
-              <Skeleton width={180} height={20} className="mt-2" />
-            </>
+            <ClipLoader size={35} color={loaderColor} />
           ) : (
-            <>
-              <p
-                className={clsx(
-                  "text-4xl font-semibold tabular-nums mb-2 text-white"
-                )}
-              >
+            <div className="flex flex-col justify-center">
+              <p className="text-4xl font-semibold tabular-nums mb-2 text-white">
                 {clock.time}
               </p>
-
-              <p className={clsx("text-md text-white")}>{clock.date}</p>
-            </>
+              <p className="text-md text-white">{clock.date}</p>
+            </div>
           )}
         </div>
 
         {/* Weather Card */}
         <div
           className={clsx(
-            "shadow-md rounded-2xl p-6 flex flex-row md:flex-col justify-between md:justify-start items-center md:items-start w-full",
+            "shadow-md rounded-2xl p-6 flex justify-center items-center w-full min-h-[120px]",
             isDark
               ? "bg-gradient-to-br from-[#1d7c96] to-[#0f2d61]"
               : "bg-gradient-to-br from-[#28a7ca] to-[#2865ce]"
           )}
         >
           {loading || !weather ? (
-            <>
-              <Skeleton width={130} height={24} />
-              <Skeleton width={110} height={18} className="mt-2" />
-              <Skeleton width={80} height={42} className="mt-4" />
-            </>
+            <ClipLoader size={35} color={loaderColor} />
           ) : (
-            <>
-              <div className="flex md:flex-col md:items-start items-center justify-between gap-4 w-full">
-                <div className="flex flex-col items-start">
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      icon={weather.icon}
-                      width={32}
-                      height={32}
-                      className="text-white"
-                    />
-                    <p className={clsx("text-xl font-medium text-white")}>
-                      {weather.condition}
-                    </p>
-                  </div>
-                  <p
-                    className={clsx(
-                      "text-sm mt-1",
-                      isDark ? "text-gray-400" : "text-gray-200"
-                    )}
-                  >
-                    {weather.location}
+            <div className="flex md:flex-col md:items-start items-center justify-between gap-4 w-full">
+              <div className="flex flex-col items-start">
+                <div className="flex items-center gap-3">
+                  <Icon
+                    icon={weather.icon}
+                    width={32}
+                    height={32}
+                    className="text-white"
+                  />
+                  <p className="text-xl font-medium text-white">
+                    {weather.condition}
                   </p>
                 </div>
                 <p
-                  className={clsx("text-5xl font-extrabold md:mt-4 text-white")}
+                  className={clsx(
+                    "text-sm mt-1",
+                    isDark ? "text-gray-400" : "text-gray-200"
+                  )}
                 >
-                  {weather.temperature}°C
+                  {weather.location}
                 </p>
               </div>
-            </>
+              <p className="text-5xl font-extrabold md:mt-4 text-white">
+                {weather.temperature}°C
+              </p>
+            </div>
           )}
         </div>
       </div>

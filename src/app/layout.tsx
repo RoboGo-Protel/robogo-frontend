@@ -26,10 +26,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${poppins.className} antialiased`}>
         <DarkModeProvider>
-          <ToastProvider
-            position="bottom-center"
-            toastClassName="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow-lg"
-          >
+          <ToastProvider position="bottom-center">
             <AppWrapper>{children}</AppWrapper>
           </ToastProvider>
         </DarkModeProvider>
