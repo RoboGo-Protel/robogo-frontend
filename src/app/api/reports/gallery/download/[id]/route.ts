@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  const { id } = params;
+  const { id } = await context.params;
   try {
     const res = await fetch(`${apiUrl}/reports/gallery/download/${id}`);
 

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  const { id } = params;
+  const { id } = await context.params;
 
   try {
     const res = await fetch(`${apiUrl}/reports/gallery/${id}`, {
