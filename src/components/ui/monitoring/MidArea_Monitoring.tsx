@@ -7,6 +7,7 @@ import DirectionalControl from "@/components/DirectionalControl";
 import CompassHUD from "@/components/CompassHUD";
 import BoatOrientationHUD from "@/components/OrientationHUD";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { useToast } from "@/context/ToastProvider";
 
 interface Metadata {
   ultrasonic: number;
@@ -66,6 +67,7 @@ export default function MidArea_Monitoring({
   const [recordingState, setRecordingState] = useState<"idle" | "recording">(
     "idle"
   );
+  const { promise } = useToast();
   const { isDark } = useDarkMode();
   const [flashOn, setFlashOn] = useState(false);
   const [fps] = useState(0);
@@ -98,6 +100,56 @@ export default function MidArea_Monitoring({
     } catch (err) {
       console.error("Recording error:", err);
       alert("❌ Error saat menghubungi server.");
+    }
+  };
+
+  const handleStartMonitoring = async () => {
+    try {
+      await promise(
+        fetch("/api/monitoring/realtime/start-monitoring", {
+          method: "GET",
+        }).then((res) => {
+          if (!res.ok) {
+            return res.text().then((text) => {
+              throw new Error(
+                text || res.statusText || "Failed to start monitoring"
+              );
+            });
+          }
+        }),
+        {
+          loading: "Starting monitoring...",
+          success: "Monitoring started successfully!",
+          error: "Failed to start monitoring. Please try again.",
+        }
+      );
+    } catch (error) {
+      console.error("Error starting monitoring:", error);
+    }
+  };
+
+  const handleStopMonitoring = async () => {
+    try {
+      await promise(
+        fetch("/api/monitoring/realtime/stop-monitoring", {
+          method: "GET",
+        }).then((res) => {
+          if (!res.ok) {
+            return res.text().then((text) => {
+              throw new Error(
+                text || res.statusText || "Failed to stop monitoring"
+              );
+            });
+          }
+        }),
+        {
+          loading: "Stopping monitoring...",
+          success: "Monitoring stopped successfully!",
+          error: "Failed to stop monitoring. Please try again.",
+        }
+      );
+    } catch (error) {
+      console.error("Error stopping monitoring:", error);
     }
   };
 
@@ -254,78 +306,76 @@ export default function MidArea_Monitoring({
       {dataMonitoring && dataMonitoring.length > 0 ? (
         <div className="flex flex-col gap-4 items-stretch w-full h-fit">
           <StatCardList
-        variant="distance"
-        infoItems={
-          dataMonitoring[0]?.metadata?.distances
-            ? [
-            {
-              title: "Distance Total",
-              value:
-            latestData.metadata.distances.distTotal != null
-              ? `${latestData.metadata.distances.distTotal.toFixed(2)} cm`
-              : "-",
-            },
-            {
-              title: "Distance X",
-              value:
-            latestData.metadata.distances.distX != null
-              ? `${latestData.metadata.distances.distX.toFixed(2)} cm`
-              : "-",
-            },
-            {
-              title: "Distance Y",
-              value:
-            latestData.metadata.distances.distY != null
-              ? `${latestData.metadata.distances.distY.toFixed(2)} cm`
-              : "-",
-            },
-          ]
-            : []
-        }
+            variant="distance"
+            infoItems={
+              dataMonitoring[0]?.metadata?.distances
+                ? [
+                    {
+                      title: "Distance Total",
+                      value:
+                        latestData.metadata.distances.distTotal != null
+                          ? `${latestData.metadata.distances.distTotal.toFixed(2)} cm`
+                          : "-",
+                    },
+                    {
+                      title: "Distance X",
+                      value:
+                        latestData.metadata.distances.distX != null
+                          ? `${latestData.metadata.distances.distX.toFixed(2)} cm`
+                          : "-",
+                    },
+                    {
+                      title: "Distance Y",
+                      value:
+                        latestData.metadata.distances.distY != null
+                          ? `${latestData.metadata.distances.distY.toFixed(2)} cm`
+                          : "-",
+                    },
+                  ]
+                : []
+            }
           />
           <StatCardList
-        variant="velocity"
-        infoItems={
-          dataMonitoring[0]?.metadata?.velocity
-            ? [
-            {
-              title: "Velocity Total",
-              value:
-            latestData.metadata.velocity.velTotal != null
-              ? `${latestData.metadata.velocity.velTotal.toFixed(2)} m/s`
-              : latestData.metadata.velocity.velocity != null
-                ? `${latestData.metadata.velocity.velocity.toFixed(2)} m/s`
-                : "-",
-            },
-            {
-              title: "Velocity X",
-              value:
-            latestData.metadata.velocity.velX != null
-              ? `${latestData.metadata.velocity.velX.toFixed(2)} m/s`
-              : latestData.metadata.velocity.velocityX != null
-                ? `${latestData.metadata.velocity.velocityX.toFixed(2)} m/s`
-                : "-",
-            },
-            {
-              title: "Velocity Y",
-              value:
-            latestData.metadata.velocity.velY != null
-              ? `${latestData.metadata.velocity.velY.toFixed(2)} m/s`
-              : latestData.metadata.velocity.velocityY != null
-                ? `${latestData.metadata.velocity.velocityY.toFixed(2)} m/s`
-                : "-",
-            },
-          ]
-            : []
-        }
+            variant="velocity"
+            infoItems={
+              dataMonitoring[0]?.metadata?.velocity
+                ? [
+                    {
+                      title: "Velocity Total",
+                      value:
+                        latestData.metadata.velocity.velTotal != null
+                          ? `${latestData.metadata.velocity.velTotal.toFixed(2)} m/s`
+                          : latestData.metadata.velocity.velocity != null
+                            ? `${latestData.metadata.velocity.velocity.toFixed(2)} m/s`
+                            : "-",
+                    },
+                    {
+                      title: "Velocity X",
+                      value:
+                        latestData.metadata.velocity.velX != null
+                          ? `${latestData.metadata.velocity.velX.toFixed(2)} m/s`
+                          : latestData.metadata.velocity.velocityX != null
+                            ? `${latestData.metadata.velocity.velocityX.toFixed(2)} m/s`
+                            : "-",
+                    },
+                    {
+                      title: "Velocity Y",
+                      value:
+                        latestData.metadata.velocity.velY != null
+                          ? `${latestData.metadata.velocity.velY.toFixed(2)} m/s`
+                          : latestData.metadata.velocity.velocityY != null
+                            ? `${latestData.metadata.velocity.velocityY.toFixed(2)} m/s`
+                            : "-",
+                    },
+                  ]
+                : []
+            }
           />
         </div>
       ) : (
         <div
           className={`flex items-center justify-center w-full h-32 rounded-xl font-semibold text-lg ${
-            isDark
-              ? "bg-[#113541] text-gray-300"
-              : "bg-gray-100 text-gray-500"
+            isDark ? "bg-[#113541] text-gray-300" : "bg-gray-100 text-gray-500"
           }`}
         >
           Start monitoring to show the data
@@ -347,25 +397,21 @@ export default function MidArea_Monitoring({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-6 gap-2.5 w-full h-fit">
             <button
-              onClick={() => console.log("Start Monitoring")}
+              onClick={handleStartMonitoring}
               className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3`}
             >
               <Icon icon="mingcute:play-fill" width={20} height={20} />
-              <p
-                className={`font-semibold text-sm text-white`}
-              >
+              <p className={`font-semibold text-sm text-white`}>
                 Start Monitoring
               </p>
             </button>
 
             <button
-              onClick={() => console.log("Stop Monitoring")}
+              onClick={handleStopMonitoring}
               className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3`}
             >
               <Icon icon="mingcute:stop-fill" width={20} height={20} />
-              <p
-                className={`font-semibold text-sm text-white`}
-              >
+              <p className={`font-semibold text-sm text-white`}>
                 Stop Monitoring
               </p>
             </button>
