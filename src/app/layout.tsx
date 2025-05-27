@@ -4,6 +4,7 @@ import "./globals.css";
 import { DarkModeProvider } from "@/context/DarkModeContext";
 import AppWrapper from "@/components/AppWrapper";
 import { ToastProvider } from "@/context/ToastProvider";
+import { Providers } from "./provider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -25,11 +26,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${poppins.className} antialiased`}>
-        <DarkModeProvider>
-          <ToastProvider position="bottom-center">
-            <AppWrapper>{children}</AppWrapper>
-          </ToastProvider>
-        </DarkModeProvider>
+        <Providers>
+          <DarkModeProvider>
+            <ToastProvider position="bottom-center">
+              <AppWrapper>{children}</AppWrapper>
+            </ToastProvider>
+          </DarkModeProvider>
+        </Providers>
       </body>
     </html>
   );

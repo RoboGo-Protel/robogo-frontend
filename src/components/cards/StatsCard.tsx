@@ -1,6 +1,6 @@
 import React from "react";
 import { Icon } from "@iconify/react";
-import { useDarkMode } from "@/context/DarkModeContext"; // ✅ Import dark mode context
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface InfoItem {
   title: string;
@@ -28,11 +28,11 @@ const VARIANT_MAP = {
 };
 
 const StatCardList: React.FC<StatCardListProps> = ({ infoItems, variant }) => {
-  const { isDark } = useDarkMode(); // ✅ Ambil status dark mode
+  const { isDark } = useDarkMode();
   const theme = VARIANT_MAP[variant];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-4 w-full h-fit">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full h-fit">
       {infoItems.map((item, index) => (
         <div
           key={index}
@@ -54,14 +54,14 @@ const StatCardList: React.FC<StatCardListProps> = ({ infoItems, variant }) => {
           >
             <Icon
               icon={theme.icon}
-              width={14}
-              height={14}
+              width={24}
+              height={24}
               className="text-white"
             />
           </div>
           <div className="flex flex-col items-start justify-center">
             <p
-              className={`text-[13px] font-semibold ${isDark ? "text-white" : "text-black"}`}
+              className={`text-[16px] font-semibold ${isDark ? "text-white" : "text-black"}`}
             >
               {item.value}
             </p>

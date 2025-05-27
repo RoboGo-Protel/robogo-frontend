@@ -16,6 +16,7 @@ interface ReportData {
   obstacles?: boolean;
   fileName?: string;
   dateTime?: string;
+  createdAt?: string;
   metadata: Metadata;
 }
 
@@ -55,6 +56,9 @@ interface Metadata {
     posX?: number;
     posY?: number;
   };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
 export default function UltrasonicSensorTable({
@@ -65,10 +69,10 @@ export default function UltrasonicSensorTable({
     id: string;
     src: string;
     alt: string;
-    obstacles: boolean;
+    obstacle: boolean;
     date: string;
     fileName: string;
-    dateTime: string;
+    createdAt: string;
     metadata: Metadata;
   }>(null);
 
@@ -207,10 +211,10 @@ export default function UltrasonicSensorTable({
                           id: report.id.toString(),
                           src: report.image || "",
                           alt: report.alt || "Image",
-                          obstacles: report.obstacles || false,
+                          obstacle: report.obstacles || false,
                           date: report.dateTime || "",
                           fileName: report.fileName || "",
-                          dateTime: report.dateTime || "",
+                          createdAt: report.createdAt || "",
                           metadata: report.metadata,
                         })
                       }

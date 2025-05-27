@@ -1,9 +1,12 @@
 import React from "react";
-import { useDarkMode } from "@/context/DarkModeContext"; // ✅ Import
+import { useDarkMode } from "@/context/DarkModeContext";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 interface SensorData {
   timestamp: string;
   value: number;
+  status?: "normal" | "warning" | "danger";
+  direction?: string;
 }
 
 interface TableProps {
@@ -11,17 +14,52 @@ interface TableProps {
   sensorModel?: string;
   secondHeaderValue?: string;
   data: SensorData[];
+  reverseOrder?: boolean;
   className?: string;
 }
+
+const categoryStatusAlert = (ultrasonic: number | string) => {
+  if (typeof ultrasonic === "number") {
+    if (ultrasonic < 10) {
+      return "danger";
+    } else if (ultrasonic >= 10 && ultrasonic <= 20) {
+      return "warning";
+    } else {
+      return "normal";
+    }
+  }
+  return null;
+};
+
+const statusTheme = {
+  normal: {
+    borderColor: "#3BD5FF",
+    fromColor: "#3BD5FF",
+    toColor: "#367AF2",
+  },
+  warning: {
+    borderColor: "#facc15",
+    fromColor: "#FF9800",
+    toColor: "#FFC107",
+  },
+  danger: {
+    borderColor: "#ef4444",
+    fromColor: "#FF9799",
+    toColor: "#EB0C0F",
+  },
+};
 
 const Table: React.FC<TableProps> = ({
   sensorTitle = "Ultrasonic Sensor",
   sensorModel,
-  secondHeaderValue = "Distance (m)",
+  secondHeaderValue = "Distance (cm)",
   data,
+  reverseOrder = false,
   className = "",
 }) => {
-  const { isDark } = useDarkMode(); // ✅ Gunakan dark mode context
+  const { isDark } = useDarkMode();
+
+  const displayData = reverseOrder ? [...data].reverse() : data;
 
   return (
     <div
@@ -29,7 +67,6 @@ const Table: React.FC<TableProps> = ({
         isDark ? "border-neutral-700" : "border-gray-200"
       } ${className}`}
     >
-      {/* Header */}
       <div className="flex justify-center items-center gap-1 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-4 py-3 text-white text-sm font-semibold rounded-t-2xl">
         {sensorTitle}
         {sensorModel && (
@@ -39,7 +76,6 @@ const Table: React.FC<TableProps> = ({
         )}
       </div>
 
-      {/* Table */}
       <div className={isDark ? "bg-neutral-900" : "bg-white"}>
         <table
           className={`w-full text-sm text-left ${
@@ -65,12 +101,86 @@ const Table: React.FC<TableProps> = ({
                 : "divide-y divide-gray-200"
             }
           >
-            {data.map((item, index) => (
-              <tr key={index}>
-                <td className="px-4 py-2">{item.timestamp}</td>
-                <td className="px-4 py-2">{item.value.toFixed(2)}</td>
-              </tr>
-            ))}
+            {displayData.map((item, index) => {
+              const status =
+                sensorTitle === "Ultrasonic Sensor"
+                  ? categoryStatusAlert(item.value)
+                  : null;
+
+              return (
+                <tr
+                  key={index}
+                  className={
+                    index === 0
+                      ? "bg-gradient-to-br from-[#3BD5FF]/20 to-[#367AF2]/20 font-semibold"
+                      : ""
+                  }
+                >
+                  <td className="px-4 py-2">{item.timestamp}</td>
+                  <td className="px-4 py-2">
+                    {sensorTitle === "Ultrasonic Sensor" ? (
+                      <div className="flex items-center gap-2">
+                        {item.value.toFixed(2)}
+                        {status === "danger" ? (
+                          <Icon
+                            icon="mdi:alert-circle"
+                            color="#ef4444"
+                            fontSize={20}
+                          />
+                        ) : (
+                          <span
+                            className="w-3 h-3 rounded-full"
+                            style={{
+                              background: status
+                                ? `linear-gradient(135deg, ${
+                                    statusTheme[status].fromColor
+                                  }, ${statusTheme[status].toColor})`
+                                : "#ccc",
+                            }}
+                            title={
+                              status
+                                ? status.charAt(0).toUpperCase() +
+                                  status.slice(1)
+                                : "Unknown"
+                            }
+                          ></span>
+                        )}
+                      </div>
+                    ) : sensorTitle === "IMU Heading Direction" ? (
+                      <div className="flex items-center gap-2">
+                        {item.value.toFixed(2)}°
+                        <Icon
+                          icon="material-symbols:north-rounded"
+                          className="text-[#367AF2] shrink-0"
+                          style={{
+                            transform: `rotate(${((item.value % 360) + 360) % 360}deg)`,
+                          }}
+                          width={20}
+                          height={20}
+                        />
+                        {item.direction && (
+                          <span className="text-xs text-gray-500">
+                            {item.direction}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      item.value.toFixed(2)
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+
+            {/* Render baris kosong jika kurang dari 5 */}
+            {Array.from({ length: Math.max(0, 5 - displayData.length) }).map(
+              (_, i) => (
+                <tr key={`empty-${i}`}>
+                  <td className="px-4 py-2">&nbsp;</td>
+                  <td className="px-4 py-2">&nbsp;</td>
+                </tr>
+              )
+            )}
           </tbody>
         </table>
       </div>

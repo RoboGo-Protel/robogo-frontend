@@ -39,6 +39,9 @@ interface Metadata {
     posX?: number;
     posY?: number;
   };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
 export default function LeftArea_Home() {
@@ -48,10 +51,10 @@ export default function LeftArea_Home() {
     id: string;
     src: string;
     alt: string;
-    obstacles: boolean;
+    obstacle: boolean;
     date: string;
     fileName: string;
-    dateTime: string;
+    createdAt: string;
     metadata: Metadata;
   }>(null);
 

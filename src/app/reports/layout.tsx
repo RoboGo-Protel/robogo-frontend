@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "../globals.css";
+import ProtectedLayout from "@/components/layout/ProtectedLayout";
 // import ReportsNavbar from "@/components/ReportsNavbar";
 
 export const metadata: Metadata = {
@@ -41,8 +42,7 @@ export default function ReportsLayout({
 }) {
   return (
     <>
-      {/* <ReportsNavbar /> */}
-      {children}
+      <ProtectedLayout>{children}</ProtectedLayout>
     </>
   );
 }

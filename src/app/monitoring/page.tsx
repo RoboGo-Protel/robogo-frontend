@@ -1,3 +1,4 @@
+import ProtectedLayout from "@/components/layout/ProtectedLayout";
 import Monitoring from "./Monitoring";
 import type { Metadata } from "next";
 
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function MonitoringPage() {
-  return <Monitoring />;
+  return (
+    <ProtectedLayout>
+      <Monitoring />
+    </ProtectedLayout>
+  );
 }

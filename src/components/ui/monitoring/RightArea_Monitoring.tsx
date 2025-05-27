@@ -3,75 +3,162 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react";
 import MonitoringInfo from "@/components/cards/MonitoringInfoCard";
-import { monitoringItems } from "@/utils/monitoring";
 import { AnimatePresence, motion } from "framer-motion";
 import CurrentPosition from "@/components/cards/CurrentPositionCard";
 import Table from "@/components/Table";
-import { useDarkMode } from "@/context/DarkModeContext"; // ✅ Import dark mode context
+import { useDarkMode } from "@/context/DarkModeContext";
 
-type SensorKey = "ultrasonic" | "battery" | "gps" | "obstacle";
+type SensorKey = "ultrasonic" | "gps" | "obstacle";
 
-const sensorConfigs: Record<
-  SensorKey,
-  {
-    title: string;
-    model?: string;
-    secondHeaderValue: string;
-    data: { timestamp: string; value: number }[];
-  }
-> = {
-  ultrasonic: {
-    title: "Ultrasonic Sensor",
-    model: "JSN-SR04T",
-    secondHeaderValue: "Distance (m)",
-    data: [
-      { timestamp: "09:41:45", value: 1.1 },
-      { timestamp: "09:41:40", value: 0.95 },
-      { timestamp: "09:41:35", value: 0.39 },
-      { timestamp: "09:41:30", value: 0.4 },
-      { timestamp: "09:41:30", value: 0.4 },
-    ],
-  },
-  battery: {
-    title: "Battery Status",
-    model: "12V Li-ion",
-    secondHeaderValue: "Voltage (V)",
-    data: [
-      { timestamp: "09:41:45", value: 25 },
-      { timestamp: "09:41:40", value: 24 },
-      { timestamp: "09:41:35", value: 23 },
-      { timestamp: "09:41:30", value: 22 },
-      { timestamp: "09:41:25", value: 21 },
-    ],
-  },
-  gps: {
-    title: "IMU Heading Direction",
-    model: "MPU-9250",
-    secondHeaderValue: "Heading (°)",
-    data: [
-      { timestamp: "09:41:45", value: 118 },
-      { timestamp: "09:41:40", value: 120 },
-      { timestamp: "09:41:35", value: 122 },
-      { timestamp: "09:41:30", value: 124 },
-      { timestamp: "09:41:25", value: 126 },
-    ],
-  },
-  obstacle: {
-    title: "Obstacle Detection",
-    secondHeaderValue: "Distance (m)",
-    data: [
-      { timestamp: "09:41:45", value: 0.48 },
-      { timestamp: "09:41:40", value: 0.5 },
-      { timestamp: "09:41:35", value: 0.52 },
-      { timestamp: "09:41:30", value: 0.55 },
-      { timestamp: "09:41:25", value: 0.58 },
-    ],
-  },
-};
+interface Metadata {
+  ultrasonic: number;
+  heading: number;
+  direction?: string;
+  accelerationMagnitude?: number;
+  rotationRate?: number;
+  distanceTraveled?: number;
+  linearAcceleration?: number;
+  distances: {
+    distTotal: number;
+    distX: number;
+    distY: number;
+  };
+  velocity: {
+    velocity?: number;
+    velocityX?: number;
+    velocityY?: number;
+    velTotal?: number;
+    velX?: number;
+    velY?: number;
+  };
+  magnetometer?: {
+    magnetometerX: number;
+    magnetometerY: number;
+    magnetometerZ: number;
+  };
+  position: {
+    positionX?: number;
+    positionY?: number;
+    posX?: number;
+    posY?: number;
+  };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
+}
 
-export default function RightArea_Monitoring() {
+interface Data {
+  id: string;
+  src: string;
+  alt: string;
+  obstacle: boolean;
+  date: string;
+  fileName: string;
+  createdAt: string;
+  metadata: Metadata;
+}
+
+interface MidAreaMonitoringProps {
+  dataMonitoring: Data[];
+}
+
+export default function RightArea_Monitoring({
+  dataMonitoring,
+}: MidAreaMonitoringProps) {
   const [selectedKey, setSelectedKey] = useState<SensorKey>("ultrasonic");
-  const { isDark } = useDarkMode(); // ✅ Gunakan dark mode context
+  const { isDark } = useDarkMode();
+
+  const formatWIBTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+    const wib = new Date(utc + 7 * 60 * 60000);
+    const hours = wib.getHours().toString().padStart(2, "0");
+    const minutes = wib.getMinutes().toString().padStart(2, "0");
+    const seconds = wib.getSeconds().toString().padStart(2, "0");
+    return `${hours}:${minutes}:${seconds} WIB`;
+  };
+
+  const sensorConfigs: Record<
+    SensorKey,
+    {
+      title: string;
+      model?: string;
+      secondHeaderValue: string;
+      data: { timestamp: string; value: number; direction?: string }[];
+    }
+  > = {
+    ultrasonic: {
+      title: "Ultrasonic Sensor",
+      model: "JSN-SR04T",
+      secondHeaderValue: "Distance (cm)",
+      data: dataMonitoring.slice(-5).map((d) => ({
+        timestamp: formatWIBTime(d.createdAt),
+        value: d.metadata.ultrasonic,
+      })),
+    },
+    gps: {
+      title: "IMU Heading Direction",
+      model: "MPU-9250",
+      secondHeaderValue: "Heading (°)",
+      data: dataMonitoring.slice(-5).map((d) => ({
+        timestamp: formatWIBTime(d.createdAt),
+        value: d.metadata.heading,
+        direction: d.metadata.direction,
+      })),
+    },
+    obstacle: {
+      title: "Obstacle Detection",
+      secondHeaderValue: "Obstacle",
+      data: dataMonitoring.slice(-5).map((d) => ({
+        timestamp: formatWIBTime(d.createdAt),
+        value: d.obstacle ? 1 : 0,
+      })),
+    },
+  };
+
+  const latest = dataMonitoring.at(-1);
+
+  type InfoItem = {
+    icon: string;
+    status: "normal" | "warning" | "danger";
+    title: string;
+    value: string;
+    realValue?: number;
+  };
+
+  const categoryStatusAlert = (ultrasonic: number | string) => {
+    if (typeof ultrasonic === "number") {
+      if (ultrasonic < 10) {
+        return "danger";
+      } else if (ultrasonic >= 10 && ultrasonic <= 20) {
+        return "warning";
+      } else {
+        return "normal";
+      }
+    }
+    return null;
+  };
+
+  const monitoringItems: (InfoItem & { key: SensorKey })[] = [
+    {
+      key: "ultrasonic",
+      icon: "mdi:proximity-sensor",
+      status:
+        (latest && categoryStatusAlert(latest.metadata.ultrasonic)) ?? "normal",
+      title: "Ultrasonic Reading",
+      value: latest ? `${latest.metadata.ultrasonic.toFixed(2)} cm` : "0 cm",
+    },
+    {
+      key: "gps",
+      icon: "fa6-solid:compass",
+      status: "normal",
+      title: "IMU Heading Direction",
+      value: latest
+        ? `${latest.metadata.heading.toFixed(2)}° ${latest.metadata.direction || ""}`
+        : "0° North",
+      realValue: latest ? latest.metadata.heading : 0,
+    },
+  ];
 
   const handleSelect = (key: SensorKey) => {
     setSelectedKey(key);
@@ -121,13 +208,14 @@ export default function RightArea_Monitoring() {
                 sensorTitle={sensorConfigs[selectedKey].title}
                 sensorModel={sensorConfigs[selectedKey].model}
                 secondHeaderValue={sensorConfigs[selectedKey].secondHeaderValue}
+                reverseOrder
               />
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
 
-      <CurrentPosition />
+      <CurrentPosition dataMonitoring={dataMonitoring} />
     </div>
   );
 }

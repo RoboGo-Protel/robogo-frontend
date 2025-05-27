@@ -1,16 +1,68 @@
 /* eslint-disable @next/next/no-img-element */
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { distance } from "@/utils/distance";
 import StatCardList from "@/components/cards/StatsCard";
-import { velocity } from "@/utils/velocity";
 import DirectionalControl from "@/components/DirectionalControl";
 import CompassHUD from "@/components/CompassHUD";
 import BoatOrientationHUD from "@/components/OrientationHUD";
 import { useDarkMode } from "@/context/DarkModeContext";
 
-export default function MidArea_Monitoring() {
+interface Metadata {
+  ultrasonic: number;
+  heading: number;
+  direction?: string;
+  accelerationMagnitude?: number;
+  rotationRate?: number;
+  distanceTraveled?: number;
+  linearAcceleration?: number;
+  distances: {
+    distTotal: number;
+    distX: number;
+    distY: number;
+  };
+  velocity: {
+    velocity?: number;
+    velocityX?: number;
+    velocityY?: number;
+    velTotal?: number;
+    velX?: number;
+    velY?: number;
+  };
+  magnetometer?: {
+    magnetometerX: number;
+    magnetometerY: number;
+    magnetometerZ: number;
+  };
+  position: {
+    positionX?: number;
+    positionY?: number;
+    posX?: number;
+    posY?: number;
+  };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
+}
+
+interface Data {
+  id: string;
+  src: string;
+  alt: string;
+  obstacle: boolean;
+  date: string;
+  fileName: string;
+  createdAt: string;
+  metadata: Metadata;
+}
+
+interface MidAreaMonitoringProps {
+  dataMonitoring: Data[];
+}
+
+export default function MidArea_Monitoring({
+  dataMonitoring,
+}: MidAreaMonitoringProps) {
   const [recordingState, setRecordingState] = useState<"idle" | "recording">(
     "idle"
   );
@@ -20,15 +72,7 @@ export default function MidArea_Monitoring() {
   const [resolution] = useState({ width: 0, height: 0 });
   const [deviceCamera] = useState("None");
   const [isStreamActive] = useState(false);
-  const [imuHeading, setImuHeading] = useState(380);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setImuHeading((prev) => (prev + 1) % 360);
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, []);
+  const latestData = dataMonitoring[dataMonitoring.length - 1];
 
   const handleRecordClick = async () => {
     try {
@@ -58,11 +102,11 @@ export default function MidArea_Monitoring() {
   };
 
   const listButtons = [
-    {
-      icon: "ion:game-controller",
-      text: "Connect with Gamepad",
-      onClick: () => {},
-    },
+    // {
+    //   icon: "ion:game-controller",
+    //   text: "Connect Gamepad",
+    //   onClick: () => {},
+    // },
     {
       icon:
         recordingState === "idle"
@@ -93,6 +137,14 @@ export default function MidArea_Monitoring() {
     },
   ];
 
+  // if (!dataMonitoring || dataMonitoring.length === 0) {
+  //   return (
+  //     <div className="p-4 text-center text-red-500 font-semibold">
+  //       No monitoring data available.
+  //     </div>
+  //   );
+  // }
+
   return (
     <div
       className={`flex flex-col items-start justify-start h-full gap-4 rounded-xl p-4 md:p-5 w-full border-2 ${
@@ -116,9 +168,11 @@ export default function MidArea_Monitoring() {
                   : "bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 border-[#3BD5FF]/20"
               }`}
             >
-              <CompassHUD heading={imuHeading} />
+              <CompassHUD heading={dataMonitoring[0]?.metadata?.heading ?? 0} />
               <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-                <BoatOrientationHUD roll={0} />
+                <BoatOrientationHUD
+                  roll={dataMonitoring[0]?.metadata?.roll ?? 0}
+                />
               </div>
               <div className="absolute bottom-0 px-4 py-2.5 flex flex-row items-center justify-between w-full z-10">
                 <AnimatePresence mode="wait">
@@ -163,7 +217,8 @@ export default function MidArea_Monitoring() {
               </div>
 
               <img
-                src="http://localhost:4000/api/v1/monitoring/camera-stream"
+                // src="http://localhost:4000/api/v1/monitoring/camera-stream"
+                src="http://192.168.171.17/stream"
                 alt="Live Camera Stream"
                 className="w-full h-full object-cover"
               />
@@ -196,10 +251,86 @@ export default function MidArea_Monitoring() {
         </AnimatePresence>
       </div>
 
-      <div className="flex flex-row gap-4 items-stretch w-full h-fit">
-        <StatCardList variant="distance" infoItems={distance} />
-        <StatCardList variant="velocity" infoItems={velocity} />
-      </div>
+      {dataMonitoring && dataMonitoring.length > 0 ? (
+        <div className="flex flex-col gap-4 items-stretch w-full h-fit">
+          <StatCardList
+        variant="distance"
+        infoItems={
+          dataMonitoring[0]?.metadata?.distances
+            ? [
+            {
+              title: "Distance Total",
+              value:
+            latestData.metadata.distances.distTotal != null
+              ? `${latestData.metadata.distances.distTotal.toFixed(2)} cm`
+              : "-",
+            },
+            {
+              title: "Distance X",
+              value:
+            latestData.metadata.distances.distX != null
+              ? `${latestData.metadata.distances.distX.toFixed(2)} cm`
+              : "-",
+            },
+            {
+              title: "Distance Y",
+              value:
+            latestData.metadata.distances.distY != null
+              ? `${latestData.metadata.distances.distY.toFixed(2)} cm`
+              : "-",
+            },
+          ]
+            : []
+        }
+          />
+          <StatCardList
+        variant="velocity"
+        infoItems={
+          dataMonitoring[0]?.metadata?.velocity
+            ? [
+            {
+              title: "Velocity Total",
+              value:
+            latestData.metadata.velocity.velTotal != null
+              ? `${latestData.metadata.velocity.velTotal.toFixed(2)} m/s`
+              : latestData.metadata.velocity.velocity != null
+                ? `${latestData.metadata.velocity.velocity.toFixed(2)} m/s`
+                : "-",
+            },
+            {
+              title: "Velocity X",
+              value:
+            latestData.metadata.velocity.velX != null
+              ? `${latestData.metadata.velocity.velX.toFixed(2)} m/s`
+              : latestData.metadata.velocity.velocityX != null
+                ? `${latestData.metadata.velocity.velocityX.toFixed(2)} m/s`
+                : "-",
+            },
+            {
+              title: "Velocity Y",
+              value:
+            latestData.metadata.velocity.velY != null
+              ? `${latestData.metadata.velocity.velY.toFixed(2)} m/s`
+              : latestData.metadata.velocity.velocityY != null
+                ? `${latestData.metadata.velocity.velocityY.toFixed(2)} m/s`
+                : "-",
+            },
+          ]
+            : []
+        }
+          />
+        </div>
+      ) : (
+        <div
+          className={`flex items-center justify-center w-full h-32 rounded-xl font-semibold text-lg ${
+            isDark
+              ? "bg-[#113541] text-gray-300"
+              : "bg-gray-100 text-gray-500"
+          }`}
+        >
+          Start monitoring to show the data
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row w-full gap-4">
         <DirectionalControl onDirectionClick={(dir) => console.log(dir)} />
@@ -214,12 +345,36 @@ export default function MidArea_Monitoring() {
             <Icon icon="mingcute:settings-1-fill" width={20} height={20} />
             <span className="font-semibold text-base">Tools</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 w-full h-fit">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-2.5 w-full h-fit">
+            <button
+              onClick={() => console.log("Start Monitoring")}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3`}
+            >
+              <Icon icon="mingcute:play-fill" width={20} height={20} />
+              <p
+                className={`font-semibold text-sm text-white`}
+              >
+                Start Monitoring
+              </p>
+            </button>
+
+            <button
+              onClick={() => console.log("Stop Monitoring")}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3`}
+            >
+              <Icon icon="mingcute:stop-fill" width={20} height={20} />
+              <p
+                className={`font-semibold text-sm text-white`}
+              >
+                Stop Monitoring
+              </p>
+            </button>
+
             {listButtons.map((item, index) => (
               <button
                 key={index}
                 onClick={item.onClick}
-                className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl ${
+                className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl col-span-1 md:col-span-2 ${
                   isDark
                     ? "border-[#3BD5FF]/10 bg-[#0A1625] text-white"
                     : "border-[#367AF2]/20 bg-white text-black"

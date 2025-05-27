@@ -56,6 +56,9 @@ interface Metadata {
     posX?: number;
     posY?: number;
   };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
 export default function Gallery() {
@@ -80,10 +83,10 @@ export default function Gallery() {
     id: string;
     src: string;
     alt: string;
-    obstacles: boolean;
+    obstacle: boolean;
     date: string;
     fileName: string;
-    dateTime: string;
+    createdAt: string;
     metadata: Metadata;
   }>(null);
 
@@ -109,7 +112,7 @@ export default function Gallery() {
   useEffect(() => {
     const fetchImagesList = async () => {
       try {
-        const response = await fetch("/api/reports/gallery");
+        const response = await fetch("/api/monitoring/realtime/images");
         const data = await response.json();
 
         setListPhotoWithDate(data.data || []);
@@ -127,7 +130,7 @@ export default function Gallery() {
     const grouped: { [date: string]: Image[] } = {};
 
     photos.forEach((photo) => {
-      const dateKey = new Date(photo.timestamp).toISOString().split("T")[0];
+      const dateKey = new Date(photo.createdAt).toISOString().split("T")[0];
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
       }
@@ -241,10 +244,10 @@ export default function Gallery() {
                         id: item.id,
                         src: item.imageUrl || "/images/no_image.png",
                         alt: item.filename,
-                        obstacles: item.obstacle ?? false,
+                        obstacle: item.obstacle ?? false,
                         date: item.timestamp,
                         fileName: item.filename,
-                        dateTime: item.timestamp,
+                        createdAt: item.createdAt,
                         metadata: item.metadata,
                       })
                     }

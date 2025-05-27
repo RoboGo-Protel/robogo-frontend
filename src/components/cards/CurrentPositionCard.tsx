@@ -3,47 +3,138 @@
 import { Icon } from "@iconify/react";
 import React, { useEffect, useRef, useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { useDarkMode } from "@/context/DarkModeContext"; // ✅ Tambahkan ini
+import { useDarkMode } from "@/context/DarkModeContext";
 
-const maxX = 10;
-const maxY = 6;
-const pathData = [
-  { x: 2, y: 2 },
-  { x: 3.8, y: 2.5 },
-  { x: 4.9, y: 3.5 },
-  { x: 5.5, y: 1.2 },
-];
+interface Metadata {
+  ultrasonic: number;
+  heading: number;
+  direction?: string;
+  accelerationMagnitude?: number;
+  rotationRate?: number;
+  distanceTraveled?: number;
+  linearAcceleration?: number;
+  distances: {
+    distTotal: number;
+    distX: number;
+    distY: number;
+  };
+  velocity: {
+    velocity?: number;
+    velocityX?: number;
+    velocityY?: number;
+    velTotal?: number;
+    velX?: number;
+    velY?: number;
+  };
+  magnetometer?: {
+    magnetometerX: number;
+    magnetometerY: number;
+    magnetometerZ: number;
+  };
+  position: {
+    positionX?: number;
+    positionY?: number;
+    posX?: number;
+    posY?: number;
+  };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
+}
 
-export default function CurrentPositionCard() {
-  const { isDark } = useDarkMode(); // ✅ Gunakan dark mode
+interface Data {
+  id: string;
+  src: string;
+  alt: string;
+  obstacle: boolean;
+  date: string;
+  fileName: string;
+  createdAt: string;
+  metadata: Metadata;
+}
+
+interface CurrentPositionCardProps {
+  dataMonitoring: Data[];
+}
+
+export default function CurrentPositionCard({
+  dataMonitoring,
+}: CurrentPositionCardProps) {
+  const { isDark } = useDarkMode();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const padding = 40;
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
 
   useEffect(() => {
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        if (entry.contentRect) {
-          const { width, height } = entry.contentRect;
-          setDimensions({ width, height });
-        }
+        const { width, height } = entry.contentRect;
+        setDimensions({
+          width: Math.floor(width),
+          height: Math.floor(height),
+        });
       }
     });
 
-    if (wrapperRef.current) observer.observe(wrapperRef.current);
-    return () => observer.disconnect();
+    const currentWrapper = wrapperRef.current;
+    if (currentWrapper) {
+      observer.observe(currentWrapper);
+    }
+
+    return () => {
+      if (currentWrapper) {
+        observer.unobserve(currentWrapper);
+      }
+    };
   }, []);
 
+  // Ambil posisi valid dari positionX dan positionY
+  const validPositions = dataMonitoring
+    .map((item) => {
+      const posX = item.metadata.position.positionX;
+      const posY = item.metadata.position.positionY;
+      if (posX === undefined || posY === undefined) return null;
+      return { x: posX, y: posY };
+    })
+    .filter((pos): pos is { x: number; y: number } => pos !== null);
+
+  // Cari nilai min dan max untuk x dan y
+  const minX = validPositions.length
+    ? Math.min(...validPositions.map((p) => p.x))
+    : -10;
+  const maxX = validPositions.length
+    ? Math.max(...validPositions.map((p) => p.x))
+    : 10;
+  const minY = validPositions.length
+    ? Math.min(...validPositions.map((p) => p.y))
+    : -10;
+  const maxY = validPositions.length
+    ? Math.max(...validPositions.map((p) => p.y))
+    : 10;
+
+  // Ambil nilai mutlak terbesar supaya skala simetris di tengah
+  const maxAbsX = Math.max(Math.abs(minX), Math.abs(maxX)) || 1;
+  const maxAbsY = Math.max(Math.abs(minY), Math.abs(maxY)) || 1;
+
+  // Fungsi konversi koordinat kartesius ke posisi pixel di container dengan 0,0 di tengah
   const convertToPixelPosition = (x: number, y: number) => {
-    const { width, height } = dimensions;
-    const pixelX = (x / maxX) * width;
-    const pixelY = ((maxY - y) / maxY) * height;
+    const pixelX =
+      (x / maxAbsX) * ((dimensions.width - padding * 2) / 2) +
+      dimensions.width / 2;
+    const pixelY =
+      (-y / maxAbsY) * ((dimensions.height - padding * 2) / 2) +
+      dimensions.height / 2;
+
     return {
-      left: `${(x / maxX) * 100}%`,
-      top: `${((maxY - y) / maxY) * 100}%`,
+      left: `${(pixelX / dimensions.width) * 100}%`,
+      top: `${(pixelY / dimensions.height) * 100}%`,
       pixelX,
       pixelY,
     };
   };
+
+  const pathData =
+    validPositions.length > 0 ? validPositions : [{ x: 0, y: 0 }];
 
   const polylinePoints = pathData
     .map((point) => {
@@ -51,6 +142,22 @@ export default function CurrentPositionCard() {
       return `${pos.pixelX},${pos.pixelY}`;
     })
     .join(" ");
+
+  const last = pathData[pathData.length - 1];
+  const pos = convertToPixelPosition(last.x, last.y);
+
+  let angleDeg = 0;
+  if (pathData.length >= 2) {
+    const a = pathData[pathData.length - 2];
+    const b = pathData[pathData.length - 1];
+    const dx = b.x - a.x;
+    const dy = -(b.y - a.y);
+    angleDeg = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+  }
+
+  if (!dimensions.width || !dimensions.height) {
+    return <div ref={wrapperRef} className="w-full h-full" />;
+  }
 
   return (
     <div
@@ -80,7 +187,7 @@ export default function CurrentPositionCard() {
         </p>
       </div>
 
-      {/* Peta */}
+      {/* Map */}
       <TransformWrapper
         initialScale={1}
         minScale={0.5}
@@ -98,7 +205,7 @@ export default function CurrentPositionCard() {
               height: dimensions.height,
             }}
           >
-            {/* Grid background */}
+            {/* Grid */}
             <div
               className={`absolute inset-0 z-0 opacity-60 pointer-events-none`}
               style={{
@@ -132,41 +239,47 @@ export default function CurrentPositionCard() {
             </svg>
 
             {/* Pointer */}
-            {(() => {
-              const last = pathData[pathData.length - 1];
-              const pos = convertToPixelPosition(last.x, last.y);
-              let angleDeg = 0;
-              if (pathData.length >= 2) {
-                const a = pathData[pathData.length - 2];
-                const b = pathData[pathData.length - 1];
-                const dx = b.x - a.x;
-                const dy = -(b.y - a.y);
-                angleDeg = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-              }
-
-              return (
-                <div
-                  className="absolute z-20 transform -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: pos.left, top: pos.top }}
-                >
-                  <div className="relative w-10 h-10">
-                    <div className="absolute inset-0 rounded-full bg-[#3BD5FF] opacity-40 blur-2xl" />
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] flex items-center justify-center shadow-lg">
-                      <Icon
-                        icon="material-symbols-light:navigation-rounded"
-                        width={24}
-                        height={24}
-                        className="text-white"
-                        style={{
-                          transform: `rotate(${angleDeg}deg)`,
-                          transition: "transform 0.3s ease-in-out",
-                        }}
-                      />
-                    </div>
-                  </div>
+            <div
+              className="absolute z-20 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pt-4"
+              style={{ left: pos.left, top: pos.top }}
+            >
+              <div className="relative w-10 h-10">
+                <div className="absolute inset-0 rounded-full bg-[#3BD5FF] opacity-40 blur-2xl" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] flex items-center justify-center shadow-lg">
+                  <Icon
+                    icon="material-symbols-light:navigation-rounded"
+                    width={24}
+                    height={24}
+                    className="text-white"
+                    style={{
+                      transform: `rotate(${angleDeg}deg)`,
+                      transition: "transform 0.3s ease-in-out",
+                    }}
+                  />
                 </div>
-              );
-            })()}
+              </div>
+
+              {/* Koordinat di bawah icon */}
+              <div
+                className={`mt-1 text-xs font-mono select-none ${
+                  isDark ? "text-white" : "text-black"
+                }`}
+              >
+                X: {last.x.toFixed(2)}, Y: {last.y.toFixed(2)}
+              </div>
+            </div>
+
+            {/* Optional: show origin (0,0) */}
+            <div
+              className="absolute w-2 h-2 bg-red-500 rounded-full"
+              style={{
+                left: `${(dimensions.width / 2 / dimensions.width) * 100}%`,
+                top: `${(dimensions.height / 2 / dimensions.height) * 100}%`,
+                transform: "translate(-50%, -50%)",
+                zIndex: 15,
+              }}
+              title="Origin (0,0)"
+            />
           </div>
         </TransformComponent>
       </TransformWrapper>

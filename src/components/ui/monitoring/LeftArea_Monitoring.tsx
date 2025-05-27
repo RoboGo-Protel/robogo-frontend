@@ -37,18 +37,38 @@ interface Metadata {
     posX?: number;
     posY?: number;
   };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
-export default function LeftArea_Monitoring() {
+interface Data {
+  id: string;
+  src: string;
+  alt: string;
+  obstacle: boolean;
+  date: string;
+  fileName: string;
+  createdAt: string;
+  metadata: Metadata;
+}
+
+interface LeftAreaMonitoringProps {
+  dataMonitoring: Data[];
+}
+
+export default function LeftArea_Monitoring({
+  dataMonitoring,
+}: LeftAreaMonitoringProps) {
   const [listPhotoWithDate, setListPhotoWithDate] = useState([]);
   const [selectedPhoto, setSelectedPhoto] = useState<null | {
     id: string;
     src: string;
     alt: string;
-    obstacles: boolean;
+    obstacle: boolean;
     date: string;
     fileName: string;
-    dateTime: string;
+    createdAt: string;
     metadata: Metadata;
   }>(null);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
@@ -59,6 +79,7 @@ export default function LeftArea_Monitoring() {
         setIsLoadingImages(true);
         const response = await fetch("/api/monitoring/realtime/images");
         const data = await response.json();
+        console.log("Fetched images:", dataMonitoring);
         setListPhotoWithDate(data.data || []);
       } catch (error) {
         console.error("Error fetching images:", error);
@@ -68,7 +89,7 @@ export default function LeftArea_Monitoring() {
     };
 
     fetchImages();
-  }, []);
+  }, [dataMonitoring]);
 
   return (
     <>

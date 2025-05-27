@@ -20,11 +20,11 @@ export const monitoringItems = [
     title: "Obstacle Detection Alert",
     value: "0.48m • Medium",
   },
-  {
-    key: "battery",
-    icon: "fluent:battery-9-32-regular",
-    status: "danger",
-    title: "Battery Status",
-    value: "25%",
-  },
+  // {
+  //   key: "battery",
+  //   icon: "fluent:battery-9-32-regular",
+  //   status: "danger",
+  //   title: "Battery Status",
+  //   value: "25%",
+  // },
 ] as const;

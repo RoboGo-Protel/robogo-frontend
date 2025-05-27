@@ -45,6 +45,9 @@ interface Metadata {
     posX?: number;
     posY?: number;
   };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
 interface Ultrasonic {

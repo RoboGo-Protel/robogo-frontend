@@ -191,7 +191,7 @@ export default function NavMenuDesktop() {
                 <motion.div
                   layoutId="nav-underline"
                   className="absolute inset-0 rounded-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] shadow-md"
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
               <div

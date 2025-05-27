@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { motion, useMotionValue } from "framer-motion";
-import { useDarkMode } from "@/context/DarkModeContext"; // ✅ Import context
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface InfoItem {
   icon: string;
@@ -42,22 +42,24 @@ function MonitoringInfo<K extends string = string>({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [dragBounds, setDragBounds] = useState({ left: 0, right: 0 });
   const x = useMotionValue(0);
-  const { isDark } = useDarkMode(); // ✅ Gunakan dark mode context
+  const { isDark } = useDarkMode();
 
   const updateDragBounds = () => {
     const wrapper = wrapperRef.current;
     if (wrapper) {
-      const scrollWidth = wrapper.scrollWidth;
-      const clientWidth = wrapper.clientWidth;
-      const gapSize = 16;
-      const sidePadding = 10;
+      const containerWidth = wrapper.offsetWidth;
+      const content = wrapper.querySelector("div");
 
-      const maxDrag = scrollWidth - clientWidth + sidePadding + gapSize;
+      if (content) {
+        const contentWidth = content.scrollWidth;
+        const containerPaddingRight = 24;
+        const maxDrag = contentWidth - containerWidth + containerPaddingRight;
 
-      setDragBounds({
-        left: -Math.max(0, maxDrag),
-        right: 0,
-      });
+        setDragBounds({
+          left: -Math.max(0, maxDrag),
+          right: 0,
+        });
+      }
     }
   };
 
@@ -85,7 +87,7 @@ function MonitoringInfo<K extends string = string>({
   }, [infoItems]);
 
   return (
-    <div ref={wrapperRef} className="relative w-full overflow-hidden pr-6">
+    <div ref={wrapperRef} className="relative w-full overflow-hidden">
       <motion.div
         className="inline-flex gap-4 cursor-grab active:cursor-grabbing"
         drag="x"
@@ -116,12 +118,21 @@ function MonitoringInfo<K extends string = string>({
                   background: `linear-gradient(to bottom right, ${theme.fromColor}, ${theme.toColor})`,
                 }}
               >
-                <Icon
-                  icon={item.icon}
-                  width={20}
-                  height={20}
-                  className="text-white"
-                />
+                {item.title === "IMU Heading Direction" ? (
+                  <Icon
+                    icon={item.icon}
+                    width={20}
+                    height={20}
+                    className="text-white"
+                  />
+                ) : (
+                  <Icon
+                    icon={item.icon}
+                    width={20}
+                    height={20}
+                    className="text-white"
+                  />
+                )}
               </div>
               <div className="flex flex-col items-start justify-center text-nowrap">
                 <p

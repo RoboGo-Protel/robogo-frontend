@@ -54,6 +54,9 @@ interface Metadata {
     posX?: number;
     posY?: number;
   };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
 export default function ImagesCard({
@@ -67,10 +70,10 @@ export default function ImagesCard({
     id: string;
     src: string;
     alt: string;
-    obstacles: boolean;
+    obstacle: boolean;
     date: string;
     fileName: string;
-    dateTime: string;
+    createdAt: string;
     metadata: Metadata;
   }) => void;
 }) {
@@ -121,10 +124,10 @@ export default function ImagesCard({
                     id: item.id,
                     src: item.imageUrl ? item.imageUrl : "/images/no_image.png",
                     alt: item.filename,
-                    obstacles: item.obstacle ?? false,
+                    obstacle: item.obstacle ?? false,
                     date: item.timestamp,
                     fileName: item.filename,
-                    dateTime: item.timestamp,
+                    createdAt: item.createdAt,
                     metadata: item.metadata,
                   })
                 }

@@ -43,10 +43,10 @@ interface PhotoDetailsProps {
     id: string;
     src: string;
     alt: string;
-    obstacles: boolean;
+    obstacle: boolean;
     date: string;
     fileName: string;
-    dateTime: string;
+    createdAt: string;
     metadata?: Metadata;
   };
   isDark: boolean;

@@ -13,26 +13,48 @@ interface OptionType {
   label: string;
 }
 
-interface Acceleration {
-  x: number;
-  y: number;
-  z: number;
-}
-
-interface Gyroscope {
-  x: number;
-  y: number;
-  z: number;
+interface Metadata {
+  ultrasonic: number;
+  heading: number;
+  direction?: string;
+  accelerationMagnitude?: number;
+  rotationRate?: number;
+  distanceTraveled?: number;
+  linearAcceleration?: number;
+  distances: {
+    distTotal: number;
+    distX: number;
+    distY: number;
+  };
+  velocity: {
+    velocity?: number;
+    velocityX?: number;
+    velocityY?: number;
+    velTotal?: number;
+    velX?: number;
+    velY?: number;
+  };
+  magnetometer?: {
+    magnetometerX: number;
+    magnetometerY: number;
+    magnetometerZ: number;
+  };
+  position: {
+    positionX?: number;
+    positionY?: number;
+    posX?: number;
+    posY?: number;
+  };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
 interface IMULogs {
   id: string;
   timestamp: string;
   sessionId: number;
-  acceleration: Acceleration;
-  gyroscope: Gyroscope;
-  heading: number;
-  direction: string;
+  metadata: Metadata;
   status: string;
   createdAt: string;
 }
@@ -118,22 +140,6 @@ export default function IMU() {
   };
 
   useEffect(() => {
-    const fetchSummaries = async () => {
-      try {
-        const response = await fetch("/api/reports/imu/summaries");
-        const data = await response.json();
-
-        setSummaries({
-          average_heading: data.data.average_heading,
-          heading_range: data.data.heading_range,
-          total_orientation_changes: data.data.total_orientation_changes,
-          max_turn_angle: data.data.max_turn_angle,
-        });
-      } catch (error) {
-        console.error("Error fetching summaries:", error);
-      }
-    };
-
     const fetchDatesWithSessions = async () => {
       try {
         const response = await fetch("/api/reports/imu/dates-with-sessions");
@@ -151,6 +157,8 @@ export default function IMU() {
 
           if (defaultDate.sessions.length > 0) {
             setSelectedSession(defaultDate.sessions[0]);
+          } else {
+            setSelectedSession(null);
           }
         }
       } catch (error) {
@@ -158,14 +166,39 @@ export default function IMU() {
       }
     };
 
-    fetchSummaries();
     fetchDatesWithSessions();
-  }, []);
+  }, []); // hanya sekali saat mount
 
+  // fetch summaries, hanya ketika selectedDate dan selectedSession sudah ada
   useEffect(() => {
-    const fetchFilteredReports = async () => {
-      if (!selectedDate || !selectedSession) return;
+    if (!selectedDate?.value || !selectedSession?.value) return;
 
+    const fetchSummaries = async () => {
+      try {
+        const response = await fetch(
+          `/api/reports/imu/summaries/date/${selectedDate.value}/session/${selectedSession.value}`
+        );
+        const data = await response.json();
+
+        setSummaries({
+          average_heading: data.data.average_heading,
+          heading_range: data.data.heading_range,
+          total_orientation_changes: data.data.total_orientation_changes,
+          max_turn_angle: data.data.max_turn_angle,
+        });
+      } catch (error) {
+        console.error("Error fetching summaries:", error);
+      }
+    };
+
+    fetchSummaries();
+  }, [selectedDate, selectedSession]);
+
+  // fetch filtered reports juga sama pengecekan
+  useEffect(() => {
+    if (!selectedDate?.value || !selectedSession?.value) return;
+
+    const fetchFilteredReports = async () => {
       setIsLoading(true);
       try {
         const response = await fetch(

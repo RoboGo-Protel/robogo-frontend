@@ -1,3 +1,4 @@
+import ProtectedLayout from "@/components/layout/ProtectedLayout";
 import Home from "./Home";
 import type { Metadata } from "next";
 
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <Home />;
+  return (
+    <ProtectedLayout>
+      <Home />
+    </ProtectedLayout>
+  );
 }

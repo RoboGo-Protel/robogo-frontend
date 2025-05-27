@@ -42,7 +42,7 @@ export default function RightArea_Home() {
       {/* Camera Stream */}
       <div className="h-full w-full rounded-2xl flex items-center justify-center relative min-h-[300px]">
         <AnimatePresence mode="wait">
-          {isStreamActive ? (
+          {!isStreamActive ? (
             <motion.div
               key="stream-on"
               initial={{ opacity: 0 }}

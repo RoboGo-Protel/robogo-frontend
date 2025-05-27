@@ -1,4 +1,3 @@
-// /* eslint-disable @next/next/no-img-element */
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,10 +51,10 @@ interface PhotoDetailsProps {
     id: string;
     src: string;
     alt: string;
-    obstacles: boolean;
+    obstacle: boolean;
     date: string;
     fileName: string;
-    dateTime: string;
+    createdAt: string;
     metadata?: Metadata;
   };
   onClose: () => void;
@@ -137,15 +136,18 @@ function TabMenu({ activeIndex, onTabChange }: TabMenuProps) {
 
 const formatDateTime = (isoString: string): string => {
   const date = new Date(isoString);
+  const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+  const wibDate = new Date(utc + 7 * 60 * 60 * 1000);
+
   const options: Intl.DateTimeFormatOptions = {
     month: "long",
     day: "numeric",
     year: "numeric",
   };
-  const formattedDate = date.toLocaleDateString("en-US", options);
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const seconds = date.getSeconds().toString().padStart(2, "0");
+  const formattedDate = wibDate.toLocaleDateString("en-US", options);
+  const hours = wibDate.getHours().toString().padStart(2, "0");
+  const minutes = wibDate.getMinutes().toString().padStart(2, "0");
+  const seconds = wibDate.getSeconds().toString().padStart(2, "0");
   return `${formattedDate} - ${hours}:${minutes}:${seconds} WIB`;
 };
 
@@ -392,7 +394,7 @@ export default function PhotoDetailsWithPaths({
                             isDark ? "text-white" : "text-black"
                           )}
                         >
-                          {formatDateTime(details.dateTime)}
+                          {formatDateTime(details.createdAt)}
                         </p>
                       </div>
 
@@ -406,7 +408,7 @@ export default function PhotoDetailsWithPaths({
                           <Icon icon="solar:tag-bold" width={16} height={16} />
                           <p>Categories</p>
                         </div>
-                        {details.obstacles ? (
+                        {details.obstacle ? (
                           <div className="w-fit px-4 py-2 rounded-full bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs font-normal flex items-center gap-1">
                             <Icon
                               icon="fluent:scan-object-24-filled"
@@ -460,21 +462,16 @@ export default function PhotoDetailsWithPaths({
                         infoItems={[
                           {
                             title: "Distance",
-                            value: `${details.metadata.distances.distTotal.toFixed(
-                              2
-                            )} cm`,
+                            value:
+                              details.metadata.distances.distTotal.toString(),
                           },
                           {
                             title: "Distance X",
-                            value: `${details.metadata.distances.distX.toFixed(
-                              2
-                            )} cm`,
+                            value: details.metadata.distances.distX.toString(),
                           },
                           {
                             title: "Distance Y",
-                            value: `${details.metadata.distances.distY.toFixed(
-                              2
-                            )} cm`,
+                            value: details.metadata.distances.distY.toString(),
                           },
                         ]}
                       />
@@ -487,28 +484,22 @@ export default function PhotoDetailsWithPaths({
                             title: "Velocity",
                             value:
                               details.metadata.velocity.velocity !== undefined
-                                ? `${details.metadata.velocity.velocity.toFixed(
-                                    2
-                                  )} m/s`
-                                : "N/A",
+                                ? String(details.metadata.velocity.velocity)
+                                : "0",
                           },
                           {
                             title: "Velocity X",
                             value:
                               details.metadata.velocity.velocityX !== undefined
-                                ? `${details.metadata.velocity.velocityX.toFixed(
-                                    2
-                                  )} m/s`
-                                : "N/A",
+                                ? String(details.metadata.velocity.velocityX)
+                                : "0",
                           },
                           {
                             title: "Velocity Y",
                             value:
                               details.metadata.velocity.velocityY !== undefined
-                                ? `${details.metadata.velocity.velocityY.toFixed(
-                                    2
-                                  )} m/s`
-                                : "N/A",
+                                ? String(details.metadata.velocity.velocityY)
+                                : "0",
                           },
                         ]}
                       />
@@ -764,7 +755,7 @@ export default function PhotoDetailsWithPaths({
                           isDark ? "text-white" : "text-black"
                         )}
                       >
-                        {formatDateTime(details.dateTime)}
+                        {formatDateTime(details.createdAt)}
                       </p>
                     </div>
                     <div className="flex flex-col gap-1 w-full">
@@ -777,7 +768,7 @@ export default function PhotoDetailsWithPaths({
                         <Icon icon="solar:tag-bold" width={16} height={16} />
                         <p>Categories</p>
                       </div>
-                      {details.obstacles ? (
+                      {details.obstacle ? (
                         <div className="w-fit px-4 py-2 rounded-full bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs font-normal flex items-center gap-1">
                           <Icon
                             icon="fluent:scan-object-24-filled"
@@ -830,21 +821,16 @@ export default function PhotoDetailsWithPaths({
                       infoItems={[
                         {
                           title: "Distance",
-                          value: `${details.metadata.distances.distTotal.toFixed(
-                            2
-                          )} cm`,
+                          value:
+                            details.metadata.distances.distTotal.toString(),
                         },
                         {
                           title: "Distance X",
-                          value: `${details.metadata.distances.distX.toFixed(
-                            2
-                          )} cm`,
+                          value: details.metadata.distances.distX.toString(),
                         },
                         {
                           title: "Distance Y",
-                          value: `${details.metadata.distances.distY.toFixed(
-                            2
-                          )} cm`,
+                          value: details.metadata.distances.distY.toString(),
                         },
                       ]}
                     />
@@ -853,27 +839,24 @@ export default function PhotoDetailsWithPaths({
                       infoItems={[
                         {
                           title: "Velocity",
-                          value: `${
+                          value:
                             details.metadata.velocity.velocity !== undefined
-                              ? `${details.metadata.velocity.velocity.toFixed(2)}`
-                              : "N/A"
-                          } m/s`,
+                              ? String(details.metadata.velocity.velocity)
+                              : "0",
                         },
                         {
                           title: "Velocity X",
-                          value: `${
+                          value:
                             details.metadata.velocity.velocityX !== undefined
-                              ? `${details.metadata.velocity.velocityX.toFixed(2)}`
-                              : "N/A"
-                          } m/s`,
+                              ? String(details.metadata.velocity.velocityX)
+                              : "0",
                         },
                         {
                           title: "Velocity Y",
-                          value: `${
+                          value:
                             details.metadata.velocity.velocityY !== undefined
-                              ? `${details.metadata.velocity.velocityY.toFixed(2)}`
-                              : "N/A"
-                          } m/s`,
+                              ? String(details.metadata.velocity.velocityY)
+                              : "0",
                         },
                       ]}
                     />

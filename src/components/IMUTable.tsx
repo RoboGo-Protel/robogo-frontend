@@ -4,26 +4,48 @@ import { Icon } from "@iconify/react";
 // import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
 import { useDarkMode } from "@/context/DarkModeContext";
 
-interface Acceleration {
-  x: number;
-  y: number;
-  z: number;
-}
-
-interface Gyroscope {
-  x: number;
-  y: number;
-  z: number;
+interface Metadata {
+  ultrasonic: number;
+  heading: number;
+  direction?: string;
+  accelerationMagnitude?: number;
+  rotationRate?: number;
+  distanceTraveled?: number;
+  linearAcceleration?: number;
+  distances: {
+    distTotal: number;
+    distX: number;
+    distY: number;
+  };
+  velocity: {
+    velocity?: number;
+    velocityX?: number;
+    velocityY?: number;
+    velTotal?: number;
+    velX?: number;
+    velY?: number;
+  };
+  magnetometer?: {
+    magnetometerX: number;
+    magnetometerY: number;
+    magnetometerZ: number;
+  };
+  position: {
+    positionX?: number;
+    positionY?: number;
+    posX?: number;
+    posY?: number;
+  };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
 interface IMULogs {
   id: string;
   timestamp: string;
   sessionId: number;
-  acceleration: Acceleration;
-  gyroscope: Gyroscope;
-  heading: number;
-  direction: string;
+  metadata: Metadata;
   status: string;
   createdAt: string;
 }
@@ -39,10 +61,10 @@ export default function IMUTable({ reports }: IMUTableProps) {
   // const [selectedPhoto, setSelectedPhoto] = useState<null | {
   //   src: string;
   //   alt: string;
-  //   obstacles: boolean;
+  //   obstacle: boolean;
   //   date: string;
   //   fileName: string;
-  //   dateTime: string;
+  //   createdAt: string;
   // }>(null);
 
   // const toggleSelectItem = (id: number) => {
@@ -188,13 +210,13 @@ export default function IMUTable({ reports }: IMUTableProps) {
                 colSpan={3}
                 className={`py-3 px-2 text-center font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
-                Acceleration (m/s²)
+                Velocity (m/s²)
               </th>
               <th
                 colSpan={3}
                 className={`py-3 px-2 text-center font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
-                Gyroscope (°/s)
+                Orientation (rad/s²)
               </th>
               <th
                 rowSpan={2}
@@ -228,17 +250,7 @@ export default function IMUTable({ reports }: IMUTableProps) {
               <th
                 className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
               >
-                X
-              </th>
-              <th
-                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
-              >
-                Y
-              </th>
-              <th
-                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
-              >
-                Z
+                Total
               </th>
               <th
                 className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
@@ -253,7 +265,17 @@ export default function IMUTable({ reports }: IMUTableProps) {
               <th
                 className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
               >
-                Z
+                Pitch
+              </th>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
+                Roll
+              </th>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
+                Yaw
               </th>
             </tr>
           </thead>
@@ -266,43 +288,43 @@ export default function IMUTable({ reports }: IMUTableProps) {
               >
                 <td className="py-3 px-2">{index + 1}</td>
                 <td className="py-3 px-2">
-                  {getTimeOnlyWithoutDate(report.timestamp)}
+                  {getTimeOnlyWithoutDate(report.createdAt)}
                 </td>
 
                 <td className="py-3 px-2 text-center">
-                  {report.acceleration.x.toFixed(2)}
+                  {report.metadata.velocity?.velocity?.toFixed(2) || "0.00"}
                 </td>
                 <td className="py-3 px-2 text-center">
-                  {report.acceleration.y.toFixed(2)}
+                  {report.metadata.velocity?.velocityX?.toFixed(2) || "0.00"}
                 </td>
                 <td className="py-3 px-2 text-center">
-                  {report.acceleration.z.toFixed(2)}
+                  {report.metadata.velocity?.velocityY?.toFixed(2) || "0.00"}
                 </td>
 
                 <td className="py-3 px-2 text-center">
-                  {report.gyroscope.x.toFixed(2)}
+                  {report.metadata.pitch?.toFixed(2) || "0.00"}
                 </td>
                 <td className="py-3 px-2 text-center">
-                  {report.gyroscope.y.toFixed(2)}
+                  {report.metadata.roll?.toFixed(2) || "0.00"}
                 </td>
                 <td className="py-3 px-2 text-center">
-                  {report.gyroscope.z.toFixed(2)}
+                  {report.metadata.yaw?.toFixed(2) || "0.00"}
                 </td>
 
-                <td className="py-3 px-2">{report.heading}°</td>
+                <td className="py-3 px-2">{report.metadata.heading}°</td>
                 <td className="py-3 px-2">
                   <div className="flex items-center gap-x-2 min-w-0">
                     <Icon
                       icon="material-symbols:north-rounded"
                       className="text-[#367AF2] shrink-0"
                       style={{
-                        transform: `rotate(${((report.heading % 360) + 360) % 360}deg)`,
+                        transform: `rotate(${((report.metadata.heading % 360) + 360) % 360}deg)`,
                       }}
                       width={20}
                       height={20}
                     />
                     <span className="break-words">
-                      {convertDegreesToDirection(report.heading)}
+                      {convertDegreesToDirection(report.metadata.heading)}
                     </span>
                   </div>
                 </td>
