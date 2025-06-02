@@ -5,6 +5,7 @@ import { useDarkMode } from "@/context/DarkModeContext";
 import { Icon } from "@iconify/react";
 import clsx from "clsx";
 import Link from "next/link";
+import { useToast } from "@/context/ToastProvider";
 
 export default function Register() {
   const { isDark } = useDarkMode();
@@ -16,6 +17,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const { promise } = useToast();
 
   useEffect(() => {
     const updateHeights = () => {
@@ -29,7 +31,7 @@ export default function Register() {
     return () => window.removeEventListener("resize", updateHeights);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setError("Passwords and confirm password do not match!");
@@ -37,10 +39,29 @@ export default function Register() {
     }
 
     setError("");
-    console.log("Nama:", name);
-    console.log("Email:", email);
-    console.log("Password:", password);
-    // Tambahkan logika pendaftaran di sini
+    await promise(
+      fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      }).then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.message || "Registration failed");
+          throw new Error(data.message || "Registration failed");
+        }
+        // Berhasil register, redirect ke login atau halaman lain
+        window.location.href = "/login";
+      }),
+      {
+        loading: "Registering...",
+        success: "Registration successful! Redirecting to login...",
+        error: (err: unknown) =>
+          err instanceof Error ? err.message : "Registration failed",
+      }
+    );
   };
 
   return (

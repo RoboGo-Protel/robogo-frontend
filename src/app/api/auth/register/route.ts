@@ -15,11 +15,11 @@ export async function POST(req: Request) {
     });
     const data = await res.json();
 
-    return NextResponse.json({ status: "success", data: data.data || [] });
+    return NextResponse.json({ status: "success", message: "Registrasi berhasil", data: data.data || [] });
   } catch (error) {
-    console.error("Error fetching logs list:", error);
+    console.error("Error during registration:", error);
     return NextResponse.json(
-      { status: "error", message: "Failed to fetch logs list" },
+      { status: "error", message: "Registrasi gagal, silakan coba lagi." },
       { status: 500 }
     );
   }
