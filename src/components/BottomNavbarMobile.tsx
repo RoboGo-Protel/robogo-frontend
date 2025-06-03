@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDarkMode } from "@/context/DarkModeContext";
+import PopUpConfirmation from "@/components/PopUpConfirmation";
+import { useToast } from "@/context/ToastProvider";
 
 const basePath = "/reports";
 
@@ -60,15 +62,71 @@ const menuItems = [
       },
     ],
   },
+  {
+    label: "Profile",
+    icon: {
+      active: "solar:user-bold",
+      inactive: "solar:user-linear",
+    },
+    children: [
+      {
+        name: "Profile",
+        href: "/profile",
+        fillIcon: "solar:user-bold",
+        outlineIcon: "solar:user-linear",
+      },
+      {
+        name: "Theme",
+        action: (context: MenuActionContext) => {
+          context.toggleDark();
+          context.showToast(
+            `Theme changed to ${context.isDark ? "light" : "dark"}!`
+          );
+        },
+        fillIcon: "solar:settings-bold",
+        outlineIcon: "solar:settings-linear",
+      },
+      {
+        name: "Logout",
+        action: (context: MenuActionContext) => {
+          context.setIsPopUpLogout(true);
+        },
+        fillIcon: "mdi:logout",
+        outlineIcon: "mdi:logout",
+      },
+    ],
+  },
 ];
 
+type MenuActionContext = {
+  toggleDark: () => void;
+  isDark: boolean;
+  showToast: (msg: string) => void;
+  setIsPopUpLogout: (b: boolean) => void;
+};
+
 export default function BottomNavbar() {
-  const { isDark } = useDarkMode();
+  const [isPopUpLogout, setIsPopUpLogout] = useState(false);
+  const { isDark, toggleDark } = useDarkMode();
+  const { showToast } = useToast();
   const pathname = usePathname();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   const dropdownWrapperRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = async () => {
+    const res = await fetch("/api/auth/logout", { method: "POST" });
+    if (res.ok) {
+      window.location.href = "/login";
+    } else {
+      alert("Logout failed");
+    }
+  };
+
+  const handleConfirmLogout = () => {
+    setIsPopUpLogout(false);
+    handleLogout();
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -118,6 +176,40 @@ export default function BottomNavbar() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {isPopUpLogout && (
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-[1px] flex items-center justify-center"
+            style={{ zIndex: 9999 }}
+          >
+            <motion.div
+              key="verify-email"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full inset-0 flex items-center justify-center"
+            >
+              <PopUpConfirmation
+                isOpen={isPopUpLogout}
+                onClose={() => setIsPopUpLogout(false)}
+                icon="material-symbols:logout-rounded"
+                iconColor="text-red-500"
+                title="Konfirmasi Keluar"
+                titleColor="text-red-500"
+                message="Apakah Anda yakin ingin keluar?"
+                confirmButtonText="Keluar"
+                cancelButtonText="Batal"
+                confirmButtonColor="bg-[#fb2c36]"
+                cancelButtonColor={isDark ? "bg-[#112133]" : "bg-white"}
+                leftToRight={false}
+                onConfirm={handleConfirmLogout}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <nav id="bottom-navbar" className="fixed bottom-0 left-0 right-0 z-50">
         {/* Mobile Version */}
         <div
@@ -127,10 +219,11 @@ export default function BottomNavbar() {
         >
           <div className="flex justify-around items-center h-14 relative">
             {menuItems.map((item, index) => {
-              const isActive =
-                item.href === "/"
+              const isActive = item.href
+                ? item.href === "/"
                   ? pathname === "/"
-                  : pathname.startsWith(item.href);
+                  : pathname.startsWith(item.href)
+                : false;
               const isLastItem = index === menuItems.length - 1;
 
               if (item.children) {
@@ -158,7 +251,7 @@ export default function BottomNavbar() {
                         height={24}
                       />
                       <span
-                        className={`${
+                        className={`$${
                           isActive
                             ? "text-[#367AF2] font-semibold"
                             : isDark
@@ -183,37 +276,72 @@ export default function BottomNavbar() {
                           } ${isDark ? "bg-[#182941]" : "bg-white"}`}
                         >
                           {item.children.map((child) => {
-                            const childActive = pathname === child.href;
-                            return (
-                              <Link
-                                key={child.href}
-                                href={child.href}
-                                onClick={() => setOpenDropdown(null)}
-                              >
-                                <div
-                                  className={`flex items-center gap-2 text-sm p-2 rounded-md transition-all ${
-                                    childActive
-                                      ? "text-[#367AF2] font-semibold"
-                                      : isDark
-                                        ? "text-gray-300"
-                                        : "text-gray-700"
+                            const childActive =
+                              child.href && pathname === child.href;
+                            // Jika child punya href (string), render Link
+                            if (typeof child.href === "string") {
+                              return (
+                                <Link
+                                  key={child.name}
+                                  href={child.href}
+                                  onClick={() => setOpenDropdown(null)}
+                                >
+                                  <div
+                                    className={`flex items-center gap-2 text-sm p-2 rounded-md transition-all ${
+                                      childActive
+                                        ? "text-[#367AF2] font-semibold"
+                                        : isDark
+                                          ? "text-gray-300"
+                                          : "text-gray-700"
+                                    } hover:${
+                                      isDark ? "bg-neutral-700" : "bg-gray-100"
+                                    }`}
+                                  >
+                                    <Icon
+                                      icon={
+                                        childActive
+                                          ? child.fillIcon
+                                          : child.outlineIcon
+                                      }
+                                      width={20}
+                                      height={20}
+                                    />
+                                    <span>{child.name}</span>
+                                  </div>
+                                </Link>
+                              );
+                            }
+                            // Jika child punya action, render button
+                            if (child.action) {
+                              return (
+                                <button
+                                  key={child.name}
+                                  type="button"
+                                  className={`flex items-center gap-2 text-sm p-2 rounded-md w-full text-left transition-all ${
+                                    isDark ? "text-gray-300" : "text-gray-700"
                                   } hover:${
                                     isDark ? "bg-neutral-700" : "bg-gray-100"
                                   }`}
+                                  onClick={() => {
+                                    child.action({
+                                      toggleDark,
+                                      isDark,
+                                      showToast,
+                                      setIsPopUpLogout,
+                                    });
+                                    setOpenDropdown(null);
+                                  }}
                                 >
                                   <Icon
-                                    icon={
-                                      childActive
-                                        ? child.fillIcon
-                                        : child.outlineIcon
-                                    }
+                                    icon={child.outlineIcon}
                                     width={20}
                                     height={20}
                                   />
                                   <span>{child.name}</span>
-                                </div>
-                              </Link>
-                            );
+                                </button>
+                              );
+                            }
+                            return null;
                           })}
                         </motion.div>
                       )}
@@ -222,40 +350,79 @@ export default function BottomNavbar() {
                 );
               }
 
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="flex flex-col items-center text-xs relative"
-                >
-                  <div
-                    className={`relative ${
-                      isActive
-                        ? "text-[#367AF2]"
-                        : isDark
-                          ? "text-gray-400"
-                          : "text-gray-500"
-                    }`}
+              // Jika item punya href, render Link, jika tidak render button biasa
+              if (item.href) {
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="flex flex-col items-center text-xs relative"
                   >
-                    <Icon
-                      icon={isActive ? item.icon.active : item.icon.inactive}
-                      width={24}
-                      height={24}
-                    />
-                  </div>
-                  <span
-                    className={
-                      isActive
-                        ? "text-[#367AF2] font-semibold"
-                        : isDark
-                          ? "text-gray-400"
-                          : "text-gray-500"
-                    }
+                    <div
+                      className={`relative ${
+                        isActive
+                          ? "text-[#367AF2]"
+                          : isDark
+                            ? "text-gray-400"
+                            : "text-gray-500"
+                      }`}
+                    >
+                      <Icon
+                        icon={isActive ? item.icon.active : item.icon.inactive}
+                        width={24}
+                        height={24}
+                      />
+                    </div>
+                    <span
+                      className={
+                        isActive
+                          ? "text-[#367AF2] font-semibold"
+                          : isDark
+                            ? "text-gray-400"
+                            : "text-gray-500"
+                      }
+                    >
+                      {item.label}
+                    </span>
+                  </Link>
+                );
+              } else {
+                return (
+                  <button
+                    key={item.label}
+                    className="flex flex-col items-center text-xs relative focus:outline-none"
+                    type="button"
+                    tabIndex={0}
                   >
-                    {item.label}
-                  </span>
-                </Link>
-              );
+                    <div
+                      className={`relative ${
+                        isActive
+                          ? "text-[#367AF2]"
+                          : isDark
+                            ? "text-gray-400"
+                            : "text-gray-500"
+                      }`}
+                    >
+                      <Icon
+                        icon={isActive ? item.icon.active : item.icon.inactive}
+                        width={24}
+                        height={24}
+                      />
+                    </div>
+                    <span
+                      className={
+                        isActive
+                          ? "text-[#367AF2] font-semibold"
+                          : isDark
+                            ? "text-gray-400"
+                            : "text-gray-500"
+                      }
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              }
             })}
           </div>
         </div>

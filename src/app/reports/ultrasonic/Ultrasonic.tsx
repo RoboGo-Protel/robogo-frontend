@@ -141,71 +141,81 @@ export default function Ultrasonic() {
   };
 
   useEffect(() => {
-    const fetchSummaries = async () => {
-      try {
-        const response = await fetch("/api/reports/ultrasonic/summaries");
-        const data = await response.json();
-
-        setSummaries({
-          totalImages: data.data.totalImages,
-          totalObstacles: data.data.totalObstacles,
-          closestDistance: data.data.closestDistance,
-          averageDistance: data.data.averageDistance,
-        });
-      } catch (error) {
-        console.error("Error fetching summaries:", error);
-      }
-    };
-
-    const fetchDatesWithSessions = async () => {
-      try {
-        const response = await fetch(
-          "/api/reports/ultrasonic/dates-with-sessions"
-        );
-        const result = await response.json();
-
-        const data = result.data;
-        setDateWithSessions(data);
-
-        if (data.length > 0) {
-          const defaultDate = data[0];
-          setSelectedDate({
-            value: defaultDate.value,
-            label: defaultDate.label,
-          });
-
-          if (defaultDate.sessions.length > 0) {
-            setSelectedSession(defaultDate.sessions[0]);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching dates with sessions:", error);
-      }
-    };
-
-    fetchSummaries();
-    fetchDatesWithSessions();
-  }, []);
-
-  useEffect(() => {
-    const fetchFilteredReports = async () => {
-      if (!selectedDate || !selectedSession) return;
-
+    const fetchAllData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `/api/reports/ultrasonic/date/${selectedDate.value}/session/${selectedSession.value}`
+        // Fetch dates with sessions first
+        const datesRes = await fetch(
+          "/api/reports/ultrasonic/dates-with-sessions"
         );
-        const result = await response.json();
-        setReports(result.data || []);
+        const datesData = await datesRes.json();
+        const data = datesData.data;
+        setDateWithSessions(data);
+
+        let date = selectedDate;
+        let session = selectedSession;
+
+        if (!date && data.length > 0) {
+          date = { value: data[0].value, label: data[0].label };
+          setSelectedDate(date);
+
+          if (data[0].sessions.length > 0) {
+            session = data[0].sessions[0];
+            setSelectedSession(session);
+          }
+        }
+
+        // Fetch summaries for the selected date and session (or first if not selected)
+        const useDate =
+          date ||
+          (data.length > 0
+            ? { value: data[0].value, label: data[0].label }
+            : null);
+        const useSession =
+          session ||
+          (data.length > 0 && data[0].sessions.length > 0
+            ? data[0].sessions[0]
+            : null);
+
+        if (useDate && useSession) {
+          const summariesRes = await fetch(
+            `/api/reports/ultrasonic/summaries/date/${useDate.value}/session/${useSession.value}`
+          );
+          const summariesData = await summariesRes.json();
+          setSummaries({
+            totalImages: summariesData.data.totalImages,
+            totalObstacles: summariesData.data.totalObstacles,
+            closestDistance: summariesData.data.closestDistance,
+            averageDistance: summariesData.data.averageDistance,
+          });
+        }
+
+        // If both date and session are selected, fetch reports
+        if (
+          (date && session) ||
+          (data.length > 0 && data[0].sessions.length > 0)
+        ) {
+          const useSession = session || data[0].sessions[0];
+          const reportsRes = await fetch(
+            `/api/reports/ultrasonic/date/${useDate?.value}/session/${useSession.value}`
+          );
+          const reportsData = await reportsRes.json();
+          const sortedReports = (reportsData.data || []).sort(
+            (a: Ultrasonic, b: Ultrasonic) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+          setReports(sortedReports);
+        } else {
+          setReports([]);
+        }
       } catch (error) {
-        console.error("Error fetching filtered reports:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchFilteredReports();
+    fetchAllData();
   }, [selectedDate, selectedSession]);
 
   const summaryItems = [
@@ -279,7 +289,7 @@ export default function Ultrasonic() {
           }}
         >
           <Icon
-            icon="tabler:photo-off"
+            icon="mingcute:file-unknown-fill"
             width={48}
             height={48}
             className={isDark ? "text-gray-600" : "text-gray-400"}

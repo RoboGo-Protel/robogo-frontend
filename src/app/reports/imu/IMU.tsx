@@ -13,14 +13,20 @@ interface OptionType {
   label: string;
 }
 
-interface Metadata {
-  ultrasonic: number;
-  heading: number;
-  direction?: string;
+interface IMULogs {
+  id: string;
+  timestamp: string;
+  sessionId: number;
   accelerationMagnitude?: number;
-  rotationRate?: number;
+  direction?: string;
   distanceTraveled?: number;
+  heading: number;
   linearAcceleration?: number;
+  pitch?: number;
+  roll?: number;
+  rotationRate?: number;
+  ultrasonic: number;
+  yaw?: number;
   distances: {
     distTotal: number;
     distX: number;
@@ -30,9 +36,6 @@ interface Metadata {
     velocity?: number;
     velocityX?: number;
     velocityY?: number;
-    velTotal?: number;
-    velX?: number;
-    velY?: number;
   };
   magnetometer?: {
     magnetometerX: number;
@@ -42,19 +45,7 @@ interface Metadata {
   position: {
     positionX?: number;
     positionY?: number;
-    posX?: number;
-    posY?: number;
   };
-  pitch?: number;
-  roll?: number;
-  yaw?: number;
-}
-
-interface IMULogs {
-  id: string;
-  timestamp: string;
-  sessionId: number;
-  metadata: Metadata;
   status: string;
   createdAt: string;
 }
@@ -139,81 +130,80 @@ export default function IMU() {
     }),
   };
 
+  // Gabungkan fetching data terkait selectedDate & selectedSession
   useEffect(() => {
-    const fetchDatesWithSessions = async () => {
-      try {
-        const response = await fetch("/api/reports/imu/dates-with-sessions");
-        const result = await response.json();
-
-        const data = result.data;
-        setDateWithSessions(data);
-
-        if (data.length > 0) {
-          const defaultDate = data[0];
-          setSelectedDate({
-            value: defaultDate.value,
-            label: defaultDate.label,
-          });
-
-          if (defaultDate.sessions.length > 0) {
-            setSelectedSession(defaultDate.sessions[0]);
-          } else {
-            setSelectedSession(null);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching dates with sessions:", error);
-      }
-    };
-
-    fetchDatesWithSessions();
-  }, []); // hanya sekali saat mount
-
-  // fetch summaries, hanya ketika selectedDate dan selectedSession sudah ada
-  useEffect(() => {
-    if (!selectedDate?.value || !selectedSession?.value) return;
-
-    const fetchSummaries = async () => {
-      try {
-        const response = await fetch(
-          `/api/reports/imu/summaries/date/${selectedDate.value}/session/${selectedSession.value}`
-        );
-        const data = await response.json();
-
-        setSummaries({
-          average_heading: data.data.average_heading,
-          heading_range: data.data.heading_range,
-          total_orientation_changes: data.data.total_orientation_changes,
-          max_turn_angle: data.data.max_turn_angle,
-        });
-      } catch (error) {
-        console.error("Error fetching summaries:", error);
-      }
-    };
-
-    fetchSummaries();
-  }, [selectedDate, selectedSession]);
-
-  // fetch filtered reports juga sama pengecekan
-  useEffect(() => {
-    if (!selectedDate?.value || !selectedSession?.value) return;
-
-    const fetchFilteredReports = async () => {
+    const fetchAllData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `/api/reports/imu/date/${selectedDate.value}/session/${selectedSession.value}`
-        );
-        const result = await response.json();
-        setReports(result.data || []);
+        // Fetch dates with sessions first
+        const datesRes = await fetch("/api/reports/imu/dates-with-sessions");
+        const datesData = await datesRes.json();
+        const data = datesData.data;
+        setDateWithSessions(data);
+
+        let date = selectedDate;
+        let session = selectedSession;
+
+        if (!date && data.length > 0) {
+          date = { value: data[0].value, label: data[0].label };
+          setSelectedDate(date);
+
+          if (data[0].sessions.length > 0) {
+            session = data[0].sessions[0];
+            setSelectedSession(session);
+          }
+        }
+
+        // Use selected or default date/session
+        const useDate =
+          date ||
+          (data.length > 0
+            ? { value: data[0].value, label: data[0].label }
+            : null);
+        const useSession =
+          session ||
+          (data.length > 0 && data[0].sessions.length > 0
+            ? data[0].sessions[0]
+            : null);
+
+        if (useDate && useSession) {
+          // Fetch summaries
+          const summariesRes = await fetch(
+            `/api/reports/imu/summaries/date/${useDate.value}/session/${useSession.value}`
+          );
+          const summariesData = await summariesRes.json();
+          const s = summariesData.data || {};
+          setSummaries({
+            average_heading: s.average_heading ?? 0,
+            heading_range: [
+              s.heading_range?.[0] ?? 0,
+              s.heading_range?.[1] ?? 0,
+            ],
+            total_orientation_changes: s.total_orientation_changes ?? 0,
+            max_turn_angle: s.max_turn_angle ?? 0,
+          });
+
+          // Fetch filtered reports
+          const reportsRes = await fetch(
+            `/api/reports/imu/date/${useDate.value}/session/${useSession.value}`
+          );
+          const reportsResult = await reportsRes.json();
+          const sortedReports = (reportsResult.data || []).sort(
+            (a: IMULogs, b: IMULogs) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+          setReports(sortedReports);
+        } else {
+          setReports([]);
+        }
       } catch (error) {
-        console.error("Error fetching filtered reports:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchFilteredReports();
+    fetchAllData();
   }, [selectedDate, selectedSession]);
 
   function getDirectionFromHeading(heading: number): string {
@@ -244,26 +234,22 @@ export default function IMU() {
     {
       icon: "lets-icons:compass-north",
       title: "Average Heading",
-      summary: `${summaries.average_heading.toFixed(
-        2
-      )}° - ${getDirectionFromHeading(summaries.average_heading)}`,
+      summary: `${(summaries.average_heading ?? 0).toFixed(2)}° - ${getDirectionFromHeading(summaries.average_heading ?? 0)}`,
     },
     {
       icon: "ph:compass-rose-fill",
       title: "Heading Range",
-      summary: `${summaries.heading_range[0].toFixed(
-        2
-      )}° - ${summaries.heading_range[1].toFixed(2)}°`,
+      summary: `${(summaries.heading_range?.[0] ?? 0).toFixed(2)}° - ${(summaries.heading_range?.[1] ?? 0).toFixed(2)}°`,
     },
     {
       icon: "uil:rotate-360",
       title: "Total Orientation Changes",
-      summary: `${summaries.total_orientation_changes} Times`,
+      summary: `${summaries.total_orientation_changes ?? 0} Times`,
     },
     {
       icon: "material-symbols:u-turn-right-rounded",
       title: "Max Turn Angle",
-      summary: `${summaries.max_turn_angle.toFixed(2)}°`,
+      summary: `${(summaries.max_turn_angle ?? 0).toFixed(2)}°`,
     },
   ] as const;
 
@@ -315,15 +301,15 @@ export default function IMU() {
           }}
         >
           <Icon
-            icon="tabler:photo-off"
+            icon="mingcute:file-unknown-fill"
             width={48}
             height={48}
-            className={clsx(isDark ? "text-gray-500" : "text-gray-400")}
+            className={isDark ? "text-gray-600" : "text-gray-400"}
           />
           <p
             className={clsx(
               "mt-4 text-lg",
-              isDark ? "text-gray-300" : "text-gray-500"
+              isDark ? "text-gray-400" : "text-gray-500"
             )}
           >
             No IMU reports available. Please check back later.

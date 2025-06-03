@@ -178,27 +178,6 @@ export default function TopNavbar() {
 
         <div className="flex items-center justify-end gap-3 relative">
           {/* Indikator Sinyal */}
-
-          <button
-            onClick={() => {
-              toggleDark();
-              showToast(
-                `Theme changed to ${isDark ? "light" : "dark"}!`,
-                "success"
-              );
-            }}
-            className={`flex items-center justify-center gap-1 rounded-xl transition duration-200 ease-in-out min-w-12 min-h-12 cursor-pointer px-3 py-2 ${
-              isDark
-                ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
-                : "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
-            }`}
-          >
-            <Icon
-              icon={isDark ? "mage:sun-fill" : "mage:moon-fill"}
-              className="text-xl"
-            />
-          </button>
-
           <div
             className={`flex items-center gap-2.5 select-none px-3 py-2 min-h-12 min-w-12 rounded-xl border transition duration-200 ease-in-out ${
               typeof rssiValue === "number"
@@ -254,7 +233,6 @@ export default function TopNavbar() {
               <span className="text-xs">({rssiValue} dBm)</span>
             )}
           </div>
-
           {/* Profile/account dropdown hanya tampil di desktop (sm+) */}
           {user ? (
             <div
@@ -291,6 +269,27 @@ export default function TopNavbar() {
                     <Icon icon="mdi:account-circle-outline" width={20} />
                     <span>Profile</span>
                   </Link>
+                  {/* Tombol darkmode dipindahkan ke dalam menu profile */}
+                  <button
+                    onClick={() => {
+                      toggleDark();
+                      showToast(
+                        `Theme changed to ${isDark ? "light" : "dark"}!`,
+                        "success"
+                      );
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 transition-colors duration-200 w-full text-left ${
+                      isDark
+                        ? "hover:bg-[#3BD5FF]/10 text-white"
+                        : "hover:bg-[#367AF2]/10 text-black"
+                    }`}
+                  >
+                    <Icon
+                      icon={isDark ? "mage:sun-fill" : "mage:moon-fill"}
+                      className="text-xl"
+                    />
+                    <span>{isDark ? "Light" : "Dark"}</span>
+                  </button>
                   <button
                     onClick={() => {
                       setIsPopUpLogout(true);
@@ -310,7 +309,7 @@ export default function TopNavbar() {
           ) : (
             <Link
               href="/login"
-              className="w-fit flex items-center justify-center gap-2 px-5 py-2.5 text-white bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl transition duration-200 ease-in-out min-h-12 cursor-pointer sm:flex hidden"
+              className="w-fit items-center justify-center gap-2 px-5 py-2.5 text-white bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl transition duration-200 ease-in-out min-h-12 cursor-pointer sm:flex hidden"
             >
               <p className="md:block hidden">Log In</p>
               <Icon icon="solar:login-3-bold" fontSize={24} />

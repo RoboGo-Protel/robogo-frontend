@@ -8,6 +8,28 @@ import CompassHUD from "@/components/CompassHUD";
 import BoatOrientationHUD from "@/components/OrientationHUD";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { useToast } from "@/context/ToastProvider";
+import StopMonitoringResult from "./StopMonitoringResult";
+import { useStopMonitoringResult } from "./StopMonitoringResultContext";
+
+// Type untuk hasil stop monitoring
+interface ImportLogResult {
+  totalData: number;
+  success: boolean;
+  duplication: boolean;
+  message: string;
+}
+
+interface ImportedReport {
+  ultrasonic_logs: ImportLogResult;
+  imu_logs: ImportLogResult;
+}
+
+export interface StopMonitoringResultType {
+  stopped: boolean;
+  sessionId: number;
+  date: string;
+  importedReport: ImportedReport;
+}
 
 interface Metadata {
   ultrasonic: number;
@@ -59,10 +81,12 @@ interface Data {
 
 interface MidAreaMonitoringProps {
   dataMonitoring: Data[];
+  currentSession?: number | null;
 }
 
 export default function MidArea_Monitoring({
   dataMonitoring,
+  currentSession = 0,
 }: MidAreaMonitoringProps) {
   const [recordingState, setRecordingState] = useState<"idle" | "recording">(
     "idle"
@@ -74,6 +98,8 @@ export default function MidArea_Monitoring({
   const [resolution] = useState({ width: 0, height: 0 });
   const [deviceCamera] = useState("None");
   const [isStreamActive] = useState(false);
+  const { stopResult, setStopResult } = useStopMonitoringResult();
+
   const latestData = dataMonitoring[dataMonitoring.length - 1];
 
   const handleRecordClick = async () => {
@@ -128,28 +154,33 @@ export default function MidArea_Monitoring({
     }
   };
 
+  const showStopResult = (result: StopMonitoringResultType) => {
+    setStopResult(result);
+  };
+
   const handleStopMonitoring = async () => {
     try {
-      await promise(
-        fetch("/api/monitoring/realtime/stop-monitoring", {
-          method: "GET",
-        }).then((res) => {
-          if (!res.ok) {
-            return res.text().then((text) => {
-              throw new Error(
-                text || res.statusText || "Failed to stop monitoring"
-              );
-            });
-          }
-        }),
-        {
-          loading: "Stopping monitoring...",
-          success: "Monitoring stopped successfully!",
-          error: "Failed to stop monitoring. Please try again.",
-        }
-      );
+      const res = await fetch("/api/monitoring/realtime/stop-monitoring", {
+        method: "GET",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || res.statusText || "Failed to stop monitoring");
+      }
+      const json = await res.json();
+      showStopResult(json);
+      await promise(Promise.resolve(), {
+        loading: "Stopping monitoring...",
+        success: "Monitoring stopped successfully!",
+        error: "Failed to stop monitoring. Please try again.",
+      });
     } catch (error) {
       console.error("Error stopping monitoring:", error);
+      await promise(Promise.reject(), {
+        loading: "Stopping monitoring...",
+        success: "Monitoring stopped successfully!",
+        error: "Failed to stop monitoring. Please try again.",
+      });
     }
   };
 
@@ -398,7 +429,8 @@ export default function MidArea_Monitoring({
           <div className="grid grid-cols-1 md:grid-cols-6 gap-2.5 w-full h-fit">
             <button
               onClick={handleStartMonitoring}
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3`}
+              disabled={!!currentSession && currentSession > 0}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3 ${!!currentSession && currentSession > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Icon icon="mingcute:play-fill" width={20} height={20} />
               <p className={`font-semibold text-sm text-white`}>
@@ -408,7 +440,8 @@ export default function MidArea_Monitoring({
 
             <button
               onClick={handleStopMonitoring}
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3`}
+              disabled={!currentSession || currentSession === 0}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl col-span-1 md:col-span-3 ${currentSession && currentSession > 0 ? "bg-gradient-to-br from-red-500 to-red-700 text-white" : "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white opacity-50 cursor-not-allowed"}`}
             >
               <Icon icon="mingcute:stop-fill" width={20} height={20} />
               <p className={`font-semibold text-sm text-white`}>
@@ -446,6 +479,32 @@ export default function MidArea_Monitoring({
           </div>
         </div>
       </div>
+
+      {/* Dialog Stop Monitoring Result */}
+      <AnimatePresence>
+        {stopResult && (
+          <motion.div
+            key="stop-result-popup"
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          >
+            <div className="bg-white rounded-xl shadow-xl p-0 md:p-0 max-w-lg w-full relative dark:bg-[#101c2b]">
+              <button
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white text-xl font-bold z-10 p-2 rounded-full transition-colors"
+                onClick={() => setStopResult(null)}
+                aria-label="Close"
+                type="button"
+              >
+                <Icon icon="mingcute:close-line" width={24} height={24} />
+              </button>
+              <StopMonitoringResult result={stopResult} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

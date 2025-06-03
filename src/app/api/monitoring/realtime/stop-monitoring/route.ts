@@ -10,8 +10,8 @@ export async function GET() {
       },
     });
     const data = await res.json();
-
-    return NextResponse.json({ status: "success", data: data.data || [] });
+    // Selalu return status 200, tidak perlu if-else
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
     console.error("Error stopping realtime monitoring:", error);
     return NextResponse.json(

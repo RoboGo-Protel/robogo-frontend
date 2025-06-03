@@ -52,7 +52,8 @@ export default function Register() {
           setError(data.message || "Registration failed");
           throw new Error(data.message || "Registration failed");
         }
-        // Berhasil register, redirect ke login atau halaman lain
+        // Berhasil register, jeda 2 detik sebelum redirect ke login
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         window.location.href = "/login";
       }),
       {

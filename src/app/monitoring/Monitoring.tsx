@@ -7,6 +7,7 @@ import { useDarkMode } from "@/context/DarkModeContext";
 import { database } from "../../firebase/firebase";
 import { ref, onValue } from "firebase/database";
 import { SyncLoader } from "react-spinners";
+import { StopMonitoringResultProvider } from "@/components/ui/monitoring/StopMonitoringResultContext";
 
 interface Data {
   id: string;
@@ -145,23 +146,28 @@ export default function Monitoring() {
     return (
       <>
         <LeftArea_Monitoring dataMonitoring={data} />
-        <MidArea_Monitoring dataMonitoring={data} />
+        <MidArea_Monitoring
+          dataMonitoring={data}
+          currentSession={currentSession}
+        />
         <RightArea_Monitoring dataMonitoring={data} />
       </>
     );
   };
 
   return (
-    <div
-      className={`flex flex-col md:flex-row items-start justify-center gap-4 min-h-screen md:h-screen p-5 ${
-        isDark ? "bg-[#112133] text-white" : "bg-white text-black"
-      }`}
-      style={{
-        paddingTop: topNavbarHeight,
-        paddingBottom: bottomNavbarHeight + 20,
-      }}
-    >
-      {renderContent()}
-    </div>
+    <StopMonitoringResultProvider>
+      <div
+        className={`flex flex-col md:flex-row items-start justify-center gap-4 min-h-screen md:h-screen p-5 ${
+          isDark ? "bg-[#112133] text-white" : "bg-white text-black"
+        }`}
+        style={{
+          paddingTop: topNavbarHeight,
+          paddingBottom: bottomNavbarHeight + 20,
+        }}
+      >
+        {renderContent()}
+      </div>
+    </StopMonitoringResultProvider>
   );
 }

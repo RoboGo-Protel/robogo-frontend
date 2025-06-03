@@ -4,14 +4,20 @@ import { Icon } from "@iconify/react";
 // import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
 import { useDarkMode } from "@/context/DarkModeContext";
 
-interface Metadata {
-  ultrasonic: number;
-  heading: number;
-  direction?: string;
+interface IMULogs {
+  id: string;
+  timestamp: string;
+  sessionId: number;
   accelerationMagnitude?: number;
-  rotationRate?: number;
+  direction?: string;
   distanceTraveled?: number;
+  heading: number;
   linearAcceleration?: number;
+  pitch?: number;
+  roll?: number;
+  rotationRate?: number;
+  ultrasonic: number;
+  yaw?: number;
   distances: {
     distTotal: number;
     distX: number;
@@ -21,9 +27,6 @@ interface Metadata {
     velocity?: number;
     velocityX?: number;
     velocityY?: number;
-    velTotal?: number;
-    velX?: number;
-    velY?: number;
   };
   magnetometer?: {
     magnetometerX: number;
@@ -33,19 +36,7 @@ interface Metadata {
   position: {
     positionX?: number;
     positionY?: number;
-    posX?: number;
-    posY?: number;
   };
-  pitch?: number;
-  roll?: number;
-  yaw?: number;
-}
-
-interface IMULogs {
-  id: string;
-  timestamp: string;
-  sessionId: number;
-  metadata: Metadata;
   status: string;
   createdAt: string;
 }
@@ -185,6 +176,9 @@ export default function IMUTable({ reports }: IMUTableProps) {
             <col className="w-16" />
             <col className="w-16" />
             <col className="w-16" />
+            <col className="w-16" />
+            <col className="w-16" />
+            <col className="w-16" />
             <col className="w-24" />
             <col className="w-24" />
             <col className="w-28" />
@@ -217,6 +211,12 @@ export default function IMUTable({ reports }: IMUTableProps) {
                 className={`py-3 px-2 text-center font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
               >
                 Orientation (rad/s²)
+              </th>
+              <th
+                colSpan={3}
+                className={`py-3 px-2 text-center font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+              >
+                Magnetometer (µT)
               </th>
               <th
                 rowSpan={2}
@@ -277,6 +277,21 @@ export default function IMUTable({ reports }: IMUTableProps) {
               >
                 Yaw
               </th>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
+                X
+              </th>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
+                Y
+              </th>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? "text-white" : "text-black"}`}
+              >
+                Z
+              </th>
             </tr>
           </thead>
 
@@ -292,39 +307,51 @@ export default function IMUTable({ reports }: IMUTableProps) {
                 </td>
 
                 <td className="py-3 px-2 text-center">
-                  {report.metadata.velocity?.velocity?.toFixed(2) || "0.00"}
+                  {report.velocity?.velocity?.toFixed(2) ?? "0.00"}
                 </td>
                 <td className="py-3 px-2 text-center">
-                  {report.metadata.velocity?.velocityX?.toFixed(2) || "0.00"}
+                  {report.velocity?.velocityX?.toFixed(2) ?? "0.00"}
                 </td>
                 <td className="py-3 px-2 text-center">
-                  {report.metadata.velocity?.velocityY?.toFixed(2) || "0.00"}
+                  {report.velocity?.velocityY?.toFixed(2) ?? "0.00"}
                 </td>
 
                 <td className="py-3 px-2 text-center">
-                  {report.metadata.pitch?.toFixed(2) || "0.00"}
+                  {report.pitch?.toFixed(2) ?? "0.00"}
                 </td>
                 <td className="py-3 px-2 text-center">
-                  {report.metadata.roll?.toFixed(2) || "0.00"}
+                  {report.roll?.toFixed(2) ?? "0.00"}
                 </td>
                 <td className="py-3 px-2 text-center">
-                  {report.metadata.yaw?.toFixed(2) || "0.00"}
+                  {report.yaw?.toFixed(2) ?? "0.00"}
                 </td>
 
-                <td className="py-3 px-2">{report.metadata.heading}°</td>
+                <td className="py-3 px-2 text-center">
+                  {report.magnetometer?.magnetometerX?.toFixed(2) ?? "0.00"}
+                </td>
+                <td className="py-3 px-2 text-center">
+                  {report.magnetometer?.magnetometerY?.toFixed(2) ?? "0.00"}
+                </td>
+                <td className="py-3 px-2 text-center">
+                  {report.magnetometer?.magnetometerZ?.toFixed(2) ?? "0.00"}
+                </td>
+
+                <td className="py-3 px-2 text-center">
+                  {report.heading.toFixed(2)}
+                </td>
                 <td className="py-3 px-2">
                   <div className="flex items-center gap-x-2 min-w-0">
                     <Icon
                       icon="material-symbols:north-rounded"
                       className="text-[#367AF2] shrink-0"
                       style={{
-                        transform: `rotate(${((report.metadata.heading % 360) + 360) % 360}deg)`,
+                        transform: `rotate(${(((report.heading ?? 0) % 360) + 360) % 360}deg)`,
                       }}
                       width={20}
                       height={20}
                     />
                     <span className="break-words">
-                      {convertDegreesToDirection(report.metadata.heading)}
+                      {convertDegreesToDirection(report.heading ?? 0)}
                     </span>
                   </div>
                 </td>

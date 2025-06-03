@@ -10,13 +10,14 @@ interface ReportData {
   timestamp: string;
   sessionId?: number;
   distance: number;
-  alertLevel: "High" | "Medium" | "Safe";
+  imageId?: string;
+  alertLevel: "High" | "Medium" | "Safe" | "Unknown";
   image?: string;
   alt?: string;
   obstacles?: boolean;
   fileName?: string;
   dateTime?: string;
-  createdAt?: string;
+  createdAt: string;
   metadata: Metadata;
 }
 
@@ -112,7 +113,12 @@ export default function UltrasonicSensorTable({
           </span>
         );
       default:
-        return null;
+        return (
+          <span className="bg-gradient-to-br from-gray-400 to-gray-600 text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
+            <Icon icon="mdi:help-circle" className="w-4 h-4 mr-1" />
+            Unknown
+          </span>
+        );
     }
   };
 
@@ -188,7 +194,7 @@ export default function UltrasonicSensorTable({
                 <td
                   className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
                 >
-                  {getTimeOnlyWithoutDate(report.timestamp)}
+                  {getTimeOnlyWithoutDate(report.createdAt)}
                 </td>
                 <td
                   className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
@@ -203,13 +209,13 @@ export default function UltrasonicSensorTable({
                 <td
                   className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
                 >
-                  {report.image && (
+                  {report.imageId && (
                     <div
                       className={`h-10 w-16 rounded cursor-pointer ${isDark ? "bg-[#23262F]" : "bg-gray-200"}`}
                       onClick={() =>
                         setSelectedPhoto({
                           id: report.id.toString(),
-                          src: report.image || "",
+                          src: report.imageId || "",
                           alt: report.alt || "Image",
                           obstacle: report.obstacles || false,
                           date: report.dateTime || "",
@@ -220,7 +226,7 @@ export default function UltrasonicSensorTable({
                       }
                     >
                       <img
-                        src={report.image}
+                        src={report.imageId ?? ""}
                         alt="Report"
                         className="h-10 w-16 rounded object-cover"
                       />
