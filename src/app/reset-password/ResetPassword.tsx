@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } fr        <div className='absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse'></div>
-        <div className='absolute top-32 right-28 w-80 h-80 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000'></div>
-        <div className='absolute -bottom-32 left-32 w-96 h-96 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000'></div>'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import { useToast } from '@/context/ToastProvider';
