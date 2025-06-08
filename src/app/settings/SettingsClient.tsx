@@ -197,7 +197,7 @@ export default function SettingsClient() {
         <div className='flex items-center justify-between mb-8'>
           <div className='flex items-center space-x-4'>
             <div className='flex items-center space-x-3'>
-              <div className='w-12 h-12 bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] rounded-xl flex items-center justify-center'>
+              <div className='w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-400 rounded-xl flex items-center justify-center'>
                 <Icon
                   icon='solar:settings-bold'
                   className='w-7 h-7 text-white'
@@ -241,7 +241,7 @@ export default function SettingsClient() {
                   {' '}
                   <Icon
                     icon='solar:devices-bold'
-                    className='w-7 h-7 text-[#3BD5FF]'
+                    className='w-7 h-7 text-blue-500'
                   />
                   <h2
                     className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}
@@ -267,8 +267,8 @@ export default function SettingsClient() {
                             className={`p-4 rounded-xl border flex items-center justify-between transition-all ${
                               config.selectedDevice === device.id
                                 ? isDark
-                                  ? 'bg-gradient-to-r from-[#3BD5FF]/20 to-[#367AF2]/20 border-[#3BD5FF] shadow-md'
-                                  : 'bg-gradient-to-r from-[#3BD5FF]/10 to-[#367AF2]/10 border-[#3BD5FF] shadow-md'
+                                  ? 'bg-gradient-to-r from-blue-500/20 to-blue-400/20 border-blue-500 shadow-md'
+                                  : 'bg-gradient-to-r from-blue-500/10 to-blue-400/10 border-blue-500 shadow-md'
                                 : isDark
                                   ? 'bg-gray-700 border-gray-600'
                                   : 'bg-gray-50 border-gray-200'
@@ -278,7 +278,7 @@ export default function SettingsClient() {
                               {' '}
                               <Icon
                                 icon='solar:cpu-bolt-bold'
-                                className='w-6 h-6 text-[#3BD5FF]'
+                                className='w-6 h-6 text-blue-500'
                               />
                               <div>
                                 <p
@@ -303,7 +303,7 @@ export default function SettingsClient() {
                               }
                               className={`px-4 py-2 text-sm rounded-lg transition-colors ${
                                 config.selectedDevice === device.id
-                                  ? 'bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] text-white'
+                                  ? 'bg-gradient-to-r from-blue-500 to-blue-400 text-white'
                                   : isDark
                                     ? 'bg-gray-600 text-gray-300 hover:bg-gray-500'
                                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -365,7 +365,7 @@ export default function SettingsClient() {
                             <button
                               onClick={() => assignDevice(device.id)}
                               disabled={saving}
-                              className='px-4 py-2 text-sm bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2CA5D1] hover:to-[#2E5FD1] disabled:bg-gray-400 text-white rounded-lg transition-colors'
+                              className='px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 disabled:bg-gray-400 text-white rounded-lg transition-colors'
                             >
                               {saving ? 'Assigning...' : 'Assign'}
                             </button>
@@ -389,7 +389,7 @@ export default function SettingsClient() {
                   {' '}
                   <Icon
                     icon='solar:camera-bold'
-                    className='w-7 h-7 text-[#3BD5FF]'
+                    className='w-7 h-7 text-blue-500'
                   />
                   <h2
                     className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}
@@ -415,7 +415,7 @@ export default function SettingsClient() {
                         }))
                       }
                       placeholder='http://192.168.1.100/stream'
-                      className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent outline-none ${
+                      className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                         isDark
                           ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                           : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -445,7 +445,7 @@ export default function SettingsClient() {
                             | 'high',
                         }))
                       }
-                      className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent outline-none ${
+                      className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                         isDark
                           ? 'bg-gray-700 border-gray-600 text-white'
                           : 'bg-white border-gray-300 text-gray-900'
@@ -468,7 +468,7 @@ export default function SettingsClient() {
                 className={`flex items-center space-x-3 px-8 py-4 rounded-xl transition-colors duration-200 text-lg font-medium ${
                   saving || !hasChanges()
                     ? 'bg-gray-400 cursor-not-allowed text-white'
-                    : 'bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2CA5D1] hover:to-[#2E5FD1] text-white'
+                    : 'bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white'
                 }`}
               >
                 <Icon icon='solar:diskette-bold' className='w-6 h-6' />

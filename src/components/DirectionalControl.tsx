@@ -36,7 +36,7 @@ export default function DirectionalControl({
   onDirectionClick?: (dir: string) => void;
 }) {
   return (
-    <div className="grid grid-rows-3 grid-cols-3 gap-x-4 gap-y-4 md:gap-y-1 place-items-center w-fit mx-auto">
+    <div className='grid grid-rows-3 grid-cols-3 gap-x-4 gap-y-4 md:gap-y-1 place-items-center w-fit mx-auto'>
       {directions.map((dir) =>
         dir.isCenter ? (
           <div
@@ -47,11 +47,11 @@ export default function DirectionalControl({
           <button
             key={dir.name}
             onClick={() => onDirectionClick?.(dir.name)}
-            className={`w-12 h-12 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] flex items-center justify-center shadow-md text-white ${dir.className}`}
+            className={`w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-md text-white ${dir.className}`}
           >
             <Icon icon={dir.icon} width={20} height={20} />
           </button>
-        )
+        ),
       )}
     </div>
   );

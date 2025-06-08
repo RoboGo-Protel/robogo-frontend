@@ -12,7 +12,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <div className='flex justify-center items-center h-screen'>
-          <SyncLoader color='#3BD5FF' size={12} />
+          <SyncLoader color='#3b82f6' size={12} />
         </div>
       }
     >

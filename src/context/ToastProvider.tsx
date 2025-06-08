@@ -157,7 +157,7 @@ export function ToastProvider({
   const defaultClass = (type: ToastType) => {
     switch (type) {
       case "success":
-        return "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow-lg";
+        return 'bg-gradient-to-br from-blue-500 to-blue-400 text-white shadow-lg';
       case "error":
         return "bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white";
       case "info":

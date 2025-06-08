@@ -91,31 +91,31 @@ export default function UltrasonicSensorTable({
 
   const getAlertBadge = (level: string) => {
     switch (level) {
-      case "Safe":
+      case 'Safe':
         return (
-          <span className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon icon="mdi:check-circle" className="w-4 h-4 mr-1" />
+          <span className='bg-gradient-to-br from-blue-500 to-blue-400 text-white px-3 py-2 rounded-full flex items-center justify-center w-fit'>
+            <Icon icon='mdi:check-circle' className='w-4 h-4 mr-1' />
             Safe
           </span>
         );
-      case "Medium":
+      case 'Medium':
         return (
-          <span className="bg-gradient-to-br from-[#FFC107] to-[#FF9800] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon icon="solar:danger-bold" className="w-4 h-4 mr-1" />
+          <span className='bg-gradient-to-br from-[#FFC107] to-[#FF9800] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit'>
+            <Icon icon='solar:danger-bold' className='w-4 h-4 mr-1' />
             Medium
           </span>
         );
-      case "High":
+      case 'High':
         return (
-          <span className="bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon icon="solar:danger-triangle-bold" className="w-4 h-4 mr-1" />
+          <span className='bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white px-3 py-2 rounded-full flex items-center justify-center w-fit'>
+            <Icon icon='solar:danger-triangle-bold' className='w-4 h-4 mr-1' />
             High
           </span>
         );
       default:
         return (
-          <span className="bg-gradient-to-br from-gray-400 to-gray-600 text-white px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon icon="mdi:help-circle" className="w-4 h-4 mr-1" />
+          <span className='bg-gradient-to-br from-gray-400 to-gray-600 text-white px-3 py-2 rounded-full flex items-center justify-center w-fit'>
+            <Icon icon='mdi:help-circle' className='w-4 h-4 mr-1' />
             Unknown
           </span>
         );
@@ -125,11 +125,11 @@ export default function UltrasonicSensorTable({
   const getTimeOnlyWithoutDate = (dateString: string) => {
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
     };
-    return date.toLocaleTimeString("id-ID", options).replace(/:/g, ".");
+    return date.toLocaleTimeString('id-ID', options).replace(/:/g, '.');
   };
 
   const { isDark } = useDarkMode();
@@ -138,123 +138,124 @@ export default function UltrasonicSensorTable({
     <>
       <div
         className={`overflow-x-auto w-full rounded-xl shadow-sm ${
-          isDark ? "bg-[#112133]" : "bg-white"
+          isDark ? 'bg-[#112133]' : 'bg-white'
         }`}
       >
         <table
-          className={`min-w-[800px] w-full border-collapse ${isDark ? "text-white" : "text-black"}`}
+          className={`min-w-[800px] w-full border-collapse ${isDark ? 'text-white' : 'text-black'}`}
         >
           <thead>
+            {' '}
             <tr
-              className={`${isDark ? "bg-[#1a3350] border-[#223c5c]" : "bg-[#367AF2]/10 border-gray-200"} border-b`}
+              className={`${isDark ? 'bg-[#1a3350] border-[#223c5c]' : 'bg-blue-400/10 border-gray-200'} border-b`}
             >
               <th
-                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? 'text-white' : 'text-black'}`}
               >
                 No
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? 'text-white' : 'text-black'}`}
               >
                 Timestamp
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? 'text-white' : 'text-black'}`}
               >
                 Distance (cm)
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? 'text-white' : 'text-black'}`}
               >
                 Alert Level
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? 'text-white' : 'text-black'}`}
               >
                 Image
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? "text-white" : "text-black"}`}
+                className={`py-3 px-4 text-left text-xs md:text-sm font-medium uppercase tracking-wider ${isDark ? 'text-white' : 'text-black'}`}
               >
                 Action
               </th>
             </tr>
           </thead>
-          <tbody className={isDark ? "divide-[#223c5c]" : "divide-gray-200"}>
+          <tbody className={isDark ? 'divide-[#223c5c]' : 'divide-gray-200'}>
             {reports.map((report, index) => (
               <tr
                 key={report.id}
-                className={isDark ? "hover:bg-[#1a3350]" : "hover:bg-gray-50"}
+                className={isDark ? 'hover:bg-[#1a3350]' : 'hover:bg-gray-50'}
               >
                 <td
-                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                  className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
                 >
                   {index + 1}
                 </td>
                 <td
-                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                  className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
                 >
                   {getTimeOnlyWithoutDate(report.createdAt)}
                 </td>
                 <td
-                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                  className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
                 >
                   {report.distance}
                 </td>
                 <td
-                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                  className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
                 >
                   {getAlertBadge(report.alertLevel)}
                 </td>
                 <td
-                  className={`py-3 px-4 text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                  className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
                 >
                   {report.imageId && (
                     <div
-                      className={`h-10 w-16 rounded cursor-pointer ${isDark ? "bg-[#23262F]" : "bg-gray-200"}`}
+                      className={`h-10 w-16 rounded cursor-pointer ${isDark ? 'bg-[#23262F]' : 'bg-gray-200'}`}
                       onClick={() =>
                         setSelectedPhoto({
                           id: report.id.toString(),
-                          src: report.imageId || "",
-                          alt: report.alt || "Image",
+                          src: report.imageId || '',
+                          alt: report.alt || 'Image',
                           obstacle: report.obstacles || false,
-                          date: report.dateTime || "",
-                          fileName: report.fileName || "",
-                          createdAt: report.createdAt || "",
+                          date: report.dateTime || '',
+                          fileName: report.fileName || '',
+                          createdAt: report.createdAt || '',
                           metadata: report.metadata,
                         })
                       }
                     >
                       <img
-                        src={report.imageId ?? ""}
-                        alt="Report"
-                        className="h-10 w-16 rounded object-cover"
+                        src={report.imageId ?? ''}
+                        alt='Report'
+                        className='h-10 w-16 rounded object-cover'
                       />
                     </div>
                   )}
                 </td>
-                <td className="py-3 px-4 text-sm space-x-2">
+                <td className='py-3 px-4 text-sm space-x-2'>
                   <button
                     disabled
                     className={`border rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15
-                      ${isDark ? "border-[#23262F] text-[#DFDFDF] hover:bg-[#23262F]" : "border-gray-300 text-gray-600"}
+                      ${isDark ? 'border-[#23262F] text-[#DFDFDF] hover:bg-[#23262F]' : 'border-gray-300 text-gray-600'}
                     `}
                     onClick={() => console.log(`Edit report ${report.id}`)}
                   >
                     <Icon
-                      icon="mage:edit-fill"
-                      className="inline mr-1"
+                      icon='mage:edit-fill'
+                      className='inline mr-1'
                       width={16}
                       height={16}
                     />
                     Edit
                   </button>
                   <button
-                    className={`border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50 ${isDark ? "hover:bg-[#23262F]" : ""}`}
+                    className={`border border-red-300 text-red-600 rounded-full px-3 py-2 text-sm hover:bg-red-50 ${isDark ? 'hover:bg-[#23262F]' : ''}`}
                   >
                     <Icon
-                      icon="mingcute:delete-fill"
-                      className="inline mr-1"
+                      icon='mingcute:delete-fill'
+                      className='inline mr-1'
                       width={16}
                       height={16}
                     />

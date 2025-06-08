@@ -18,19 +18,19 @@ interface MonitoringInfoPhotoDetailsProps<K extends string = string> {
 
 const statusTheme = {
   normal: {
-    borderColor: "#3BD5FF",
-    fromColor: "#3BD5FF",
-    toColor: "#367AF2",
+    borderColor: '#3b82f6',
+    fromColor: '#3b82f6',
+    toColor: '#60a5fa',
   },
   warning: {
-    borderColor: "#facc15",
-    fromColor: "#FF9800",
-    toColor: "#FFC107",
+    borderColor: '#facc15',
+    fromColor: '#FF9800',
+    toColor: '#FFC107',
   },
   danger: {
-    borderColor: "#ef4444",
-    fromColor: "#FF9799",
-    toColor: "#EB0C0F",
+    borderColor: '#ef4444',
+    fromColor: '#FF9799',
+    toColor: '#EB0C0F',
   },
 };
 

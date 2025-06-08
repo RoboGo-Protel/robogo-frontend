@@ -257,7 +257,7 @@ export default function BottomNavbar() {
                       onClick={() => toggleDropdown(item.label)}
                       className={`flex flex-col items-center ${
                         isActive
-                          ? 'text-[#367AF2]'
+                          ? 'text-blue-400'
                           : isDark
                             ? 'text-gray-400'
                             : 'text-gray-500'
@@ -269,9 +269,9 @@ export default function BottomNavbar() {
                         height={24}
                       />
                       <span
-                        className={`$${
+                        className={`text-[10px] ${
                           isActive
-                            ? 'text-[#367AF2] font-semibold'
+                            ? 'text-blue-400 font-semibold'
                             : isDark
                               ? 'text-gray-400'
                               : 'text-gray-500'
@@ -321,7 +321,7 @@ export default function BottomNavbar() {
                                   <div
                                     className={`flex items-center gap-2 text-sm p-2 rounded-md transition-all ${
                                       childActive
-                                        ? 'text-[#367AF2] font-semibold'
+                                        ? 'text-blue-400 font-semibold'
                                         : isDark
                                           ? 'text-gray-300'
                                           : 'text-gray-700'
@@ -401,7 +401,7 @@ export default function BottomNavbar() {
                     <div
                       className={`relative ${
                         isActive
-                          ? 'text-[#367AF2]'
+                          ? 'text-blue-400'
                           : isDark
                             ? 'text-gray-400'
                             : 'text-gray-500'
@@ -412,11 +412,11 @@ export default function BottomNavbar() {
                         width={24}
                         height={24}
                       />
-                    </div>
+                    </div>{' '}
                     <span
                       className={
                         isActive
-                          ? 'text-[#367AF2] font-semibold'
+                          ? 'text-blue-400 font-semibold'
                           : isDark
                             ? 'text-gray-400'
                             : 'text-gray-500'
@@ -437,7 +437,7 @@ export default function BottomNavbar() {
                     <div
                       className={`relative ${
                         isActive
-                          ? 'text-[#367AF2]'
+                          ? 'text-blue-400'
                           : isDark
                             ? 'text-gray-400'
                             : 'text-gray-500'
@@ -452,7 +452,7 @@ export default function BottomNavbar() {
                     <span
                       className={
                         isActive
-                          ? 'text-[#367AF2] font-semibold'
+                          ? 'text-blue-400 font-semibold'
                           : isDark
                             ? 'text-gray-400'
                             : 'text-gray-500'

@@ -162,23 +162,23 @@ export default function CurrentPositionCard({
       ref={wrapperRef}
       className={`relative w-full h-full rounded-xl overflow-hidden border-2 ${
         isDark
-          ? "border-[#113541] bg-[#0F1B2B] text-white"
-          : "border-[#ECECEC] bg-white text-black"
+          ? 'border-[#113541] bg-[#0F1B2B] text-white'
+          : 'border-[#ECECEC] bg-white text-black'
       }`}
     >
       {/* Header */}
-      <div className="absolute top-4 left-4 z-30 flex flex-row items-center gap-2">
-        <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow">
+      <div className='absolute top-4 left-4 z-30 flex flex-row items-center gap-2'>
+        <div className='p-1.5 bg-gradient-to-br from-blue-500 to-blue-400 rounded-xl shadow'>
           <Icon
-            icon="material-symbols-light:navigation-rounded"
+            icon='material-symbols-light:navigation-rounded'
             width={18}
             height={18}
-            className="text-white rotate-45"
+            className='text-white rotate-45'
           />
         </div>
         <p
           className={`font-semibold text-base ${
-            isDark ? "text-white" : "text-black"
+            isDark ? 'text-white' : 'text-black'
           }`}
         >
           Current Position
@@ -195,9 +195,9 @@ export default function CurrentPositionCard({
         doubleClick={{ disabled: true }}
         panning={{ velocityDisabled: true }}
       >
-        <TransformComponent wrapperClass="w-full h-full">
+        <TransformComponent wrapperClass='w-full h-full'>
           <div
-            className="relative"
+            className='relative'
             style={{
               width: dimensions.width,
               height: dimensions.height,
@@ -208,59 +208,59 @@ export default function CurrentPositionCard({
               className={`absolute inset-0 z-0 opacity-60 pointer-events-none`}
               style={{
                 backgroundImage: `linear-gradient(to right, ${
-                  isDark ? "#1f2e40" : "#e0e0e0"
+                  isDark ? '#1f2e40' : '#e0e0e0'
                 } 1px, transparent 1px), linear-gradient(to bottom, ${
-                  isDark ? "#1f2e40" : "#e0e0e0"
+                  isDark ? '#1f2e40' : '#e0e0e0'
                 } 1px, transparent 1px)`,
-                backgroundSize: "20px 20px",
+                backgroundSize: '20px 20px',
               }}
             />
 
             {/* Polyline Path */}
             <svg
               viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-              className="absolute top-0 left-0 w-full h-full z-10"
+              className='absolute top-0 left-0 w-full h-full z-10'
             >
               <polyline
                 points={polylinePoints}
-                fill="none"
-                stroke="url(#path-gradient)"
-                strokeWidth="8"
-                strokeLinecap="round"
-              />
+                fill='none'
+                stroke='url(#path-gradient)'
+                strokeWidth='8'
+                strokeLinecap='round'
+              />{' '}
               <defs>
-                <linearGradient id="path-gradient" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#3BD5FF" />
-                  <stop offset="100%" stopColor="#367AF2" />
+                <linearGradient id='path-gradient' x1='0' y1='0' x2='1' y2='0'>
+                  <stop offset='0%' stopColor='#3b82f6' />
+                  <stop offset='100%' stopColor='#60a5fa' />
                 </linearGradient>
               </defs>
             </svg>
 
             {/* Pointer */}
             <div
-              className="absolute z-20 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pt-4"
+              className='absolute z-20 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pt-4'
               style={{ left: pos.left, top: pos.top }}
             >
-              <div className="relative w-10 h-10">
-                <div className="absolute inset-0 rounded-full bg-[#3BD5FF] opacity-40 blur-2xl" />
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] flex items-center justify-center shadow-lg">
+              {' '}
+              <div className='relative w-10 h-10'>
+                <div className='absolute inset-0 rounded-full bg-blue-500 opacity-40 blur-2xl' />
+                <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg'>
                   <Icon
-                    icon="material-symbols-light:navigation-rounded"
+                    icon='material-symbols-light:navigation-rounded'
                     width={24}
                     height={24}
-                    className="text-white"
+                    className='text-white'
                     style={{
                       transform: `rotate(${angleDeg}deg)`,
-                      transition: "transform 0.3s ease-in-out",
+                      transition: 'transform 0.3s ease-in-out',
                     }}
                   />
                 </div>
               </div>
-
               {/* Koordinat di bawah icon */}
               <div
                 className={`mt-1 text-xs font-mono select-none ${
-                  isDark ? "text-white" : "text-black"
+                  isDark ? 'text-white' : 'text-black'
                 }`}
               >
                 X: {last.x.toFixed(2)}, Y: {last.y.toFixed(2)}
@@ -269,14 +269,14 @@ export default function CurrentPositionCard({
 
             {/* Optional: show origin (0,0) */}
             <div
-              className="absolute w-2 h-2 bg-red-500 rounded-full"
+              className='absolute w-2 h-2 bg-red-500 rounded-full'
               style={{
                 left: `${(dimensions.width / 2 / dimensions.width) * 100}%`,
                 top: `${(dimensions.height / 2 / dimensions.height) * 100}%`,
-                transform: "translate(-50%, -50%)",
+                transform: 'translate(-50%, -50%)',
                 zIndex: 15,
               }}
-              title="Origin (0,0)"
+              title='Origin (0,0)'
             />
           </div>
         </TransformComponent>

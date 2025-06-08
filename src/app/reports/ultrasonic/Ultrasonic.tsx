@@ -104,35 +104,35 @@ export default function Ultrasonic() {
   const customStyles: StylesConfig<OptionType, false> = {
     container: (provided) => ({
       ...provided,
-      width: "auto",
+      width: 'auto',
       minWidth: 140,
     }),
     control: (provided) => ({
       ...provided,
       height: 64,
       minHeight: 64,
-      border: "none",
-      borderRadius: "1rem",
-      background: "linear-gradient(to bottom right, #3BD5FF, #367AF2)",
-      boxShadow: "none",
-      paddingLeft: "16px",
-      paddingRight: "16px",
-      overflow: "visible",
-      whiteSpace: "nowrap",
+      border: 'none',
+      borderRadius: '1rem',
+      background: 'linear-gradient(to bottom right, #3b82f6, #60a5fa)',
+      boxShadow: 'none',
+      paddingLeft: '16px',
+      paddingRight: '16px',
+      overflow: 'visible',
+      whiteSpace: 'nowrap',
     }),
     singleValue: (provided) => ({
       ...provided,
-      color: "white",
-      fontSize: "1rem",
-      overflow: "visible",
-      whiteSpace: "nowrap",
+      color: 'white',
+      fontSize: '1rem',
+      overflow: 'visible',
+      whiteSpace: 'nowrap',
     }),
     indicatorSeparator: () => ({
-      display: "none",
+      display: 'none',
     }),
     dropdownIndicator: (provided) => ({
       ...provided,
-      color: "white",
+      color: 'white',
     }),
     menu: (provided) => ({
       ...provided,
@@ -243,8 +243,8 @@ export default function Ultrasonic() {
   return (
     <div
       className={clsx(
-        "flex flex-col gap-4 p-4 md:p-5 transition-colors duration-300",
-        isDark ? "bg-[#112133] text-white" : "bg-white text-black"
+        'flex flex-col gap-4 p-4 md:p-5 transition-colors duration-300',
+        isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
       )}
       style={{
         paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -253,7 +253,7 @@ export default function Ultrasonic() {
     >
       {isLoading ? (
         <div
-          className="flex flex-col justify-center items-center text-center"
+          className='flex flex-col justify-center items-center text-center'
           style={{
             height: `calc(100vh - ${
               topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
@@ -261,15 +261,15 @@ export default function Ultrasonic() {
           }}
         >
           <PulseLoader
-            color={isDark ? "#3BD5FF" : "#367AF2"}
+            color={isDark ? '#3b82f6' : '#60a5fa'}
             loading={isLoading}
             size={15}
             margin={5}
           />
           <p
             className={clsx(
-              "mt-4 text-lg",
-              isDark ? "text-gray-400" : "text-gray-500"
+              'mt-4 text-lg',
+              isDark ? 'text-gray-400' : 'text-gray-500',
             )}
           >
             Loading ultrasonic reports, please wait...
@@ -278,8 +278,8 @@ export default function Ultrasonic() {
       ) : reports.length === 0 ? (
         <div
           className={clsx(
-            "flex flex-col justify-center items-center w-full p-4 border-2 rounded-xl text-center",
-            isDark ? "border-gray-700" : "border-gray-300"
+            'flex flex-col justify-center items-center w-full p-4 border-2 rounded-xl text-center',
+            isDark ? 'border-gray-700' : 'border-gray-300',
           )}
           style={{
             height: `calc(100vh - ${
@@ -288,15 +288,15 @@ export default function Ultrasonic() {
           }}
         >
           <Icon
-            icon="mingcute:file-unknown-fill"
+            icon='mingcute:file-unknown-fill'
             width={48}
             height={48}
-            className={isDark ? "text-gray-600" : "text-gray-400"}
+            className={isDark ? 'text-gray-600' : 'text-gray-400'}
           />
           <p
             className={clsx(
-              "mt-4 text-lg",
-              isDark ? "text-gray-400" : "text-gray-500"
+              'mt-4 text-lg',
+              isDark ? 'text-gray-400' : 'text-gray-500',
             )}
           >
             No ultrasonic reports available. Please check back later.
@@ -304,15 +304,15 @@ export default function Ultrasonic() {
         </div>
       ) : (
         <>
-          <div className="flex flex-col md:flex-row w-full gap-4">
-            <div className="flex-1 flex flex-col">
+          <div className='flex flex-col md:flex-row w-full gap-4'>
+            <div className='flex-1 flex flex-col'>
               <ShortSummary
                 summaryItems={summaryItems}
-                layout="grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-4 items-stretch"
+                layout='grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-4 items-stretch'
               />
             </div>
 
-            <div className="flex flex-row gap-4 items-stretch md:items-center">
+            <div className='flex flex-row gap-4 items-stretch md:items-center'>
               <Select
                 options={dateWithSessions.map((d) => ({
                   value: d.value,
@@ -323,7 +323,7 @@ export default function Ultrasonic() {
                 onChange={(option) => {
                   setSelectedDate(option);
                   const selected = dateWithSessions.find(
-                    (d) => d.value === option?.value
+                    (d) => d.value === option?.value,
                   );
                   if (selected?.sessions.length) {
                     setSelectedSession(selected.sessions[0]);
@@ -332,15 +332,15 @@ export default function Ultrasonic() {
                   }
                 }}
                 isSearchable={false}
-                className="flex-1"
+                className='flex-1'
                 theme={(theme) => ({
                   ...theme,
                   colors: {
                     ...theme.colors,
-                    primary25: isDark ? "#23272f" : "#e3f2fd",
-                    primary: isDark ? "#3BD5FF" : "#367AF2",
-                    neutral0: isDark ? "#23272f" : "#fff",
-                    neutral80: isDark ? "#fff" : "#333",
+                    primary25: isDark ? '#23272f' : '#e3f2fd',
+                    primary: isDark ? '#3b82f6' : '#60a5fa',
+                    neutral0: isDark ? '#23272f' : '#fff',
+                    neutral80: isDark ? '#fff' : '#333',
                   },
                 })}
               />
@@ -348,7 +348,7 @@ export default function Ultrasonic() {
                 options={
                   selectedDate
                     ? dateWithSessions.find(
-                        (d) => d.value === selectedDate.value
+                        (d) => d.value === selectedDate.value,
                       )?.sessions || []
                     : []
                 }
@@ -357,22 +357,22 @@ export default function Ultrasonic() {
                 onChange={setSelectedSession}
                 isSearchable={false}
                 isDisabled={!selectedDate}
-                className="flex-1"
+                className='flex-1'
                 theme={(theme) => ({
                   ...theme,
                   colors: {
                     ...theme.colors,
-                    primary25: isDark ? "#23272f" : "#e3f2fd",
-                    primary: isDark ? "#3BD5FF" : "#367AF2",
-                    neutral0: isDark ? "#23272f" : "#fff",
-                    neutral80: isDark ? "#fff" : "#333",
+                    primary25: isDark ? '#23272f' : '#e3f2fd',
+                    primary: isDark ? '#3b82f6' : '#60a5fa',
+                    neutral0: isDark ? '#23272f' : '#fff',
+                    neutral80: isDark ? '#fff' : '#333',
                   },
                 })}
               />
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className='overflow-x-auto'>
             <UltrasonicSensorTable reports={reports} />
           </div>
         </>

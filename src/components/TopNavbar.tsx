@@ -196,8 +196,8 @@ export default function TopNavbar() {
                         ? 'bg-orange-100 border-orange-400'
                         : 'bg-red-100 border-red-400'
                   : isDark
-                    ? 'bg-[#0F1B2D] border-[#367AF2]/30'
-                    : 'bg-white border-[#367AF2]'
+                    ? 'bg-[#0F1B2D] border-blue-400/30'
+                    : 'bg-white border-blue-400'
               } ${
                 isDark && typeof rssiValue !== 'number'
                   ? 'text-white'
@@ -251,8 +251,8 @@ export default function TopNavbar() {
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className={`w-fit flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl transition duration-200 ease-in-out min-h-12 border cursor-pointer select-none ${
                   isDark
-                    ? 'bg-[#0F1B2D] border-[#367AF2]/30 text-white'
-                    : 'bg-white border-[#367AF2] text-black'
+                    ? 'bg-[#0F1B2D] border-blue-400/30 text-white'
+                    : 'bg-white border-blue-400 text-black'
                 }`}
               >
                 <p className='md:block hidden'>{user?.name}</p>
@@ -270,7 +270,7 @@ export default function TopNavbar() {
                   <Link
                     href='/profile'
                     className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors duration-200 hover:${
-                      isDark ? 'bg-[#367AF2]/30' : 'bg-[#367AF2]/20'
+                      isDark ? 'bg-blue-400/30' : 'bg-blue-400/20'
                     }`}
                     onClick={() => setDropdownOpen(false)}
                   >
@@ -281,7 +281,7 @@ export default function TopNavbar() {
                   <Link
                     href='/settings'
                     className={`flex items-center gap-2 px-4 py-2 transition-colors duration-200 hover:${
-                      isDark ? 'bg-[#367AF2]/30' : 'bg-[#367AF2]/20'
+                      isDark ? 'bg-blue-400/30' : 'bg-blue-400/20'
                     }`}
                     onClick={() => setDropdownOpen(false)}
                   >
@@ -299,8 +299,8 @@ export default function TopNavbar() {
                     }}
                     className={`flex items-center gap-2 px-4 py-2 transition-colors duration-200 w-full text-left ${
                       isDark
-                        ? 'hover:bg-[#3BD5FF]/10 text-white'
-                        : 'hover:bg-[#367AF2]/10 text-black'
+                        ? 'hover:bg-blue-500/10 text-white'
+                        : 'hover:bg-blue-400/10 text-black'
                     }`}
                   >
                     <Icon
@@ -359,28 +359,28 @@ export default function TopNavbar() {
                     <Link
                       href='/login'
                       className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
-                        isDark ? 'bg-[#3BD5FF]/20' : 'bg-[#3BD5FF]/10'
+                        isDark ? 'bg-blue-500/20' : 'bg-blue-500/10'
                       }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Icon
                         icon='solar:login-3-bold'
                         width={20}
-                        className='text-[#3BD5FF]'
+                        className='text-blue-500'
                       />
                       <span>Login</span>
-                    </Link>
+                    </Link>{' '}
                     <Link
                       href='/register'
                       className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
-                        isDark ? 'bg-[#367AF2]/20' : 'bg-[#367AF2]/10'
+                        isDark ? 'bg-blue-400/20' : 'bg-blue-400/10'
                       }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Icon
                         icon='solar:user-plus-bold'
                         width={20}
-                        className='text-[#367AF2]'
+                        className='text-blue-400'
                       />
                       <span>Register</span>
                     </Link>
@@ -418,8 +418,8 @@ export default function TopNavbar() {
                   href='/register'
                   className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition duration-200 ease-in-out min-h-12 cursor-pointer border-2 ${
                     isDark
-                      ? 'border-[#3BD5FF] text-[#3BD5FF] hover:bg-[#3BD5FF]/10'
-                      : 'border-[#367AF2] text-[#367AF2] hover:bg-[#367AF2]/10'
+                      ? 'border-blue-500 text-blue-500 hover:bg-blue-500/10'
+                      : 'border-blue-400 text-blue-400 hover:bg-blue-400/10'
                   }`}
                 >
                   <Icon icon='solar:user-plus-bold' fontSize={20} />
@@ -427,7 +427,7 @@ export default function TopNavbar() {
                 </Link>
                 <Link
                   href='/login'
-                  className='flex items-center justify-center gap-2 px-4 py-2.5 text-white bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] hover:from-[#3BD5FF]/90 hover:to-[#367AF2]/90 rounded-xl transition duration-200 ease-in-out min-h-12 cursor-pointer'
+                  className='flex items-center justify-center gap-2 px-4 py-2.5 text-white bg-gradient-to-br from-blue-500 to-blue-400 hover:from-blue-500/90 hover:to-blue-400/90 rounded-xl transition duration-200 ease-in-out min-h-12 cursor-pointer'
                 >
                   <Icon icon='solar:login-3-bold' fontSize={20} />
                   <span>Login</span>

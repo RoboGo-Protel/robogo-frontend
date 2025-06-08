@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import { useDarkMode } from '@/context/DarkModeContext';
@@ -12,11 +12,31 @@ export default function ProfileClient() {
   const { showToast } = useToast();
   const router = useRouter();
   const { data: user, isLoading: userLoading } = useMeQuery();
+  const [topNavbarHeight, setTopNavbarHeight] = useState(0);
+  const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
+
   useEffect(() => {
     if (userLoading === false && !user) {
       router.push('/login');
     }
   }, [user, userLoading, router]);
+
+  useEffect(() => {
+    const updateHeights = () => {
+      const top = document.querySelector('#top-navbar');
+      const bottom = document.querySelector('#bottom-navbar');
+
+      if (top) setTopNavbarHeight(top.clientHeight);
+      else setTopNavbarHeight(0);
+
+      if (bottom) setBottomNavbarHeight(bottom.clientHeight);
+      else setBottomNavbarHeight(0);
+    };
+
+    updateHeights();
+    window.addEventListener('resize', updateHeights);
+    return () => window.removeEventListener('resize', updateHeights);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -32,6 +52,7 @@ export default function ProfileClient() {
       showToast('Logout failed', 'error');
     }
   };
+
   if (userLoading) {
     return (
       <div
@@ -61,23 +82,20 @@ export default function ProfileClient() {
           ? 'bg-gradient-to-br from-[#0a0e1a] via-[#112133] to-[#1a2332]'
           : 'bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100'
       }`}
-    >
-      {/* Header */}
-      <div
-        className={`backdrop-blur-xl border-b sticky top-0 z-50 ${
-          isDark
-            ? 'bg-gray-900/80 border-gray-700'
-            : 'bg-white/80 border-gray-200'
-        }`}
-      >
-        <div className='max-w-4xl mx-auto px-4 py-4 flex items-center justify-between'>
-          <div className='flex items-center space-x-3'>
-            <div className='w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-400 rounded-xl flex items-center justify-center'>
-              <Icon icon='solar:user-bold' className='w-6 h-6 text-white' />
+      style={{
+        paddingTop: topNavbarHeight,
+        paddingBottom: bottomNavbarHeight + 20,
+      }}
+    >      <div className='max-w-4xl mx-auto px-4 py-8'>
+        {/* Header */}
+        <div className='mb-8'>
+          <div className='flex items-center space-x-3 mb-4'>
+            <div className='w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-400 rounded-xl flex items-center justify-center'>
+              <Icon icon='solar:user-bold' className='w-7 h-7 text-white' />
             </div>
             <div>
               <h1
-                className={`text-xl font-bold ${
+                className={`text-2xl font-bold ${
                   isDark ? 'text-white' : 'text-gray-900'
                 }`}
               >
@@ -92,22 +110,8 @@ export default function ProfileClient() {
               </p>
             </div>
           </div>
-
-          <button
-            onClick={() => router.push('/')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-200 ${
-              isDark
-                ? 'bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900'
-            }`}
-          >
-            <Icon icon='solar:home-2-bold' className='w-5 h-5' />
-            <span>Dashboard</span>
-          </button>
         </div>
-      </div>
 
-      <div className='max-w-4xl mx-auto px-4 py-8'>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
           {/* User Profile Card */}
           <div
@@ -218,7 +222,7 @@ export default function ProfileClient() {
                     >
                       <li className='flex items-center space-x-2'>
                         <Icon
-                          icon='solar:device-bold'
+                          icon='solar:devices-bold'
                           className='w-4 h-4 text-blue-500'
                         />
                         <span>

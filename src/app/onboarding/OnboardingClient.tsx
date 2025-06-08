@@ -222,7 +222,7 @@ export default function OnboardingClient() {
               'Skip Setup'
             )}
           </button>
-          <div className='w-16 h-16 bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] rounded-xl flex items-center justify-center mx-auto mb-4'>
+          <div className='w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-400 rounded-xl flex items-center justify-center mx-auto mb-4'>
             <Icon icon='solar:settings-bold' className='w-8 h-8 text-white' />
           </div>
           <h1
@@ -245,7 +245,7 @@ export default function OnboardingClient() {
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                     step <= currentStep
-                      ? 'bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] text-white'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-400 text-white'
                       : isDark
                         ? 'bg-gray-700 text-gray-400'
                         : 'bg-gray-200 text-gray-500'
@@ -261,7 +261,7 @@ export default function OnboardingClient() {
                   <div
                     className={`w-16 h-1 mx-2 ${
                       step < currentStep
-                        ? 'bg-gradient-to-r from-[#3BD5FF] to-[#367AF2]'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-400'
                         : isDark
                           ? 'bg-gray-700'
                           : 'bg-gray-200'
@@ -317,8 +317,8 @@ export default function OnboardingClient() {
                       className={`p-6 rounded-xl border cursor-pointer transition-all duration-300 hover:shadow-lg ${
                         config.selectedDevice === device.id
                           ? isDark
-                            ? 'bg-gradient-to-r from-[#3BD5FF]/20 to-[#367AF2]/20 border-[#3BD5FF]'
-                            : 'bg-gradient-to-r from-[#3BD5FF]/10 to-[#367AF2]/10 border-[#3BD5FF]'
+                            ? 'bg-gradient-to-r from-blue-500/20 to-blue-400/20 border-blue-500'
+                            : 'bg-gradient-to-r from-blue-500/10 to-blue-400/10 border-blue-500'
                           : isDark
                             ? 'bg-gray-700 border-gray-600 hover:bg-gray-600'
                             : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
@@ -332,9 +332,10 @@ export default function OnboardingClient() {
                     >
                       <div className='flex items-center justify-between'>
                         <div className='flex items-center space-x-3'>
+                          {' '}
                           <Icon
                             icon='solar:cpu-bolt-bold'
-                            className='w-8 h-8 text-[#3BD5FF]'
+                            className='w-8 h-8 text-blue-500'
                           />
                           <div>
                             <h3
@@ -352,7 +353,7 @@ export default function OnboardingClient() {
                         <div
                           className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                             config.selectedDevice === device.id
-                              ? 'border-[#3BD5FF] bg-[#3BD5FF]'
+                              ? 'border-blue-500 bg-blue-500'
                               : isDark
                                 ? 'border-gray-400'
                                 : 'border-gray-300'
@@ -393,7 +394,7 @@ export default function OnboardingClient() {
                   className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
                     !config.selectedDevice || saving
                       ? 'bg-gray-400 cursor-not-allowed text-white'
-                      : 'bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2CA5D1] hover:to-[#2E5FD1] text-white'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white'
                   }`}
                 >
                   {saving ? 'Assigning...' : 'Assign Device & Continue'}
@@ -433,7 +434,7 @@ export default function OnboardingClient() {
                       }))
                     }
                     placeholder='http://192.168.1.100/stream'
-                    className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent outline-none ${
+                    className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                       isDark
                         ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                         : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -464,7 +465,7 @@ export default function OnboardingClient() {
                           | 'high',
                       }))
                     }
-                    className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent outline-none ${
+                    className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                       isDark
                         ? 'bg-gray-700 border-gray-600 text-white'
                         : 'bg-white border-gray-300 text-gray-900'
@@ -493,7 +494,7 @@ export default function OnboardingClient() {
                 </button>
                 <button
                   onClick={nextStep}
-                  className='px-8 py-3 bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2CA5D1] hover:to-[#2E5FD1] text-white rounded-xl font-semibold transition-all duration-300'
+                  className='px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white rounded-xl font-semibold transition-all duration-300'
                 >
                   Continue
                 </button>
@@ -566,7 +567,7 @@ export default function OnboardingClient() {
                   className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
                     saving
                       ? 'bg-gray-400 cursor-not-allowed text-white'
-                      : 'bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2CA5D1] hover:to-[#2E5FD1] text-white'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white'
                   }`}
                 >
                   {saving ? 'Saving...' : 'Complete Setup'}

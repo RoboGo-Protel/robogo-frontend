@@ -58,37 +58,37 @@ const LogsCard: React.FC = () => {
       transition={{ duration: 0.4, delay: 0.1 }}
       className={`flex flex-col items-center justify-start w-full px-5 py-4 border-2 rounded-xl flex-1 overflow-hidden ${
         isDark
-          ? "border-[#113541] bg-[#0F1B2B] text-white"
-          : "border-[#ECECEC] bg-white text-black"
+          ? 'border-[#113541] bg-[#0F1B2B] text-white'
+          : 'border-[#ECECEC] bg-white text-black'
       }`}
     >
-      <div className="flex flex-row items-center justify-start w-full gap-2">
-        <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md">
+      <div className='flex flex-row items-center justify-start w-full gap-2'>
+        <div className='p-1.5 bg-gradient-to-br from-blue-500 to-blue-400 rounded-xl shadow-md'>
           <Icon
-            icon="fluent:data-usage-32-filled"
+            icon='fluent:data-usage-32-filled'
             width={20}
             height={20}
-            className="text-white"
+            className='text-white'
           />
         </div>
-        <p className="font-semibold text-base">Logs</p>
+        <p className='font-semibold text-base'>Logs</p>
       </div>
 
-      <div className="flex flex-col items-start justify-start w-full gap-2 mt-3 overflow-y-auto pr-2 max-h-[300px] md:max-h-[400px]">
+      <div className='flex flex-col items-start justify-start w-full gap-2 mt-3 overflow-y-auto pr-2 max-h-[300px] md:max-h-[400px]'>
         {isLoadingLogs ? (
-          <div className="w-full flex items-center justify-center mt-10">
-            <ClipLoader size={24} color={isDark ? "#3BD5FF" : "#367AF2"} />
+          <div className='w-full flex items-center justify-center mt-10'>
+            <ClipLoader size={24} color={isDark ? '#3b82f6' : '#60a5fa'} />
           </div>
         ) : logsItems.length > 0 ? (
           logsItems.map((item, index) => (
             <div
               key={index}
-              className="flex flex-row items-center justify-start gap-2 w-full"
+              className='flex flex-row items-center justify-start gap-2 w-full'
             >
-              <p className="text-sm font-semibold text-[#979797]">
-                [{convertTimestampToTime(item.timestamp)}]{" "}
+              <p className='text-sm font-semibold text-[#979797]'>
+                [{convertTimestampToTime(item.timestamp)}]{' '}
                 <span
-                  className={`font-normal ${isDark ? "text-white" : "text-black"}`}
+                  className={`font-normal ${isDark ? 'text-white' : 'text-black'}`}
                 >
                   {item.message}
                 </span>
@@ -96,7 +96,7 @@ const LogsCard: React.FC = () => {
             </div>
           ))
         ) : (
-          <p className="text-sm text-gray-400 mt-2">No logs available</p>
+          <p className='text-sm text-gray-400 mt-2'>No logs available</p>
         )}
       </div>
     </motion.div>

@@ -14,16 +14,16 @@ interface StatCardListProps {
 
 const VARIANT_MAP = {
   distance: {
-    icon: "ri:pin-distance-fill",
-    fromColor: "#3BD5FF",
-    toColor: "#367AF2",
-    borderColor: "#3BD5FF",
+    icon: 'ri:pin-distance-fill',
+    fromColor: '#3b82f6',
+    toColor: '#60a5fa',
+    borderColor: '#3b82f6',
   },
   velocity: {
-    icon: "material-symbols:speed-rounded",
-    fromColor: "#FFD057",
-    toColor: "#FF9F1C",
-    borderColor: "#FFD057",
+    icon: 'material-symbols:speed-rounded',
+    fromColor: '#FFD057',
+    toColor: '#FF9F1C',
+    borderColor: '#FFD057',
   },
 };
 

@@ -24,13 +24,13 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
     return (
       <div
         style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
         }}
       >
-        <SyncLoader color="#367AF2" />
+        <SyncLoader color='#60a5fa' />
       </div>
     );
 

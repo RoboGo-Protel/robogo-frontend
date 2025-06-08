@@ -86,7 +86,7 @@ export default function TunnelPath({
     <div
       ref={wrapperRef}
       className={`relative w-full h-[600px] rounded-xl overflow-hidden ${
-        isDark ? "bg-[#112133]" : "bg-white"
+        isDark ? 'bg-[#112133]' : 'bg-white'
       }`}
     >
       <TransformWrapper
@@ -101,16 +101,16 @@ export default function TunnelPath({
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
             {/* Control Buttons */}
-            <div className="absolute z-30 top-3 right-3 flex gap-2">
+            <div className='absolute z-30 top-3 right-3 flex gap-2'>
               <button
                 onClick={() => zoomIn()}
-                className="bg-blue-500 text-white px-3 py-1 rounded-md"
+                className='bg-blue-500 text-white px-3 py-1 rounded-md'
               >
                 +
               </button>
               <button
                 onClick={() => zoomOut()}
-                className="bg-blue-500 text-white px-3 py-1 rounded-md"
+                className='bg-blue-500 text-white px-3 py-1 rounded-md'
               >
                 -
               </button>
@@ -118,51 +118,51 @@ export default function TunnelPath({
                 onClick={() => resetTransform()}
                 className={`px-3 py-1 rounded-md ${
                   isDark
-                    ? "bg-[#1E334A] text-white hover:bg-[#2A435C]"
-                    : "bg-gray-300 text-black hover:bg-gray-200"
+                    ? 'bg-[#1E334A] text-white hover:bg-[#2A435C]'
+                    : 'bg-gray-300 text-black hover:bg-gray-200'
                 }`}
               >
                 Reset
               </button>
             </div>
 
-            <TransformComponent wrapperClass="w-full h-full">
+            <TransformComponent wrapperClass='w-full h-full'>
               <div
-                className="relative"
+                className='relative'
                 style={{ width: dimensions.width, height: dimensions.height }}
               >
                 {/* Grid background */}
                 <div
-                  className="absolute inset-0 bg-[length:20px_20px] z-0"
+                  className='absolute inset-0 bg-[length:20px_20px] z-0'
                   style={{
                     backgroundImage: isDark
-                      ? "linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)"
-                      : "linear-gradient(to right, #e0e0e0 1px, transparent 1px), linear-gradient(to bottom, #e0e0e0 1px, transparent 1px)",
+                      ? 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)'
+                      : 'linear-gradient(to right, #e0e0e0 1px, transparent 1px), linear-gradient(to bottom, #e0e0e0 1px, transparent 1px)',
                   }}
                 />
 
                 {/* Polyline layer */}
                 <svg
                   viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-                  className="absolute top-0 left-0 w-full h-full z-10"
+                  className='absolute top-0 left-0 w-full h-full z-10'
                 >
                   <polyline
                     points={polylinePoints}
-                    fill="none"
-                    stroke="url(#gradient)"
-                    strokeWidth="8"
-                    strokeLinecap="round"
+                    fill='none'
+                    stroke='url(#gradient)'
+                    strokeWidth='8'
+                    strokeLinecap='round'
                   />
                   <defs>
                     <linearGradient
-                      id="gradient"
-                      x1="0"
-                      y1="0"
-                      x2="100%"
-                      y2="0"
+                      id='gradient'
+                      x1='0'
+                      y1='0'
+                      x2='100%'
+                      y2='0'
                     >
-                      <stop offset="0%" stopColor="#3BD5FF" />
-                      <stop offset="100%" stopColor="#367AF2" />
+                      <stop offset='0%' stopColor='#3b82f6' />
+                      <stop offset='100%' stopColor='#60a5fa' />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -171,7 +171,7 @@ export default function TunnelPath({
                 {pathData.map((point, idx) => {
                   const pos = getMarkerPosition(
                     point.position.x,
-                    point.position.y
+                    point.position.y,
                   );
                   const cardHeight = 120;
                   const shouldPlaceAbove =
@@ -181,20 +181,20 @@ export default function TunnelPath({
 
                   const cardClass = `rounded-xl border p-1 shadow-md hover:shadow-lg transition ${
                     isDark
-                      ? "bg-[#1E334A] border-[#2A435C] text-white"
-                      : "bg-white border-gray-300 text-black"
+                      ? 'bg-[#1E334A] border-[#2A435C] text-white'
+                      : 'bg-white border-gray-300 text-black'
                   }`;
 
                   if (idx === 0 && showStartpoint) {
                     return (
                       <div
                         key={idx}
-                        className="absolute flex flex-col items-center z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                        className='absolute flex flex-col items-center z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer'
                         style={{ left: pos.left, top: pos.top }}
                         onClick={() => handleClick(point.position)}
                       >
-                        <div className="rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center">
-                          <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]" />
+                        <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center'>
+                          <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]' />
                         </div>
                       </div>
                     );
@@ -206,12 +206,12 @@ export default function TunnelPath({
                     return (
                       <div
                         key={idx}
-                        className="absolute flex flex-col items-center z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                        className='absolute flex flex-col items-center z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer'
                         style={{ left: pos.left, top: pos.top }}
                         onClick={() => handleClick(point.position)}
                       >
-                        <div className="rounded-full w-8 h-8 bg-gradient-to-br from-[#FF623B]/30 to-[#CD2323]/30 flex items-center justify-center">
-                          <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323]" />
+                        <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FF623B]/30 to-[#CD2323]/30 flex items-center justify-center'>
+                          <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323]' />
                         </div>
                       </div>
                     );
@@ -219,11 +219,11 @@ export default function TunnelPath({
                     return (
                       <div
                         key={idx}
-                        className="absolute flex flex-col items-center z-20"
+                        className='absolute flex flex-col items-center z-20'
                         style={{
                           left: `${pos.left}px`,
                           top: `${pos.top}px`,
-                          transform: "translate(-50%, -50%)",
+                          transform: 'translate(-50%, -50%)',
                         }}
                       >
                         <>
@@ -236,25 +236,25 @@ export default function TunnelPath({
                             }
                             className={`${
                               shouldPlaceAbove
-                                ? "cursor-pointer"
-                                : "invisible cursor-default"
+                                ? 'cursor-pointer'
+                                : 'invisible cursor-default'
                             } ${cardClass}`}
                           >
                             <img
-                              src={point.imageUrl || "/images/no_image.png"}
-                              className="w-40 h-24 object-cover rounded-md"
+                              src={point.imageUrl || '/images/no_image.png'}
+                              className='w-40 h-24 object-cover rounded-md'
                               alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
                             />
-                            <p className="text-xs text-center pt-1 font-medium">
+                            <p className='text-xs text-center pt-1 font-medium'>
                               x: {point.position.x} – y: {point.position.y}
                             </p>
                           </div>
 
                           {/* Middle icon */}
-                          <div className="flex items-center justify-center bg-gradient-to-br from-[#FF623B] to-[#CD2323] rounded-full p-1.5 my-1 shadow">
+                          <div className='flex items-center justify-center bg-gradient-to-br from-[#FF623B] to-[#CD2323] rounded-full p-1.5 my-1 shadow'>
                             <Icon
-                              icon="mynaui:danger-triangle-solid"
-                              className="text-white"
+                              icon='mynaui:danger-triangle-solid'
+                              className='text-white'
                               width={24}
                               height={24}
                             />
@@ -269,16 +269,16 @@ export default function TunnelPath({
                             }
                             className={`${
                               shouldPlaceAbove
-                                ? "invisible cursor-default"
-                                : "cursor-pointer"
+                                ? 'invisible cursor-default'
+                                : 'cursor-pointer'
                             } ${cardClass}`}
                           >
                             <img
-                              src={point.imageUrl || "/images/no_image.png"}
-                              className="w-40 h-24 object-cover rounded-md"
+                              src={point.imageUrl || '/images/no_image.png'}
+                              className='w-40 h-24 object-cover rounded-md'
                               alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
                             />
-                            <p className="text-xs text-center pt-1 font-medium">
+                            <p className='text-xs text-center pt-1 font-medium'>
                               x: {point.position.x} – y: {point.position.y}
                             </p>
                           </div>

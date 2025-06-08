@@ -154,7 +154,6 @@ export default function ThreeDView() {
       >
         <Icon icon='mdi:refresh' className='w-5 h-5' />
       </button>
-
       <div
         className={`absolute inset-0 z-0 opacity-60 pointer-events-none`}
         style={{
@@ -165,10 +164,9 @@ export default function ThreeDView() {
           } 1px, transparent 1px)`,
           backgroundSize: '20px 20px',
         }}
-      />
-
+      />{' '}
       <div className='flex flex-row items-center justify-start w-full gap-2 z-10 mb-3'>
-        <div className='p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md'>
+        <div className='p-1.5 bg-gradient-to-br from-blue-500 to-blue-400 rounded-xl shadow-md'>
           <Icon
             icon='iconamoon:3d-fill'
             width={20}
@@ -178,7 +176,6 @@ export default function ThreeDView() {
         </div>
         <p className='font-semibold text-base'>3D View</p>
       </div>
-
       <div
         ref={containerRef}
         className='w-full h-[300px] flex-1 z-10'

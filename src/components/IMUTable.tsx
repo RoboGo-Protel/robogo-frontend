@@ -102,7 +102,7 @@ export default function IMUTable({ reports }: IMUTableProps) {
       case 'Normal':
         return (
           <span
-            className={`bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] ${baseStyle}`}
+            className={`bg-gradient-to-br from-blue-500 to-blue-400 ${baseStyle}`}
           >
             <Icon icon='material-symbols:check-circle' className={iconStyle} />
             {level}
@@ -149,11 +149,10 @@ export default function IMUTable({ reports }: IMUTableProps) {
             <col className='w-24' />
             <col className='w-24' />
             <col className='w-28' />
-          </colgroup>
-
+          </colgroup>{' '}
           <thead>
             <tr
-              className={`${isDark ? 'bg-[#1a3350] border-[#223c5c]' : 'bg-[#367AF2]/10 border-gray-200'} border-b`}
+              className={`${isDark ? 'bg-[#1a3350] border-[#223c5c]' : 'bg-blue-400/10 border-gray-200'} border-b`}
             >
               <th
                 rowSpan={2}
@@ -209,10 +208,9 @@ export default function IMUTable({ reports }: IMUTableProps) {
               >
                 Action
               </th>
-            </tr>
-
+            </tr>{' '}
             <tr
-              className={`${isDark ? 'bg-[#1a3350] border-[#223c5c]' : 'bg-[#367AF2]/10 border-gray-200'} border-b`}
+              className={`${isDark ? 'bg-[#1a3350] border-[#223c5c]' : 'bg-blue-400/10 border-gray-200'} border-b`}
             >
               <th
                 className={`py-2 px-2 text-center font-medium uppercase ${isDark ? 'text-white' : 'text-black'}`}
@@ -261,7 +259,6 @@ export default function IMUTable({ reports }: IMUTableProps) {
               </th>
             </tr>
           </thead>
-
           <tbody className={isDark ? 'divide-[#223c5c]' : 'divide-gray-200'}>
             {reports.map((report, index) => (
               <tr
@@ -307,10 +304,11 @@ export default function IMUTable({ reports }: IMUTableProps) {
                   {report.heading.toFixed(2)}
                 </td>
                 <td className='py-3 px-2'>
+                  {' '}
                   <div className='flex items-center gap-x-2 min-w-0'>
                     <Icon
                       icon='material-symbols:north-rounded'
-                      className='text-[#367AF2] shrink-0'
+                      className='text-blue-400 shrink-0'
                       style={{
                         transform: `rotate(${(((report.heading ?? 0) % 360) + 360) % 360}deg)`,
                       }}

@@ -102,7 +102,7 @@ export default function IMU() {
       minHeight: 64,
       border: 'none',
       borderRadius: '1rem',
-      background: 'linear-gradient(to bottom right, #3BD5FF, #367AF2)',
+      background: 'linear-gradient(to bottom right, #3b82f6, #60a5fa)',
       boxShadow: 'none',
       paddingLeft: '16px',
       paddingRight: '16px',
@@ -269,7 +269,7 @@ export default function IMU() {
           }}
         >
           <PulseLoader
-            color='#367AF2'
+            color={isDark ? '#3b82f6' : '#60a5fa'}
             loading={isLoading}
             size={15}
             margin={5}

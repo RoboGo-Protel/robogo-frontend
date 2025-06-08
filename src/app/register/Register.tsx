@@ -94,13 +94,13 @@ export default function Register() {
       <div
         className={clsx(
           'absolute top-20 left-10 w-20 h-20 rounded-full blur-xl opacity-30 animate-pulse',
-          isDark ? 'bg-[#3BD5FF]' : 'bg-[#3BD5FF]',
+          isDark ? 'bg-blue-500' : 'bg-blue-500',
         )}
       ></div>
       <div
         className={clsx(
           'absolute bottom-20 right-10 w-32 h-32 rounded-full blur-xl opacity-20 animate-pulse delay-1000',
-          isDark ? 'bg-[#367AF2]' : 'bg-[#367AF2]',
+          isDark ? 'bg-blue-400' : 'bg-blue-400',
         )}
       ></div>
 
@@ -112,8 +112,8 @@ export default function Register() {
             className={clsx(
               'inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg',
               isDark
-                ? 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]'
-                : 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]',
+                ? 'bg-gradient-to-br from-blue-500 to-blue-400'
+                : 'bg-gradient-to-br from-blue-500 to-blue-400',
             )}
           >
             <span className='text-2xl font-bold text-white'>R</span>
@@ -157,13 +157,14 @@ export default function Register() {
                 Full Name
               </label>
               <div className='relative'>
+                {' '}
                 <input
                   type='text'
                   placeholder='Enter your full name'
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className={clsx(
-                    'w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent outline-none',
+                    'w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none',
                     isDark
                       ? 'bg-white/5 border-white/10 text-white placeholder-gray-400 hover:bg-white/10'
                       : 'bg-white/50 border-gray-200 text-gray-900 placeholder-gray-500 hover:bg-white',
@@ -201,13 +202,14 @@ export default function Register() {
                 Email Address
               </label>
               <div className='relative'>
+                {' '}
                 <input
                   type='email'
                   placeholder='Enter your email'
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className={clsx(
-                    'w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent outline-none',
+                    'w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none',
                     isDark
                       ? 'bg-white/5 border-white/10 text-white placeholder-gray-400 hover:bg-white/10'
                       : 'bg-white/50 border-gray-200 text-gray-900 placeholder-gray-500 hover:bg-white',
@@ -251,7 +253,7 @@ export default function Register() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={clsx(
-                    'w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent outline-none',
+                    'w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none',
                     isDark
                       ? 'bg-white/5 border-white/10 text-white placeholder-gray-400 hover:bg-white/10'
                       : 'bg-white/50 border-gray-200 text-gray-900 placeholder-gray-500 hover:bg-white',
@@ -295,7 +297,7 @@ export default function Register() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={clsx(
-                    'w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent outline-none',
+                    'w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none',
                     isDark
                       ? 'bg-white/5 border-white/10 text-white placeholder-gray-400 hover:bg-white/10'
                       : 'bg-white/50 border-gray-200 text-gray-900 placeholder-gray-500 hover:bg-white',
@@ -357,7 +359,7 @@ export default function Register() {
                     'w-5 h-5 rounded-md border-2 transition-all duration-300 flex items-center justify-center cursor-pointer',
                     'hover:shadow-md hover:scale-105',
                     agreeToTerms
-                      ? 'bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] border-transparent'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-400 border-transparent'
                       : isDark
                         ? 'border-white/20 bg-white/5 hover:bg-white/10'
                         : 'border-gray-300 bg-white/50 hover:bg-white/70',
@@ -389,7 +391,7 @@ export default function Register() {
                   I agree to the{' '}
                   <a
                     href='#'
-                    className='text-[#3BD5FF] hover:text-[#367AF2] transition-colors underline decoration-1 hover:decoration-2'
+                    className='text-blue-500 hover:text-blue-400 transition-colors underline decoration-1 hover:decoration-2'
                     onClick={(e) => e.stopPropagation()}
                   >
                     Terms of Service
@@ -397,7 +399,7 @@ export default function Register() {
                   and{' '}
                   <a
                     href='#'
-                    className='text-[#3BD5FF] hover:text-[#367AF2] transition-colors underline decoration-1 hover:decoration-2'
+                    className='text-blue-500 hover:text-blue-400 transition-colors underline decoration-1 hover:decoration-2'
                     onClick={(e) => e.stopPropagation()}
                   >
                     Privacy Policy
@@ -408,7 +410,7 @@ export default function Register() {
             {/* Submit Button */}
             <button
               type='submit'
-              className='w-full py-3 px-4 bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#3BD5FF]/90 hover:to-[#367AF2]/90 text-white font-medium rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#3BD5FF] focus:ring-offset-2 active:scale-[0.98] flex items-center justify-center gap-2'
+              className='w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-500/90 hover:to-blue-400/90 text-white font-medium rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-[0.98] flex items-center justify-center gap-2'
             >
               <span>Create Account</span>
               <Icon icon='solar:user-plus-bold' fontSize={20} />
@@ -479,7 +481,7 @@ export default function Register() {
             Already have an account?{' '}
             <Link
               href='/login'
-              className='text-[#3BD5FF] hover:text-[#367AF2] font-medium transition-colors'
+              className='text-blue-500 hover:text-blue-400 font-medium transition-colors'
             >
               Sign in
             </Link>
@@ -497,14 +499,14 @@ export default function Register() {
             By creating an account, you agree to our{' '}
             <a
               href='#'
-              className='underline hover:text-[#3BD5FF] transition-colors'
+              className='underline hover:text-blue-500 transition-colors'
             >
               Terms of Service
             </a>{' '}
             and{' '}
             <a
               href='#'
-              className='underline hover:text-[#3BD5FF] transition-colors'
+              className='underline hover:text-blue-500 transition-colors'
             >
               Privacy Policy
             </a>

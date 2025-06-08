@@ -235,7 +235,7 @@ export default function MidArea_Monitoring({
               className={`flex flex-col gap-2.5 p-4 items-center justify-center w-full h-full rounded-2xl border-2 ${
                 isDark
                   ? 'bg-[#0F1B2B] border-[#113541]'
-                  : 'bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 border-[#3BD5FF]/20'
+                  : 'bg-gradient-to-br from-blue-500/10 to-blue-400/10 border-blue-500/20'
               }`}
             >
               <CompassHUD heading={dataMonitoring[0]?.metadata?.heading ?? 0} />
@@ -276,7 +276,7 @@ export default function MidArea_Monitoring({
                   title='Flash'
                   className={`text-white text-sm font-semibold p-2.5 rounded-xl shadow-md transition-all ${
                     flashOn
-                      ? 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]'
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-400'
                       : isDark
                         ? 'bg-white/10 hover:bg-white/20'
                         : 'bg-white/20 hover:bg-[#285ec9]'
@@ -299,9 +299,10 @@ export default function MidArea_Monitoring({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className='flex flex-col gap-2.5 p-4 items-center justify-center bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 w-full h-full rounded-2xl border-2 border-[#3BD5FF]/20'
+              className='flex flex-col gap-2.5 p-4 items-center justify-center bg-gradient-to-br from-blue-500/10 to-blue-400/10 w-full h-full rounded-2xl border-2 border-blue-500/20'
             >
-              <div className='p-2 rounded-xl shadow-md bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]'>
+              {' '}
+              <div className='p-2 rounded-xl shadow-md bg-gradient-to-br from-blue-500 to-blue-400'>
                 <Icon
                   icon='fluent:video-off-24-filled'
                   width={28}
@@ -309,10 +310,10 @@ export default function MidArea_Monitoring({
                   className='text-white'
                 />
               </div>
-              <p className='font-semibold text-lg bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text text-center'>
+              <p className='font-semibold text-lg bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text text-center'>
                 Video Stream Unavailable!
               </p>
-              <div className='flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-full text-white text-sm text-center'>
+              <div className='flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-500 to-blue-400 rounded-full text-white text-sm text-center'>
                 Please check RoboGo connection!
               </div>
             </motion.div>
@@ -406,7 +407,7 @@ export default function MidArea_Monitoring({
             className={`flex flex-row items-center justify-center gap-2.5 w-full h-fit rounded-xl px-4 py-2 ${
               isDark
                 ? 'bg-[#113541] text-white'
-                : 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white'
+                : 'bg-gradient-to-br from-blue-500 to-blue-400 text-white'
             }`}
           >
             <Icon icon='mingcute:settings-1-fill' width={20} height={20} />
@@ -416,7 +417,7 @@ export default function MidArea_Monitoring({
             <button
               onClick={handleStartMonitoring}
               disabled={!!currentSession && currentSession > 0}
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3 ${!!currentSession && currentSession > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 text-white col-span-1 md:col-span-3 ${!!currentSession && currentSession > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Icon icon='mingcute:play-fill' width={20} height={20} />
               <p className={`font-semibold text-sm text-white`}>
@@ -427,7 +428,7 @@ export default function MidArea_Monitoring({
             <button
               onClick={handleStopMonitoring}
               disabled={!currentSession || currentSession === 0}
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl col-span-1 md:col-span-3 ${currentSession && currentSession > 0 ? 'bg-gradient-to-br from-red-500 to-red-700 text-white' : 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white opacity-50 cursor-not-allowed'}`}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl col-span-1 md:col-span-3 ${currentSession && currentSession > 0 ? 'bg-gradient-to-br from-red-500 to-red-700 text-white' : 'bg-gradient-to-br from-blue-500 to-blue-400 text-white opacity-50 cursor-not-allowed'}`}
             >
               <Icon icon='mingcute:stop-fill' width={20} height={20} />
               <p className={`font-semibold text-sm text-white`}>
@@ -441,24 +442,24 @@ export default function MidArea_Monitoring({
                 onClick={item.onClick}
                 className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl col-span-1 md:col-span-2 ${
                   isDark
-                    ? 'border-[#3BD5FF]/10 bg-[#0A1625] text-white'
-                    : 'border-[#367AF2]/20 bg-white text-black'
+                    ? 'border-blue-500/10 bg-[#0A1625] text-white'
+                    : 'border-blue-400/20 bg-white text-black'
                 }`}
               >
                 <p
                   className={`font-semibold text-sm ${
                     isDark
                       ? 'text-white'
-                      : 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text'
+                      : 'bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text'
                   }`}
                 >
                   {item.text}
-                </p>
+                </p>{' '}
                 <Icon
                   icon={item.icon}
                   width={20}
                   height={20}
-                  className={isDark ? 'text-[#3BD5FF]' : 'text-[#39A9F9]'}
+                  className={isDark ? 'text-blue-500' : 'text-[#39A9F9]'}
                 />
               </button>
             ))}

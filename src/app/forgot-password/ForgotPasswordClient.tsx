@@ -19,7 +19,7 @@ export default function ForgotPasswordClient() {
   if (isLoading) {
     return (
       <div className='flex justify-center items-center h-screen'>
-        <SyncLoader color='#3BD5FF' size={12} />
+        <SyncLoader color='#60a5fa' size={12} />
       </div>
     );
   }

@@ -106,19 +106,19 @@ export default function NavMenuDesktop() {
 
           if (isReports) {
             return (
-              <div key={index} className="relative">
+              <div key={index} className='relative'>
                 <Link
                   href={item.href}
-                  className="relative z-10 flex items-center justify-center"
+                  className='relative z-10 flex items-center justify-center'
                   onMouseEnter={handleMenuEnter}
                   onMouseLeave={handleMenuLeave}
                 >
                   {isActive && (
                     <motion.div
-                      layoutId="nav-underline"
-                      className="absolute inset-0 rounded-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] shadow-md"
+                      layoutId='nav-underline'
+                      className='absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 shadow-md'
                       transition={{
-                        type: "spring",
+                        type: 'spring',
                         stiffness: 500,
                         damping: 30,
                       }}
@@ -127,10 +127,10 @@ export default function NavMenuDesktop() {
                   <div
                     className={`relative flex flex-row gap-2 items-center text-sm px-6 py-3 rounded-full transition-all duration-200 ${
                       isActive
-                        ? "text-white font-medium"
+                        ? 'text-white font-medium'
                         : isDark
-                          ? "text-white hover:bg-white/10"
-                          : "text-black hover:bg-black/10"
+                          ? 'text-white hover:bg-white/10'
+                          : 'text-black hover:bg-black/10'
                     }`}
                   >
                     <Icon icon={icon} width={22} height={22} />
@@ -145,12 +145,12 @@ export default function NavMenuDesktop() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                     className={`absolute top-full min-w-[220px] rounded-xl shadow-lg z-20 ${
-                      isDark ? "bg-gray-800" : "bg-white"
+                      isDark ? 'bg-gray-800' : 'bg-white'
                     }`}
                     onMouseEnter={handleDropdownEnter}
                     onMouseLeave={handleDropdownLeave}
                   >
-                    <div className="py-2">
+                    <div className='py-2'>
                       {item.children.map((child, childIdx) => {
                         const isChildActive = pathname === child.href;
                         const childIcon = isChildActive
@@ -163,10 +163,10 @@ export default function NavMenuDesktop() {
                             key={childIdx}
                             className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors duration-150 ${
                               isChildActive
-                                ? "text-blue-500 font-medium"
+                                ? 'text-blue-500 font-medium'
                                 : isDark
-                                  ? "text-white hover:bg-white/10"
-                                  : "text-gray-800 hover:bg-gray-100"
+                                  ? 'text-white hover:bg-white/10'
+                                  : 'text-gray-800 hover:bg-gray-100'
                             }`}
                           >
                             <Icon icon={childIcon} width={20} height={20} />
@@ -185,22 +185,22 @@ export default function NavMenuDesktop() {
             <Link
               href={item.href}
               key={index}
-              className="relative z-10 flex items-center justify-center"
+              className='relative z-10 flex items-center justify-center'
             >
               {isActive && (
                 <motion.div
-                  layoutId="nav-underline"
-                  className="absolute inset-0 rounded-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] shadow-md"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  layoutId='nav-underline'
+                  className='absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 shadow-md'
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
               <div
                 className={`relative flex flex-row gap-2 items-center text-sm px-6 py-3 rounded-full transition-all duration-200 ${
                   isActive
-                    ? "text-white font-medium"
+                    ? 'text-white font-medium'
                     : isDark
-                      ? "text-white hover:bg-white/10"
-                      : "text-black hover:bg-black/10"
+                      ? 'text-white hover:bg-white/10'
+                      : 'text-black hover:bg-black/10'
                 }`}
               >
                 <Icon icon={icon} width={22} height={22} />

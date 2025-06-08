@@ -22,14 +22,13 @@ const ShortInfo: React.FC<ShortInfoProps> = ({ infoItems }) => {
 
         const containerClasses = isActive
           ? isDark
-            ? 'border-[#3BD5FF]/10 bg-gradient-to-br from-[#3BD5FF]/5 to-[#367AF2]/5'
-            : 'border-[#3BD5FF]/20 bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10'
+            ? 'border-blue-500/10 bg-gradient-to-br from-blue-500/5 to-blue-400/5'
+            : 'border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-400/10'
           : isDark
             ? 'border-white/10 bg-white/5'
             : 'border-gray-300 bg-gray-100';
-
         const iconWrapperClasses = isActive
-          ? 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]'
+          ? 'bg-gradient-to-br from-blue-500 to-blue-400'
           : isDark
             ? 'bg-white/10'
             : 'bg-gray-300';

@@ -165,37 +165,37 @@ export default function RightArea_Monitoring({
   };
 
   return (
-    <div className="flex flex-col items-start justify-start w-full md:w-auto max-w-none md:min-w-[450px] gap-4 h-full">
+    <div className='flex flex-col items-start justify-start w-full md:w-auto max-w-none md:min-w-[450px] gap-4 h-full'>
       <div
         className={`flex flex-col items-center justify-start w-full px-4 md:px-5 py-4 rounded-xl flex-1 border-2 gap-3 ${
           isDark
-            ? "border-[#113541] bg-[#0F1B2B] text-white"
-            : "border-[#ECECEC] bg-white text-black"
+            ? 'border-[#113541] bg-[#0F1B2B] text-white'
+            : 'border-[#ECECEC] bg-white text-black'
         }`}
       >
-        <div className="flex flex-row items-center justify-start w-full gap-2 z-10">
-          <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md">
+        <div className='flex flex-row items-center justify-start w-full gap-2 z-10'>
+          <div className='p-1.5 bg-gradient-to-br from-blue-500 to-blue-400 rounded-xl shadow-md'>
             <Icon
-              icon="fluent:data-usage-32-filled"
+              icon='fluent:data-usage-32-filled'
               width={20}
               height={20}
-              className="text-white"
+              className='text-white'
             />
           </div>
-          <p className="font-semibold text-sm md:text-base truncate">
+          <p className='font-semibold text-sm md:text-base truncate'>
             Real-time Monitoring
           </p>
         </div>
 
-        <div className="w-full z-10">
+        <div className='w-full z-10'>
           <MonitoringInfo<SensorKey>
             infoItems={monitoringItems}
             onSelect={handleSelect}
           />
         </div>
 
-        <div className="w-full z-10">
-          <AnimatePresence mode="wait">
+        <div className='w-full z-10'>
+          <AnimatePresence mode='wait'>
             <motion.div
               key={selectedKey}
               initial={{ opacity: 0, x: 10 }}

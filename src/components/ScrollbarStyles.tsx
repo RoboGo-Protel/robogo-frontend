@@ -8,17 +8,15 @@ export default function ScrollbarStyles() {
   const scrollbarStyle = `
     ::-webkit-scrollbar {
       width: 8px;
-      background-color: ${isDark ? "#1D7C9F" : "#D9D9D9"};
+      background-color: ${isDark ? '#1D7C9F' : '#D9D9D9'};
       border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background-color: ${isDark ? "#3BD5FF" : "#367AF2"};
+    }    ::-webkit-scrollbar-thumb {
+      background-color: ${isDark ? '#3b82f6' : '#60a5fa'};
       border-radius: 10px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-      background-color: ${isDark ? "#367AF2" : "#3BD5FF"};
+      background-color: ${isDark ? '#60a5fa' : '#3b82f6'};
     }
   `;
 

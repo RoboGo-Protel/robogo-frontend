@@ -124,7 +124,7 @@ const Settings: React.FC<SettingsProps> = ({
                 Cancel
               </button>
               <button
-                className='px-5 py-2 rounded-lg font-medium bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white hover:brightness-90 transition-colors'
+                className='px-5 py-2 rounded-lg font-medium bg-gradient-to-br from-blue-500 to-blue-400 text-white hover:brightness-90 transition-colors'
                 onClick={handleSave}
                 disabled={loading || !cameraUrl.trim()}
               >

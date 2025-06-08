@@ -33,29 +33,29 @@ const categoryStatusAlert = (ultrasonic: number | string) => {
 
 const statusTheme = {
   normal: {
-    borderColor: "#3BD5FF",
-    fromColor: "#3BD5FF",
-    toColor: "#367AF2",
+    borderColor: '#3b82f6',
+    fromColor: '#3b82f6',
+    toColor: '#60a5fa',
   },
   warning: {
-    borderColor: "#facc15",
-    fromColor: "#FF9800",
-    toColor: "#FFC107",
+    borderColor: '#facc15',
+    fromColor: '#FF9800',
+    toColor: '#FFC107',
   },
   danger: {
-    borderColor: "#ef4444",
-    fromColor: "#FF9799",
-    toColor: "#EB0C0F",
+    borderColor: '#ef4444',
+    fromColor: '#FF9799',
+    toColor: '#EB0C0F',
   },
 };
 
 const Table: React.FC<TableProps> = ({
-  sensorTitle = "Ultrasonic Sensor",
+  sensorTitle = 'Ultrasonic Sensor',
   sensorModel,
-  secondHeaderValue = "Distance (cm)",
+  secondHeaderValue = 'Distance (cm)',
   data,
   reverseOrder = false,
-  className = "",
+  className = '',
 }) => {
   const { isDark } = useDarkMode();
 
@@ -64,46 +64,46 @@ const Table: React.FC<TableProps> = ({
   return (
     <div
       className={`w-full max-w-md overflow-hidden rounded-2xl shadow-md border ${
-        isDark ? "border-neutral-700" : "border-gray-200"
+        isDark ? 'border-neutral-700' : 'border-gray-200'
       } ${className}`}
     >
-      <div className="flex justify-center items-center gap-1 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-4 py-3 text-white text-sm font-semibold rounded-t-2xl">
+      <div className='flex justify-center items-center gap-1 bg-gradient-to-br from-blue-500 to-blue-400 px-4 py-3 text-white text-sm font-semibold rounded-t-2xl'>
         {sensorTitle}
         {sensorModel && (
           <>
-            &nbsp;• <span className="font-bold">{sensorModel}</span>
+            &nbsp;• <span className='font-bold'>{sensorModel}</span>
           </>
         )}
       </div>
 
-      <div className={isDark ? "bg-neutral-900" : "bg-white"}>
+      <div className={isDark ? 'bg-neutral-900' : 'bg-white'}>
         <table
           className={`w-full text-sm text-left ${
-            isDark ? "text-white" : "text-black"
+            isDark ? 'text-white' : 'text-black'
           }`}
         >
           <thead
             className={`${
               isDark
-                ? "bg-neutral-800 text-white"
-                : "bg-gradient-to-r from-blue-50 to-blue-100 text-gray-800"
+                ? 'bg-neutral-800 text-white'
+                : 'bg-gradient-to-r from-blue-50 to-blue-100 text-gray-800'
             }`}
           >
             <tr>
-              <th className="px-4 py-2 font-semibold">Timestamp</th>
-              <th className="px-4 py-2 font-semibold">{secondHeaderValue}</th>
+              <th className='px-4 py-2 font-semibold'>Timestamp</th>
+              <th className='px-4 py-2 font-semibold'>{secondHeaderValue}</th>
             </tr>
           </thead>
           <tbody
             className={
               isDark
-                ? "divide-y divide-neutral-700"
-                : "divide-y divide-gray-200"
+                ? 'divide-y divide-neutral-700'
+                : 'divide-y divide-gray-200'
             }
           >
             {displayData.map((item, index) => {
               const status =
-                sensorTitle === "Ultrasonic Sensor"
+                sensorTitle === 'Ultrasonic Sensor'
                   ? categoryStatusAlert(item.value)
                   : null;
 
@@ -112,46 +112,46 @@ const Table: React.FC<TableProps> = ({
                   key={index}
                   className={
                     index === 0
-                      ? "bg-gradient-to-br from-[#3BD5FF]/20 to-[#367AF2]/20 font-semibold"
-                      : ""
+                      ? 'bg-gradient-to-br from-blue-500/20 to-blue-400/20 font-semibold'
+                      : ''
                   }
                 >
-                  <td className="px-4 py-2">{item.timestamp}</td>
-                  <td className="px-4 py-2">
-                    {sensorTitle === "Ultrasonic Sensor" ? (
-                      <div className="flex items-center gap-2">
+                  <td className='px-4 py-2'>{item.timestamp}</td>
+                  <td className='px-4 py-2'>
+                    {sensorTitle === 'Ultrasonic Sensor' ? (
+                      <div className='flex items-center gap-2'>
                         {item.value.toFixed(2)}
-                        {status === "danger" ? (
+                        {status === 'danger' ? (
                           <Icon
-                            icon="mdi:alert-circle"
-                            color="#ef4444"
+                            icon='mdi:alert-circle'
+                            color='#ef4444'
                             fontSize={20}
                           />
                         ) : (
                           <span
-                            className="w-3 h-3 rounded-full"
+                            className='w-3 h-3 rounded-full'
                             style={{
                               background: status
                                 ? `linear-gradient(135deg, ${
                                     statusTheme[status].fromColor
                                   }, ${statusTheme[status].toColor})`
-                                : "#ccc",
+                                : '#ccc',
                             }}
                             title={
                               status
                                 ? status.charAt(0).toUpperCase() +
                                   status.slice(1)
-                                : "Unknown"
+                                : 'Unknown'
                             }
                           ></span>
                         )}
                       </div>
-                    ) : sensorTitle === "IMU Heading Direction" ? (
-                      <div className="flex items-center gap-2">
-                        {item.value.toFixed(2)}°
+                    ) : sensorTitle === 'IMU Heading Direction' ? (
+                      <div className='flex items-center gap-2'>
+                        {item.value.toFixed(2)}°{' '}
                         <Icon
-                          icon="material-symbols:north-rounded"
-                          className="text-[#367AF2] shrink-0"
+                          icon='material-symbols:north-rounded'
+                          className='text-blue-400 shrink-0'
                           style={{
                             transform: `rotate(${((item.value % 360) + 360) % 360}deg)`,
                           }}
@@ -159,7 +159,7 @@ const Table: React.FC<TableProps> = ({
                           height={20}
                         />
                         {item.direction && (
-                          <span className="text-xs text-gray-500">
+                          <span className='text-xs text-gray-500'>
                             {item.direction}
                           </span>
                         )}
@@ -176,10 +176,10 @@ const Table: React.FC<TableProps> = ({
             {Array.from({ length: Math.max(0, 5 - displayData.length) }).map(
               (_, i) => (
                 <tr key={`empty-${i}`}>
-                  <td className="px-4 py-2">&nbsp;</td>
-                  <td className="px-4 py-2">&nbsp;</td>
+                  <td className='px-4 py-2'>&nbsp;</td>
+                  <td className='px-4 py-2'>&nbsp;</td>
                 </tr>
-              )
+              ),
             )}
           </tbody>
         </table>

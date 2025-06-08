@@ -67,36 +67,36 @@ export default function IMU() {
   const customStyles: StylesConfig<OptionType, false> = {
     container: (provided) => ({
       ...provided,
-      width: "full",
+      width: 'full',
       minWidth: 140,
     }),
     control: (provided) => ({
       ...provided,
       height: 48,
       minHeight: 48,
-      border: "none",
-      borderRadius: "1rem",
-      background: "linear-gradient(to bottom right, #3BD5FF, #367AF2)",
-      boxShadow: "none",
-      paddingLeft: "16px",
-      paddingRight: "16px",
+      border: 'none',
+      borderRadius: '1rem',
+      background: 'linear-gradient(to bottom right, #3b82f6, #60a5fa)',
+      boxShadow: 'none',
+      paddingLeft: '16px',
+      paddingRight: '16px',
 
-      overflow: "visible",
-      whiteSpace: "nowrap",
+      overflow: 'visible',
+      whiteSpace: 'nowrap',
     }),
     singleValue: (provided) => ({
       ...provided,
-      color: "white",
-      fontSize: "1rem",
-      overflow: "visible",
-      whiteSpace: "nowrap",
+      color: 'white',
+      fontSize: '1rem',
+      overflow: 'visible',
+      whiteSpace: 'nowrap',
     }),
     indicatorSeparator: () => ({
-      display: "none",
+      display: 'none',
     }),
     dropdownIndicator: (provided) => ({
       ...provided,
-      color: "white",
+      color: 'white',
     }),
     menu: (provided) => ({
       ...provided,
@@ -156,8 +156,8 @@ export default function IMU() {
   return (
     <div
       className={clsx(
-        "flex flex-col md:flex-row gap-4 p-4 md:p-5 transition-colors duration-300 w-full",
-        isDark ? "text-white bg-[#112133]" : "text-black"
+        'flex flex-col md:flex-row gap-4 p-4 md:p-5 transition-colors duration-300 w-full',
+        isDark ? 'text-white bg-[#112133]' : 'text-black',
       )}
       style={{
         paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -166,7 +166,7 @@ export default function IMU() {
     >
       {isLoading ? (
         <div
-          className="flex flex-col justify-center items-center w-full"
+          className='flex flex-col justify-center items-center w-full'
           style={{
             height: `calc(100vh - ${
               topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
@@ -174,15 +174,15 @@ export default function IMU() {
           }}
         >
           <PulseLoader
-            color="#367AF2"
+            color='#60a5fa'
             loading={isLoading}
             size={15}
             margin={5}
           />
           <p
             className={clsx(
-              "mt-4 text-lg text-center",
-              isDark ? "text-gray-300" : "text-gray-500"
+              'mt-4 text-lg text-center',
+              isDark ? 'text-gray-300' : 'text-gray-500',
             )}
           >
             Loading path reports, please wait...
@@ -191,8 +191,8 @@ export default function IMU() {
       ) : reports.length === 0 ? (
         <div
           className={clsx(
-            "flex flex-col justify-center items-center w-full p-4 border-2 rounded-xl",
-            isDark ? "border-gray-700" : "border-gray-300"
+            'flex flex-col justify-center items-center w-full p-4 border-2 rounded-xl',
+            isDark ? 'border-gray-700' : 'border-gray-300',
           )}
           style={{
             height: `calc(100vh - ${
@@ -201,15 +201,15 @@ export default function IMU() {
           }}
         >
           <Icon
-            icon="tabler:photo-off"
+            icon='tabler:photo-off'
             width={48}
             height={48}
-            className={clsx(isDark ? "text-gray-600" : "text-gray-400")}
+            className={clsx(isDark ? 'text-gray-600' : 'text-gray-400')}
           />
           <p
             className={clsx(
-              "mt-4 text-lg text-center",
-              isDark ? "text-gray-300" : "text-gray-500"
+              'mt-4 text-lg text-center',
+              isDark ? 'text-gray-300' : 'text-gray-500',
             )}
           >
             No path reports available. Please check back later.
@@ -217,54 +217,54 @@ export default function IMU() {
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-4 w-full">
+          <div className='flex flex-col gap-4 w-full'>
             <TunnelPath showStartpoint showEndpoint pathData={reports} />
 
             {/* Legends Section */}
-            <div className="flex flex-col md:flex-row gap-4 w-full">
-              <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl text-white justify-center md:justify-start">
-                <Icon icon="mdi:map-legend" width={24} height={24} />
+            <div className='flex flex-col md:flex-row gap-4 w-full'>
+              <div className='flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-500 to-blue-400 rounded-xl text-white justify-center md:justify-start'>
+                <Icon icon='mdi:map-legend' width={24} height={24} />
                 <p>Legends</p>
               </div>
               <div
                 className={clsx(
-                  "flex flex-wrap justify-between w-full gap-4 px-4 py-2 rounded-xl border-2",
-                  isDark ? "border-[#223355]" : "border-[#DCDCDC]"
+                  'flex flex-wrap justify-between w-full gap-4 px-4 py-2 rounded-xl border-2',
+                  isDark ? 'border-[#223355]' : 'border-[#DCDCDC]',
                 )}
               >
                 {/* Each legend item */}
-                <div className="flex items-center gap-2 min-w-[130px]">
-                  <div className="flex items-center justify-center bg-gradient-to-br from-[#FF623B] to-[#CD2323] rounded-full p-1.5 shadow">
+                <div className='flex items-center gap-2 min-w-[130px]'>
+                  <div className='flex items-center justify-center bg-gradient-to-br from-[#FF623B] to-[#CD2323] rounded-full p-1.5 shadow'>
                     <Icon
-                      icon="mynaui:danger-triangle-solid"
-                      className="text-white"
+                      icon='mynaui:danger-triangle-solid'
+                      className='text-white'
                       width={18}
                       height={18}
                     />
                   </div>
-                  <p className="bg-gradient-to-br from-[#FF623B] to-[#CD2323] text-transparent bg-clip-text font-medium">
+                  <p className='bg-gradient-to-br from-[#FF623B] to-[#CD2323] text-transparent bg-clip-text font-medium'>
                     Obstacle
                   </p>
                 </div>
-                <div className="flex items-center gap-2 min-w-[130px]">
-                  <div className="rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center">
-                    <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]" />
+                <div className='flex items-center gap-2 min-w-[130px]'>
+                  <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center'>
+                    <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]' />
                   </div>
-                  <p className="bg-gradient-to-br from-[#FFC107] to-[#FF9800] text-transparent bg-clip-text font-medium">
+                  <p className='bg-gradient-to-br from-[#FFC107] to-[#FF9800] text-transparent bg-clip-text font-medium'>
                     Startpoint
                   </p>
                 </div>
-                <div className="flex items-center gap-2 min-w-[130px]">
-                  <div className="rounded-full w-8 h-8 bg-gradient-to-br from-[#FF9799]/30 to-[#EB0C0F]/30 flex items-center justify-center">
-                    <div className="rounded-full w-5 h-5 bg-gradient-to-br from-[#FF9799] to-[#EB0C0F]" />
+                <div className='flex items-center gap-2 min-w-[130px]'>
+                  <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FF9799]/30 to-[#EB0C0F]/30 flex items-center justify-center'>
+                    <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FF9799] to-[#EB0C0F]' />
                   </div>
-                  <p className="bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-transparent bg-clip-text font-medium">
+                  <p className='bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-transparent bg-clip-text font-medium'>
                     Endpoint
                   </p>
                 </div>
-                <div className="flex items-center gap-2 min-w-[130px]">
-                  <div className="w-8 h-1 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-full" />
-                  <p className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text font-medium">
+                <div className='flex items-center gap-2 min-w-[130px]'>
+                  <div className='w-8 h-1 bg-gradient-to-br from-blue-500 to-blue-400 rounded-full' />
+                  <p className='bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text font-medium'>
                     RoboGo Path
                   </p>
                 </div>
@@ -273,8 +273,8 @@ export default function IMU() {
           </div>
 
           {/* Dropdown + Table Section */}
-          <div className="flex flex-col w-full gap-4 items-stretch mt-4">
-            <div className="flex flex-col md:flex-row gap-4 w-full">
+          <div className='flex flex-col w-full gap-4 items-stretch mt-4'>
+            <div className='flex flex-col md:flex-row gap-4 w-full'>
               <Select
                 options={dateWithSessions.map((d) => ({
                   value: d.value,
@@ -285,7 +285,7 @@ export default function IMU() {
                 onChange={(option) => {
                   setSelectedDate(option);
                   const selected = dateWithSessions.find(
-                    (d) => d.value === option?.value
+                    (d) => d.value === option?.value,
                   );
                   if (selected?.sessions.length) {
                     setSelectedSession(selected.sessions[0]);
@@ -294,15 +294,15 @@ export default function IMU() {
                   }
                 }}
                 isSearchable={false}
-                className="flex-1"
+                className='flex-1'
                 theme={(theme) => ({
                   ...theme,
                   colors: {
                     ...theme.colors,
-                    primary25: isDark ? "#23272f" : "#e3f2fd",
-                    primary: isDark ? "#3BD5FF" : "#367AF2",
-                    neutral0: isDark ? "#23272f" : "#fff",
-                    neutral80: isDark ? "#fff" : "#333",
+                    primary25: isDark ? '#23272f' : '#e3f2fd',
+                    primary: isDark ? '#3b82f6' : '#60a5fa',
+                    neutral0: isDark ? '#23272f' : '#fff',
+                    neutral80: isDark ? '#fff' : '#333',
                   },
                 })}
               />
@@ -310,7 +310,7 @@ export default function IMU() {
                 options={
                   selectedDate
                     ? dateWithSessions.find(
-                        (d) => d.value === selectedDate.value
+                        (d) => d.value === selectedDate.value,
                       )?.sessions || []
                     : []
                 }
@@ -319,15 +319,15 @@ export default function IMU() {
                 onChange={setSelectedSession}
                 isSearchable={false}
                 isDisabled={!selectedDate}
-                className="flex-1"
+                className='flex-1'
                 theme={(theme) => ({
                   ...theme,
                   colors: {
                     ...theme.colors,
-                    primary25: isDark ? "#23272f" : "#e3f2fd",
-                    primary: isDark ? "#3BD5FF" : "#367AF2",
-                    neutral0: isDark ? "#23272f" : "#fff",
-                    neutral80: isDark ? "#fff" : "#333",
+                    primary25: isDark ? '#23272f' : '#e3f2fd',
+                    primary: isDark ? '#3b82f6' : '#60a5fa',
+                    neutral0: isDark ? '#23272f' : '#fff',
+                    neutral80: isDark ? '#fff' : '#333',
                   },
                 })}
               />

@@ -155,8 +155,8 @@ export default function Gallery() {
     <>
       <div
         className={clsx(
-          "flex flex-col gap-4 p-5 transition-colors duration-300",
-          isDark ? "bg-[#112133] text-white" : "bg-white text-black"
+          'flex flex-col gap-4 p-5 transition-colors duration-300',
+          isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
         )}
         style={{
           paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -165,7 +165,7 @@ export default function Gallery() {
       >
         {isLoading ? (
           <div
-            className="flex flex-col justify-center items-center"
+            className='flex flex-col justify-center items-center'
             style={{
               height: `calc(100vh - ${
                 topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
@@ -173,15 +173,15 @@ export default function Gallery() {
             }}
           >
             <SyncLoader
-              color="#367AF2"
+              color='#60a5fa'
               loading={isLoading}
               size={15}
               margin={5}
             />
             <p
               className={clsx(
-                "mt-4 text-lg",
-                isDark ? "text-gray-400" : "text-gray-500"
+                'mt-4 text-lg',
+                isDark ? 'text-gray-400' : 'text-gray-500',
               )}
             >
               Loading photos, please wait...
@@ -189,7 +189,7 @@ export default function Gallery() {
           </div>
         ) : listPhotoWithDate.length === 0 ? (
           <div
-            className="flex flex-col justify-center items-center w-full p-4 border-2 border-gray-300 rounded-xl"
+            className='flex flex-col justify-center items-center w-full p-4 border-2 border-gray-300 rounded-xl'
             style={{
               height: `calc(100vh - ${
                 topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
@@ -197,15 +197,15 @@ export default function Gallery() {
             }}
           >
             <Icon
-              icon="tabler:photo-off"
+              icon='tabler:photo-off'
               width={48}
               height={48}
-              className="text-gray-400"
+              className='text-gray-400'
             />
             <p
               className={clsx(
-                "mt-4 text-lg",
-                isDark ? "text-gray-400" : "text-gray-500"
+                'mt-4 text-lg',
+                isDark ? 'text-gray-400' : 'text-gray-500',
               )}
             >
               No photos available. Please check back later.
@@ -213,36 +213,36 @@ export default function Gallery() {
           </div>
         ) : (
           Object.entries(groupedPhotos).map(([dateKey, photos]) => (
-            <div key={dateKey} className="mb-4">
+            <div key={dateKey} className='mb-4'>
               <div
                 className={clsx(
-                  "w-full sticky top-[calc(var(--top-navbar-height)+var(--reports-navbar-height))] z-10 rounded-b-2xl",
-                  isDark ? "bg-[#112133] text-white" : "bg-white text-black"
+                  'w-full sticky top-[calc(var(--top-navbar-height)+var(--reports-navbar-height))] z-10 rounded-b-2xl',
+                  isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
                 )}
               >
                 <div
                   className={clsx(
-                    "flex flex-row items-center gap-2.5 text-lg font-semibold mb-3 px-5 py-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white shadow",
-                    "rounded-xl"
+                    'flex flex-row items-center gap-2.5 text-lg font-semibold mb-3 px-5 py-2.5 bg-gradient-to-br from-blue-500 to-blue-400 text-white shadow',
+                    'rounded-xl',
                   )}
                   style={{
-                    borderRadius: "1rem 1rem 1rem 1rem",
-                    marginBottom: "-1px",
+                    borderRadius: '1rem 1rem 1rem 1rem',
+                    marginBottom: '-1px',
                   }}
                 >
-                  <Icon icon="tabler:calendar-filled" width={24} height={24} />
+                  <Icon icon='tabler:calendar-filled' width={24} height={24} />
                   <p>{formatDate(dateKey)}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 mt-4">
+              <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 mt-4'>
                 {photos.map((item, idx) => (
                   <div
                     key={idx}
-                    className="relative cursor-pointer"
+                    className='relative cursor-pointer'
                     onClick={() =>
                       setSelectedPhoto({
                         id: item.id,
-                        src: item.imageUrl || "/images/no_image.png",
+                        src: item.imageUrl || '/images/no_image.png',
                         alt: item.filename,
                         obstacle: item.obstacle ?? false,
                         date: item.timestamp,
@@ -253,37 +253,37 @@ export default function Gallery() {
                     }
                   >
                     <img
-                      src={item.imageUrl || "/images/no_image.png"}
+                      src={item.imageUrl || '/images/no_image.png'}
                       alt={item.filename}
                       className={clsx(
-                        "w-full aspect-[4/3] object-cover rounded-xl",
+                        'w-full aspect-[4/3] object-cover rounded-xl',
                         isDark
-                          ? "border border-gray-700"
-                          : "border border-gray-200"
+                          ? 'border border-gray-700'
+                          : 'border border-gray-200',
                       )}
-                      loading="lazy"
+                      loading='lazy'
                     />
 
-                    <div className="flex items-center gap-2 absolute top-2 right-2">
+                    <div className='flex items-center gap-2 absolute top-2 right-2'>
                       {item.metadata &&
                         Object.keys(item.metadata).length > 0 && (
                           <>
                             <span
-                              className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white text-xs p-1 rounded-lg shadow-md"
+                              className='bg-gradient-to-br from-blue-500 to-blue-400 text-white text-xs p-1 rounded-lg shadow-md'
                               data-tooltip-id={`metadata-${idx}`}
-                              data-tooltip-content="There is metadata on this image!"
+                              data-tooltip-content='There is metadata on this image!'
                             >
                               <Icon
-                                icon="fluent:document-data-16-filled"
+                                icon='fluent:document-data-16-filled'
                                 width={24}
                                 height={24}
                               />
                             </span>
                             <ReactTooltip
                               id={`metadata-${idx}`}
-                              place="top"
-                              variant="info"
-                              className="z-40"
+                              place='top'
+                              variant='info'
+                              className='z-40'
                             />
                           </>
                         )}
@@ -291,21 +291,21 @@ export default function Gallery() {
                       {item.obstacle && (
                         <>
                           <span
-                            className="bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs p-1 rounded-lg shadow-md"
+                            className='bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs p-1 rounded-lg shadow-md'
                             data-tooltip-id={`obstacle-${idx}`}
-                            data-tooltip-content="This image contains an obstacle!"
+                            data-tooltip-content='This image contains an obstacle!'
                           >
                             <Icon
-                              icon="fluent:scan-object-24-filled"
+                              icon='fluent:scan-object-24-filled'
                               width={24}
                               height={24}
                             />
                           </span>
                           <ReactTooltip
                             id={`obstacle-${idx}`}
-                            place="top"
-                            variant="error"
-                            className="z-40"
+                            place='top'
+                            variant='error'
+                            className='z-40'
                           />
                         </>
                       )}

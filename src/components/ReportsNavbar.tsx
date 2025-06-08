@@ -86,7 +86,7 @@ export default function ReportsNavbar() {
           "flex flex-row gap-3 items-center justify-center text-base font-medium transition duration-200 ease-in-out rounded-xl py-3 px-4 w-full";
 
         const activeClass =
-          "text-white bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] cursor-default pointer-events-none w-full";
+          'text-white bg-gradient-to-br from-blue-500 to-blue-400 cursor-default pointer-events-none w-full';
         const inactiveClass = "text-black hover:bg-white/20";
 
         const content = (

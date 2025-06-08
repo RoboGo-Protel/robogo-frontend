@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } fr        <div className='absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse'></div>
+        <div className='absolute top-32 right-28 w-80 h-80 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000'></div>
+        <div className='absolute -bottom-32 left-32 w-96 h-96 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000'></div>'next/navigation';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import { useToast } from '@/context/ToastProvider';
@@ -97,9 +99,9 @@ export default function ResetPassword() {
     <div className='min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'>
       {/* Animated Background Elements */}
       <div className='absolute inset-0'>
-        <div className='absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse'></div>
-        <div className='absolute top-40 right-32 w-80 h-80 bg-gradient-to-r from-[#367AF2] to-[#3BD5FF] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000'></div>
-        <div className='absolute -bottom-32 left-32 w-96 h-96 bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000'></div>
+        <div className='absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse'></div>
+        <div className='absolute top-40 right-32 w-80 h-80 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000'></div>
+        <div className='absolute -bottom-32 left-32 w-96 h-96 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000'></div>
       </div>
 
       {/* Floating Particles */}
@@ -137,7 +139,7 @@ export default function ResetPassword() {
           {/* Main Card */}
           <div className='backdrop-blur-lg bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-8 relative'>
             {/* Gradient Border Effect */}
-            <div className='absolute inset-0 rounded-2xl bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] p-[1px]'>
+            <div className='absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-400 p-[1px]'>
               <div className='rounded-2xl bg-slate-900/90 w-full h-full'></div>
             </div>
 
@@ -147,7 +149,7 @@ export default function ResetPassword() {
                   {/* Header */}
                   <div className='text-center mb-8'>
                     {' '}
-                    <div className='w-16 h-16 bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] rounded-full flex items-center justify-center mx-auto mb-4'>
+                    <div className='w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full flex items-center justify-center mx-auto mb-4'>
                       <Icon
                         icon='solar:lock-password-linear'
                         className='w-8 h-8 text-white'
@@ -180,11 +182,10 @@ export default function ResetPassword() {
                           />
                         </div>
                         <input
-                          id='password'
-                          type={showPassword ? 'text' : 'password'}
+                          id='password'                          type={showPassword ? 'text' : 'password'}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className='w-full pl-10 pr-12 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent transition-all duration-300'
+                          className='w-full pl-10 pr-12 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300'
                           placeholder='Enter new password'
                           disabled={isLoading}
                         />{' '}
@@ -221,11 +222,10 @@ export default function ResetPassword() {
                           />
                         </div>
                         <input
-                          id='confirmPassword'
-                          type={showConfirmPassword ? 'text' : 'password'}
+                          id='confirmPassword'                          type={showConfirmPassword ? 'text' : 'password'}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          className='w-full pl-10 pr-12 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3BD5FF] focus:border-transparent transition-all duration-300'
+                          className='w-full pl-10 pr-12 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300'
                           placeholder='Confirm new password'
                           disabled={isLoading}
                         />{' '}
@@ -282,7 +282,7 @@ export default function ResetPassword() {
                     <button
                       type='submit'
                       disabled={isLoading || !token}
-                      className='w-full bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] text-white py-3 px-4 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center space-x-2'
+                      className='w-full bg-gradient-to-r from-blue-500 to-blue-400 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center space-x-2'
                     >
                       {isLoading ? (
                         <>
@@ -320,7 +320,7 @@ export default function ResetPassword() {
                     </p>
                     <Link
                       href='/login'
-                      className='inline-block w-full bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] text-white py-3 px-4 rounded-lg font-semibold text-center transition-all duration-300 hover:shadow-lg hover:scale-[1.02]'
+                      className='inline-block w-full bg-gradient-to-r from-blue-500 to-blue-400 text-white py-3 px-4 rounded-lg font-semibold text-center transition-all duration-300 hover:shadow-lg hover:scale-[1.02]'
                     >
                       Sign In Now
                     </Link>
@@ -337,7 +337,7 @@ export default function ResetPassword() {
                 Remember your password?{' '}
                 <Link
                   href='/login'
-                  className='text-[#3BD5FF] hover:text-white transition-colors duration-300 font-medium'
+                  className='text-blue-500 hover:text-white transition-colors duration-300 font-medium'
                 >
                   Sign in
                 </Link>
