@@ -65,7 +65,7 @@ interface Metadata {
 export default function UltrasonicSensorTable({
   reports,
 }: UltrasonicSensorTableProps) {
-  // const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  
   const [selectedPhoto, setSelectedPhoto] = useState<null | {
     id: string;
     src: string;
@@ -77,17 +77,17 @@ export default function UltrasonicSensorTable({
     metadata: Metadata;
   }>(null);
 
-  // const toggleSelectItem = (id: number) => {
-  //   if (selectedItems.includes(id)) {
-  //     setSelectedItems(selectedItems.filter((item) => item !== id));
-  //   } else {
-  //     setSelectedItems([...selectedItems, id]);
-  //   }
-  // };
+  
+  
+  
+  
+  
+  
+  
 
-  // const deleteReport = (id: number) => {
-  //   setSelectedItems(selectedItems.filter((item) => item !== id));
-  // };
+  
+  
+  
 
   const getAlertBadge = (level: string) => {
     switch (level) {

@@ -113,19 +113,18 @@ export function ToastProvider({
     ): Promise<T> => {
       const id = uuidv4();
 
-      // Show loading toast
+      
       setToasts((prev) => [
         ...prev,
-        { id, message: loading, type: "loading", persistent: true },
+        { id, message: loading, type: 'loading', persistent: true },
       ]);
 
       try {
         const result = await promise;
 
-        // Update to success
         updateToast(id, {
-          message: typeof success === "function" ? success(result) : success,
-          type: "success",
+          message: typeof success === 'function' ? success(result) : success,
+          type: 'success',
           persistent: false,
         });
 
@@ -133,8 +132,8 @@ export function ToastProvider({
         return result;
       } catch (err) {
         updateToast(id, {
-          message: typeof error === "function" ? error(err) : error,
-          type: "error",
+          message: typeof error === 'function' ? error(err) : error,
+          type: 'error',
           persistent: false,
         });
 

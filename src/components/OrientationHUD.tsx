@@ -3,7 +3,7 @@ import React from "react";
 import { motion } from "framer-motion";
 
 interface BoatOrientationHUDProps {
-  roll: number; // -45 ke 45 (kemiringan kapal ke kiri/kanan)
+  roll: number;
 }
 
 export default function BoatOrientationHUD({

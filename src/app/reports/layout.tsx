@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "../globals.css";
-import ProtectedLayout from "@/components/layout/ProtectedLayout";
-// import ReportsNavbar from "@/components/ReportsNavbar";
+import ProtectedLayout from '@/components/layout/ProtectedLayout';
 
 export const metadata: Metadata = {
   title: "Reports - RoboGo",

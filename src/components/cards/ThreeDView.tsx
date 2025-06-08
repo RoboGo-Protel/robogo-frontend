@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import * as THREE from "three";
 import { MTLLoader, OBJLoader, OrbitControls } from "three-stdlib";
-import { useDarkMode } from "@/context/DarkModeContext"; // Pastikan hook tersedia
+import { useDarkMode } from '@/context/DarkModeContext';
 
 export default function ThreeDView() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,7 +37,6 @@ export default function ThreeDView() {
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    // Light setup
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
@@ -49,16 +48,15 @@ export default function ThreeDView() {
     hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
 
-    // Load model
     const mtlLoader = new MTLLoader();
-    mtlLoader.setPath("/models/");
-    mtlLoader.load("bodyfull.mtl", (materials) => {
+    mtlLoader.setPath('/models/');
+    mtlLoader.load('bodyfull.mtl', (materials) => {
       materials.preload();
       const objLoader = new OBJLoader();
       objLoader.setMaterials(materials);
-      objLoader.setPath("/models/");
+      objLoader.setPath('/models/');
       objLoader.load(
-        "bodyfull.obj",
+        'bodyfull.obj',
         (object) => {
           const box = new THREE.Box3().setFromObject(object);
           const size = new THREE.Vector3();
@@ -98,9 +96,9 @@ export default function ThreeDView() {
         },
         undefined,
         (err) => {
-          console.error("Error loading model:", err);
+          console.error('Error loading model:', err);
           setIsLoading(false);
-        }
+        },
       );
     });
 
@@ -119,12 +117,12 @@ export default function ThreeDView() {
       renderer.setSize(newWidth, newHeight);
     };
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       renderer.dispose();
       controls.dispose();
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener('resize', handleResize);
       if (container.contains(rendererEl)) {
         container.removeChild(rendererEl);
       }
@@ -135,10 +133,10 @@ export default function ThreeDView() {
     <div
       className={`flex flex-col items-center justify-start w-full px-5 py-4 border-2 rounded-xl flex-1 overflow-hidden relative ${
         isDark
-          ? "border-[#113541] bg-[#0F1B2B] text-white"
-          : "border-[#ECECEC] bg-white text-black"
+          ? 'border-[#113541] bg-[#0F1B2B] text-white'
+          : 'border-[#ECECEC] bg-white text-black'
       }`}
-      style={{ height: "400px" }}
+      style={{ height: '400px' }}
     >
       <button
         onClick={() => {
@@ -150,70 +148,70 @@ export default function ThreeDView() {
         }}
         className={`absolute top-2 right-2 z-30 px-3 py-1 text-sm rounded-lg shadow transition ${
           isDark
-            ? "bg-[#1E2D40] text-white hover:bg-[#29415E]"
-            : "bg-white text-gray-700 hover:bg-gray-100"
+            ? 'bg-[#1E2D40] text-white hover:bg-[#29415E]'
+            : 'bg-white text-gray-700 hover:bg-gray-100'
         }`}
       >
-        <Icon icon="mdi:refresh" className="w-5 h-5" />
+        <Icon icon='mdi:refresh' className='w-5 h-5' />
       </button>
 
       <div
         className={`absolute inset-0 z-0 opacity-60 pointer-events-none`}
         style={{
           backgroundImage: `linear-gradient(to right, ${
-            isDark ? "#1f2e40" : "#e0e0e0"
+            isDark ? '#1f2e40' : '#e0e0e0'
           } 1px, transparent 1px), linear-gradient(to bottom, ${
-            isDark ? "#1f2e40" : "#e0e0e0"
+            isDark ? '#1f2e40' : '#e0e0e0'
           } 1px, transparent 1px)`,
-          backgroundSize: "20px 20px",
+          backgroundSize: '20px 20px',
         }}
       />
 
-      <div className="flex flex-row items-center justify-start w-full gap-2 z-10 mb-3">
-        <div className="p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md">
+      <div className='flex flex-row items-center justify-start w-full gap-2 z-10 mb-3'>
+        <div className='p-1.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-xl shadow-md'>
           <Icon
-            icon="iconamoon:3d-fill"
+            icon='iconamoon:3d-fill'
             width={20}
             height={20}
-            className="text-white"
+            className='text-white'
           />
         </div>
-        <p className="font-semibold text-base">3D View</p>
+        <p className='font-semibold text-base'>3D View</p>
       </div>
 
       <div
         ref={containerRef}
-        className="w-full h-[300px] flex-1 z-10"
+        className='w-full h-[300px] flex-1 z-10'
         style={{
-          position: "relative",
-          aspectRatio: "16 / 9",
-          width: "100%",
+          position: 'relative',
+          aspectRatio: '16 / 9',
+          width: '100%',
         }}
       >
         {isLoading && (
           <div
             className={`absolute inset-0 flex items-center justify-center z-20 ${
-              isDark ? "bg-[#0F1B2B]/80" : "bg-white/70"
+              isDark ? 'bg-[#0F1B2B]/80' : 'bg-white/70'
             } backdrop-blur`}
           >
             <svg
-              className="animate-spin h-8 w-8 text-blue-500"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
+              className='animate-spin h-8 w-8 text-blue-500'
+              xmlns='http://www.w3.org/2000/svg'
+              fill='none'
+              viewBox='0 0 24 24'
             >
               <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
+                className='opacity-25'
+                cx='12'
+                cy='12'
+                r='10'
+                stroke='currentColor'
+                strokeWidth='4'
               />
               <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                className='opacity-75'
+                fill='currentColor'
+                d='M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z'
               />
             </svg>
           </div>

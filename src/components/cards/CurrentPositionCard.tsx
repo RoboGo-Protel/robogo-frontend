@@ -88,7 +88,7 @@ export default function CurrentPositionCard({
     };
   }, []);
 
-  // Ambil posisi valid dari positionX dan positionY
+  
   const validPositions = dataMonitoring
     .map((item) => {
       const posX = item.metadata.position.positionX;
@@ -98,7 +98,6 @@ export default function CurrentPositionCard({
     })
     .filter((pos): pos is { x: number; y: number } => pos !== null);
 
-  // Cari nilai min dan max untuk x dan y
   const minX = validPositions.length
     ? Math.min(...validPositions.map((p) => p.x))
     : -10;
@@ -112,11 +111,10 @@ export default function CurrentPositionCard({
     ? Math.max(...validPositions.map((p) => p.y))
     : 10;
 
-  // Ambil nilai mutlak terbesar supaya skala simetris di tengah
   const maxAbsX = Math.max(Math.abs(minX), Math.abs(maxX)) || 1;
   const maxAbsY = Math.max(Math.abs(minY), Math.abs(maxY)) || 1;
 
-  // Fungsi konversi koordinat kartesius ke posisi pixel di container dengan 0,0 di tengah
+  
   const convertToPixelPosition = (x: number, y: number) => {
     const pixelX =
       (x / maxAbsX) * ((dimensions.width - padding * 2) / 2) +

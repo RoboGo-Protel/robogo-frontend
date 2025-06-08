@@ -56,16 +56,16 @@ function ImageWithAnalysis({ details, isDark }: PhotoDetailsProps) {
   const [loading, setLoading] = useState(false);
   const [obstacle, setObstacle] = useState<null | boolean>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null); // NEW
+  const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     setLoading(true);
     setObstacle(null);
-    setError(null); // Reset error
+    setError(null);
     try {
-      const response = await fetch("/api/analyze/obstacle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/analyze/obstacle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl: details.src }),
       });
 
@@ -75,21 +75,21 @@ function ImageWithAnalysis({ details, isDark }: PhotoDetailsProps) {
 
       const data = await response.json();
       if (!data?.data) {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
 
       setObstacle(data.data.obstacle);
       setImageBase64(data.data.image || null);
     } catch (error) {
-      console.error("Error analyzing image:", error);
+      console.error('Error analyzing image:', error);
       setObstacle(null);
       setImageBase64(null);
       if (error instanceof Error) {
         setError(error.message);
-      } else if (typeof error === "string") {
+      } else if (typeof error === 'string') {
         setError(error);
       } else {
-        setError("Unknown error occurred");
+        setError('Unknown error occurred');
       }
     } finally {
       setLoading(false);

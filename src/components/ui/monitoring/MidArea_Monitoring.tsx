@@ -11,7 +11,7 @@ import { useToast } from "@/context/ToastProvider";
 import StopMonitoringResult from "./StopMonitoringResult";
 import { useStopMonitoringResult } from "./StopMonitoringResultContext";
 
-// Type untuk hasil stop monitoring
+
 interface ImportLogResult {
   totalData: number;
   success: boolean;
@@ -185,97 +185,84 @@ export default function MidArea_Monitoring({
   };
 
   const listButtons = [
-    // {
-    //   icon: "ion:game-controller",
-    //   text: "Connect Gamepad",
-    //   onClick: () => {},
-    // },
     {
       icon:
-        recordingState === "idle"
-          ? "fluent:video-recording-20-filled"
-          : "fluent:stop-24-filled",
-      text: recordingState === "idle" ? "Start Recording" : "Stop Recording",
+        recordingState === 'idle'
+          ? 'fluent:video-recording-20-filled'
+          : 'fluent:stop-24-filled',
+      text: recordingState === 'idle' ? 'Start Recording' : 'Stop Recording',
       onClick: handleRecordClick,
     },
     {
-      icon: "mynaui:chip-solid",
-      text: "Recalibrate IMU",
+      icon: 'mynaui:chip-solid',
+      text: 'Recalibrate IMU',
       onClick: () => {},
     },
     {
-      icon: "mingcute:camera-2-ai-fill",
-      text: "Take Photo",
+      icon: 'mingcute:camera-2-ai-fill',
+      text: 'Take Photo',
       onClick: () => {
-        fetch("http://localhost:4000/capture")
+        fetch('http://localhost:4000/capture')
           .then((res) => res.json())
           .then((data) => {
-            console.log("📸 Captured:", data);
-            alert("Snapshot berhasil disimpan!");
+            console.log('📸 Captured:', data);
+            alert('Snapshot berhasil disimpan!');
           })
           .catch((err) => {
-            console.error("Capture failed:", err);
+            console.error('Capture failed:', err);
           });
       },
     },
   ];
 
-  // if (!dataMonitoring || dataMonitoring.length === 0) {
-  //   return (
-  //     <div className="p-4 text-center text-red-500 font-semibold">
-  //       No monitoring data available.
-  //     </div>
-  //   );
-  // }
-
   return (
     <div
       className={`flex flex-col items-start justify-start h-full gap-4 rounded-xl p-4 md:p-5 w-full border-2 ${
         isDark
-          ? "border-[#113541] bg-[#0F1B2B] text-white"
-          : "border-[#ECECEC] bg-white text-black"
+          ? 'border-[#113541] bg-[#0F1B2B] text-white'
+          : 'border-[#ECECEC] bg-white text-black'
       }`}
     >
-      <div className="relative flex-1 w-full h-[300px] md:h-full rounded-2xl overflow-hidden">
-        <AnimatePresence mode="wait">
+      <div className='relative flex-1 w-full h-[300px] md:h-full rounded-2xl overflow-hidden'>
+        <AnimatePresence mode='wait'>
           {isStreamActive ? (
             <motion.div
-              key="stream-off"
+              key='stream-off'
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className={`flex flex-col gap-2.5 p-4 items-center justify-center w-full h-full rounded-2xl border-2 ${
                 isDark
-                  ? "bg-[#0F1B2B] border-[#113541]"
-                  : "bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 border-[#3BD5FF]/20"
+                  ? 'bg-[#0F1B2B] border-[#113541]'
+                  : 'bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 border-[#3BD5FF]/20'
               }`}
             >
               <CompassHUD heading={dataMonitoring[0]?.metadata?.heading ?? 0} />
-              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+              <div className='absolute top-0 left-0 w-full h-full flex items-center justify-center'>
                 <BoatOrientationHUD
                   roll={dataMonitoring[0]?.metadata?.roll ?? 0}
                 />
               </div>
-              <div className="absolute bottom-0 px-4 py-2.5 flex flex-row items-center justify-between w-full z-10">
-                <AnimatePresence mode="wait">
+              <div className='absolute bottom-0 px-4 py-2.5 flex flex-row items-center justify-between w-full z-10'>
+                <AnimatePresence mode='wait'>
                   <motion.p
                     key={`${resolution.width}x${resolution.height}-${fps}`}
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
                     transition={{ duration: 0.25 }}
-                    className="text-white p-2.5"
+                    className='text-white p-2.5'
                   >
                     {resolution.height}P | {fps}
                   </motion.p>
                 </AnimatePresence>
 
-                <div className="absolute top-0 px-4 py-2.5 flex flex-row items-center justify-center w-full">
-                  <div className="font-semibold flex flex-row items-center gap-2 text-white p-2.5">
+                <div className='absolute top-0 px-4 py-2.5 flex flex-row items-center justify-center w-full'>
+                  <div className='font-semibold flex flex-row items-center gap-2 text-white p-2.5'>
                     <p>{deviceCamera}</p>
                     <Icon
-                      icon="fluent:video-24-filled"
+                      icon='fluent:video-24-filled'
                       width={20}
                       height={20}
                     />
@@ -284,49 +271,48 @@ export default function MidArea_Monitoring({
 
                 <button
                   onClick={() => setFlashOn(!flashOn)}
-                  type="button"
-                  aria-label="Flash"
-                  title="Flash"
+                  type='button'
+                  aria-label='Flash'
+                  title='Flash'
                   className={`text-white text-sm font-semibold p-2.5 rounded-xl shadow-md transition-all ${
                     flashOn
-                      ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]"
+                      ? 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]'
                       : isDark
-                        ? "bg-white/10 hover:bg-white/20"
-                        : "bg-white/20 hover:bg-[#285ec9]"
+                        ? 'bg-white/10 hover:bg-white/20'
+                        : 'bg-white/20 hover:bg-[#285ec9]'
                   }`}
                 >
-                  <Icon icon="fluent:flash-32-filled" width={20} height={20} />
+                  <Icon icon='fluent:flash-32-filled' width={20} height={20} />
                 </button>
               </div>
 
               <img
-                // src="http://localhost:4000/api/v1/monitoring/camera-stream"
-                src="http://192.168.171.17/stream"
-                alt="Live Camera Stream"
-                className="w-full h-full object-cover"
+                src='http://192.168.171.17/stream'
+                alt='Live Camera Stream'
+                className='w-full h-full object-cover'
               />
             </motion.div>
           ) : (
             <motion.div
-              key="stream-off"
+              key='stream-off'
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="flex flex-col gap-2.5 p-4 items-center justify-center bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 w-full h-full rounded-2xl border-2 border-[#3BD5FF]/20"
+              className='flex flex-col gap-2.5 p-4 items-center justify-center bg-gradient-to-br from-[#3BD5FF]/10 to-[#367AF2]/10 w-full h-full rounded-2xl border-2 border-[#3BD5FF]/20'
             >
-              <div className="p-2 rounded-xl shadow-md bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
+              <div className='p-2 rounded-xl shadow-md bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]'>
                 <Icon
-                  icon="fluent:video-off-24-filled"
+                  icon='fluent:video-off-24-filled'
                   width={28}
                   height={28}
-                  className="text-white"
+                  className='text-white'
                 />
               </div>
-              <p className="font-semibold text-lg bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text text-center">
+              <p className='font-semibold text-lg bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text text-center'>
                 Video Stream Unavailable!
               </p>
-              <div className="flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-full text-white text-sm text-center">
+              <div className='flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-full text-white text-sm text-center'>
                 Please check RoboGo connection!
               </div>
             </motion.div>
@@ -335,68 +321,68 @@ export default function MidArea_Monitoring({
       </div>
 
       {dataMonitoring && dataMonitoring.length > 0 ? (
-        <div className="flex flex-col gap-4 items-stretch w-full h-fit">
+        <div className='flex flex-col gap-4 items-stretch w-full h-fit'>
           <StatCardList
-            variant="distance"
+            variant='distance'
             infoItems={
               dataMonitoring[0]?.metadata?.distances
                 ? [
                     {
-                      title: "Distance Total",
+                      title: 'Distance Total',
                       value:
                         latestData.metadata.distances.distTotal != null
                           ? `${latestData.metadata.distances.distTotal.toFixed(2)} cm`
-                          : "-",
+                          : '-',
                     },
                     {
-                      title: "Distance X",
+                      title: 'Distance X',
                       value:
                         latestData.metadata.distances.distX != null
                           ? `${latestData.metadata.distances.distX.toFixed(2)} cm`
-                          : "-",
+                          : '-',
                     },
                     {
-                      title: "Distance Y",
+                      title: 'Distance Y',
                       value:
                         latestData.metadata.distances.distY != null
                           ? `${latestData.metadata.distances.distY.toFixed(2)} cm`
-                          : "-",
+                          : '-',
                     },
                   ]
                 : []
             }
           />
           <StatCardList
-            variant="velocity"
+            variant='velocity'
             infoItems={
               dataMonitoring[0]?.metadata?.velocity
                 ? [
                     {
-                      title: "Velocity Total",
+                      title: 'Velocity Total',
                       value:
                         latestData.metadata.velocity.velTotal != null
                           ? `${latestData.metadata.velocity.velTotal.toFixed(2)} m/s`
                           : latestData.metadata.velocity.velocity != null
                             ? `${latestData.metadata.velocity.velocity.toFixed(2)} m/s`
-                            : "-",
+                            : '-',
                     },
                     {
-                      title: "Velocity X",
+                      title: 'Velocity X',
                       value:
                         latestData.metadata.velocity.velX != null
                           ? `${latestData.metadata.velocity.velX.toFixed(2)} m/s`
                           : latestData.metadata.velocity.velocityX != null
                             ? `${latestData.metadata.velocity.velocityX.toFixed(2)} m/s`
-                            : "-",
+                            : '-',
                     },
                     {
-                      title: "Velocity Y",
+                      title: 'Velocity Y',
                       value:
                         latestData.metadata.velocity.velY != null
                           ? `${latestData.metadata.velocity.velY.toFixed(2)} m/s`
                           : latestData.metadata.velocity.velocityY != null
                             ? `${latestData.metadata.velocity.velocityY.toFixed(2)} m/s`
-                            : "-",
+                            : '-',
                     },
                   ]
                 : []
@@ -406,33 +392,33 @@ export default function MidArea_Monitoring({
       ) : (
         <div
           className={`flex items-center justify-center w-full h-32 rounded-xl font-semibold text-lg ${
-            isDark ? "bg-[#113541] text-gray-300" : "bg-gray-100 text-gray-500"
+            isDark ? 'bg-[#113541] text-gray-300' : 'bg-gray-100 text-gray-500'
           }`}
         >
           Start monitoring to show the data
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row w-full gap-4">
+      <div className='flex flex-col md:flex-row w-full gap-4'>
         <DirectionalControl onDirectionClick={(dir) => console.log(dir)} />
-        <div className="flex flex-col w-full gap-2.5">
+        <div className='flex flex-col w-full gap-2.5'>
           <div
             className={`flex flex-row items-center justify-center gap-2.5 w-full h-fit rounded-xl px-4 py-2 ${
               isDark
-                ? "bg-[#113541] text-white"
-                : "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
+                ? 'bg-[#113541] text-white'
+                : 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white'
             }`}
           >
-            <Icon icon="mingcute:settings-1-fill" width={20} height={20} />
-            <span className="font-semibold text-base">Tools</span>
+            <Icon icon='mingcute:settings-1-fill' width={20} height={20} />
+            <span className='font-semibold text-base'>Tools</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-2.5 w-full h-fit">
+          <div className='grid grid-cols-1 md:grid-cols-6 gap-2.5 w-full h-fit'>
             <button
               onClick={handleStartMonitoring}
               disabled={!!currentSession && currentSession > 0}
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3 ${!!currentSession && currentSession > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white col-span-1 md:col-span-3 ${!!currentSession && currentSession > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Icon icon="mingcute:play-fill" width={20} height={20} />
+              <Icon icon='mingcute:play-fill' width={20} height={20} />
               <p className={`font-semibold text-sm text-white`}>
                 Start Monitoring
               </p>
@@ -441,9 +427,9 @@ export default function MidArea_Monitoring({
             <button
               onClick={handleStopMonitoring}
               disabled={!currentSession || currentSession === 0}
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl col-span-1 md:col-span-3 ${currentSession && currentSession > 0 ? "bg-gradient-to-br from-red-500 to-red-700 text-white" : "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white opacity-50 cursor-not-allowed"}`}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl col-span-1 md:col-span-3 ${currentSession && currentSession > 0 ? 'bg-gradient-to-br from-red-500 to-red-700 text-white' : 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white opacity-50 cursor-not-allowed'}`}
             >
-              <Icon icon="mingcute:stop-fill" width={20} height={20} />
+              <Icon icon='mingcute:stop-fill' width={20} height={20} />
               <p className={`font-semibold text-sm text-white`}>
                 Stop Monitoring
               </p>
@@ -455,15 +441,15 @@ export default function MidArea_Monitoring({
                 onClick={item.onClick}
                 className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl col-span-1 md:col-span-2 ${
                   isDark
-                    ? "border-[#3BD5FF]/10 bg-[#0A1625] text-white"
-                    : "border-[#367AF2]/20 bg-white text-black"
+                    ? 'border-[#3BD5FF]/10 bg-[#0A1625] text-white'
+                    : 'border-[#367AF2]/20 bg-white text-black'
                 }`}
               >
                 <p
                   className={`font-semibold text-sm ${
                     isDark
-                      ? "text-white"
-                      : "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text"
+                      ? 'text-white'
+                      : 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text'
                   }`}
                 >
                   {item.text}
@@ -472,7 +458,7 @@ export default function MidArea_Monitoring({
                   icon={item.icon}
                   width={20}
                   height={20}
-                  className={isDark ? "text-[#3BD5FF]" : "text-[#39A9F9]"}
+                  className={isDark ? 'text-[#3BD5FF]' : 'text-[#39A9F9]'}
                 />
               </button>
             ))}
@@ -484,21 +470,21 @@ export default function MidArea_Monitoring({
       <AnimatePresence>
         {stopResult && (
           <motion.div
-            key="stop-result-popup"
+            key='stop-result-popup'
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            className='fixed inset-0 z-50 flex items-center justify-center bg-black/40'
           >
-            <div className="bg-white rounded-xl shadow-xl p-0 md:p-0 max-w-lg w-full relative dark:bg-[#101c2b]">
+            <div className='bg-white rounded-xl shadow-xl p-0 md:p-0 max-w-lg w-full relative dark:bg-[#101c2b]'>
               <button
-                className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white text-xl font-bold z-10 p-2 rounded-full transition-colors"
+                className='absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white text-xl font-bold z-10 p-2 rounded-full transition-colors'
                 onClick={() => setStopResult(null)}
-                aria-label="Close"
-                type="button"
+                aria-label='Close'
+                type='button'
               >
-                <Icon icon="mingcute:close-line" width={24} height={24} />
+                <Icon icon='mingcute:close-line' width={24} height={24} />
               </button>
               <StopMonitoringResult result={stopResult} />
             </div>

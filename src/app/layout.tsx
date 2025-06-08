@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { DarkModeProvider } from "@/context/DarkModeContext";
 import AppWrapper from "@/components/AppWrapper";
+import OnboardingGuard from '@/components/OnboardingGuard';
 import { ToastProvider } from "@/context/ToastProvider";
 import { Providers } from "./provider";
 
@@ -24,12 +25,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang='en' suppressHydrationWarning>
       <body className={`${poppins.className} antialiased`}>
         <Providers>
           <DarkModeProvider>
-            <ToastProvider position="bottom-center">
-              <AppWrapper>{children}</AppWrapper>
+            <ToastProvider position='bottom-center'>
+              <OnboardingGuard>
+                <AppWrapper>{children}</AppWrapper>
+              </OnboardingGuard>
             </ToastProvider>
           </DarkModeProvider>
         </Providers>

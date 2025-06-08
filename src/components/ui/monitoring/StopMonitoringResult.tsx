@@ -35,7 +35,7 @@ const StopMonitoringResult: React.FC<StopMonitoringResultProps> = ({
     const day = date.getDate();
     const month = date.toLocaleString("en-US", { month: "long" });
     const year = date.getFullYear();
-    // Suffix
+    
     const j = day % 10,
       k = day % 100;
     let suffix = "th";
@@ -45,12 +45,12 @@ const StopMonitoringResult: React.FC<StopMonitoringResultProps> = ({
     return `${month} ${day}${suffix}, ${year}`;
   };
 
-  // Mapping log type keys to user-friendly titles
+  
   const logTypeTitleMap: Record<string, string> = {
     imu_logs: "IMU Logs",
     ultrasonic_logs: "Ultrasonic Logs",
     path_logs: "Path Logs",
-    // Tambahkan mapping lain jika ada log type baru
+    
   };
 
   return (

@@ -179,7 +179,6 @@ export default function TunnelPath({
                       ? pos.top + cardHeight > dimensions.height
                       : false;
 
-                  // Dynamic card style
                   const cardClass = `rounded-xl border p-1 shadow-md hover:shadow-lg transition ${
                     isDark
                       ? "bg-[#1E334A] border-[#2A435C] text-white"

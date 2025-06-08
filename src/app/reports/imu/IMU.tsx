@@ -67,14 +67,14 @@ export default function IMU() {
   >([]);
   const [selectedDate, setSelectedDate] = useState<OptionType | null>(null);
   const [selectedSession, setSelectedSession] = useState<OptionType | null>(
-    null
+    null,
   );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const reports = document.querySelector("#reports-navbar");
-    const top = document.querySelector("#top-navbar");
-    const bottom = document.querySelector("#bottom-navbar");
+    const reports = document.querySelector('#reports-navbar');
+    const top = document.querySelector('#top-navbar');
+    const bottom = document.querySelector('#bottom-navbar');
 
     if (top) setTopNavbarHeight(top.clientHeight);
     if (bottom) setBottomNavbarHeight(bottom.clientHeight);
@@ -86,43 +86,43 @@ export default function IMU() {
       if (reports) setReportsNavbarHeight(reports.clientHeight);
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [topNavbarHeight, bottomNavbarHeight, reportsNavbarHeight]);
 
   const customStyles: StylesConfig<OptionType, false> = {
     container: (provided) => ({
       ...provided,
-      width: "auto",
+      width: 'auto',
       minWidth: 140,
     }),
     control: (provided) => ({
       ...provided,
       height: 64,
       minHeight: 64,
-      border: "none",
-      borderRadius: "1rem",
-      background: "linear-gradient(to bottom right, #3BD5FF, #367AF2)",
-      boxShadow: "none",
-      paddingLeft: "16px",
-      paddingRight: "16px",
+      border: 'none',
+      borderRadius: '1rem',
+      background: 'linear-gradient(to bottom right, #3BD5FF, #367AF2)',
+      boxShadow: 'none',
+      paddingLeft: '16px',
+      paddingRight: '16px',
 
-      overflow: "visible",
-      whiteSpace: "nowrap",
+      overflow: 'visible',
+      whiteSpace: 'nowrap',
     }),
     singleValue: (provided) => ({
       ...provided,
-      color: "white",
-      fontSize: "1rem",
-      overflow: "visible",
-      whiteSpace: "nowrap",
+      color: 'white',
+      fontSize: '1rem',
+      overflow: 'visible',
+      whiteSpace: 'nowrap',
     }),
     indicatorSeparator: () => ({
-      display: "none",
+      display: 'none',
     }),
     dropdownIndicator: (provided) => ({
       ...provided,
-      color: "white",
+      color: 'white',
     }),
     menu: (provided) => ({
       ...provided,
@@ -130,13 +130,11 @@ export default function IMU() {
     }),
   };
 
-  // Gabungkan fetching data terkait selectedDate & selectedSession
   useEffect(() => {
     const fetchAllData = async () => {
       setIsLoading(true);
       try {
-        // Fetch dates with sessions first
-        const datesRes = await fetch("/api/reports/imu/dates-with-sessions");
+        const datesRes = await fetch('/api/reports/imu/dates-with-sessions');
         const datesData = await datesRes.json();
         const data = datesData.data;
         setDateWithSessions(data);
@@ -154,7 +152,6 @@ export default function IMU() {
           }
         }
 
-        // Use selected or default date/session
         const useDate =
           date ||
           (data.length > 0
@@ -167,9 +164,8 @@ export default function IMU() {
             : null);
 
         if (useDate && useSession) {
-          // Fetch summaries
           const summariesRes = await fetch(
-            `/api/reports/imu/summaries/date/${useDate.value}/session/${useSession.value}`
+            `/api/reports/imu/summaries/date/${useDate.value}/session/${useSession.value}`,
           );
           const summariesData = await summariesRes.json();
           const s = summariesData.data || {};
@@ -183,21 +179,20 @@ export default function IMU() {
             max_turn_angle: s.max_turn_angle ?? 0,
           });
 
-          // Fetch filtered reports
           const reportsRes = await fetch(
-            `/api/reports/imu/date/${useDate.value}/session/${useSession.value}`
+            `/api/reports/imu/date/${useDate.value}/session/${useSession.value}`,
           );
           const reportsResult = await reportsRes.json();
           const sortedReports = (reportsResult.data || []).sort(
             (a: IMULogs, b: IMULogs) =>
-              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
           );
           setReports(sortedReports);
         } else {
           setReports([]);
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error('Error fetching data:', error);
       } finally {
         setIsLoading(false);
       }
@@ -208,23 +203,23 @@ export default function IMU() {
 
   function getDirectionFromHeading(heading: number): string {
     const directions = [
-      "North (N)",
-      "North-Northeast (NNE)",
-      "Northeast (NE)",
-      "East-Northeast (ENE)",
-      "East (E)",
-      "East-Southeast (ESE)",
-      "Southeast (SE)",
-      "South-Southeast (SSE)",
-      "South (S)",
-      "South-Southwest (SSW)",
-      "Southwest (SW)",
-      "West-Southwest (WSW)",
-      "West (W)",
-      "West-Northwest (WNW)",
-      "Northwest (NW)",
-      "North-Northwest (NNW)",
-      "North (N)",
+      'North (N)',
+      'North-Northeast (NNE)',
+      'Northeast (NE)',
+      'East-Northeast (ENE)',
+      'East (E)',
+      'East-Southeast (ESE)',
+      'Southeast (SE)',
+      'South-Southeast (SSE)',
+      'South (S)',
+      'South-Southwest (SSW)',
+      'Southwest (SW)',
+      'West-Southwest (WSW)',
+      'West (W)',
+      'West-Northwest (WNW)',
+      'Northwest (NW)',
+      'North-Northwest (NNW)',
+      'North (N)',
     ];
     const index = Math.round(heading / 22.5) % 16;
     return directions[index];
@@ -232,23 +227,23 @@ export default function IMU() {
 
   const summaryItems = [
     {
-      icon: "lets-icons:compass-north",
-      title: "Average Heading",
+      icon: 'lets-icons:compass-north',
+      title: 'Average Heading',
       summary: `${(summaries.average_heading ?? 0).toFixed(2)}° - ${getDirectionFromHeading(summaries.average_heading ?? 0)}`,
     },
     {
-      icon: "ph:compass-rose-fill",
-      title: "Heading Range",
+      icon: 'ph:compass-rose-fill',
+      title: 'Heading Range',
       summary: `${(summaries.heading_range?.[0] ?? 0).toFixed(2)}° - ${(summaries.heading_range?.[1] ?? 0).toFixed(2)}°`,
     },
     {
-      icon: "uil:rotate-360",
-      title: "Total Orientation Changes",
+      icon: 'uil:rotate-360',
+      title: 'Total Orientation Changes',
       summary: `${summaries.total_orientation_changes ?? 0} Times`,
     },
     {
-      icon: "material-symbols:u-turn-right-rounded",
-      title: "Max Turn Angle",
+      icon: 'material-symbols:u-turn-right-rounded',
+      title: 'Max Turn Angle',
       summary: `${(summaries.max_turn_angle ?? 0).toFixed(2)}°`,
     },
   ] as const;
@@ -256,8 +251,8 @@ export default function IMU() {
   return (
     <div
       className={clsx(
-        "flex flex-col gap-4 p-5 transition-colors duration-300",
-        isDark ? "bg-[#112133] text-white" : "bg-white text-black"
+        'flex flex-col gap-4 p-5 transition-colors duration-300',
+        isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
       )}
       style={{
         paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -266,7 +261,7 @@ export default function IMU() {
     >
       {isLoading ? (
         <div
-          className="flex flex-col justify-center items-center"
+          className='flex flex-col justify-center items-center'
           style={{
             height: `calc(100vh - ${
               topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
@@ -274,15 +269,15 @@ export default function IMU() {
           }}
         >
           <PulseLoader
-            color="#367AF2"
+            color='#367AF2'
             loading={isLoading}
             size={15}
             margin={5}
           />
           <p
             className={clsx(
-              "mt-4 text-lg",
-              isDark ? "text-gray-300" : "text-gray-500"
+              'mt-4 text-lg',
+              isDark ? 'text-gray-300' : 'text-gray-500',
             )}
           >
             Loading IMU reports, please wait...
@@ -291,8 +286,8 @@ export default function IMU() {
       ) : reports.length === 0 ? (
         <div
           className={clsx(
-            "flex flex-col justify-center items-center w-full p-4 border-2 rounded-xl",
-            isDark ? "border-gray-700" : "border-gray-300"
+            'flex flex-col justify-center items-center w-full p-4 border-2 rounded-xl',
+            isDark ? 'border-gray-700' : 'border-gray-300',
           )}
           style={{
             height: `calc(100vh - ${
@@ -301,15 +296,15 @@ export default function IMU() {
           }}
         >
           <Icon
-            icon="mingcute:file-unknown-fill"
+            icon='mingcute:file-unknown-fill'
             width={48}
             height={48}
-            className={isDark ? "text-gray-600" : "text-gray-400"}
+            className={isDark ? 'text-gray-600' : 'text-gray-400'}
           />
           <p
             className={clsx(
-              "mt-4 text-lg",
-              isDark ? "text-gray-400" : "text-gray-500"
+              'mt-4 text-lg',
+              isDark ? 'text-gray-400' : 'text-gray-500',
             )}
           >
             No IMU reports available. Please check back later.
@@ -317,15 +312,15 @@ export default function IMU() {
         </div>
       ) : (
         <>
-          <div className="flex flex-col md:flex-row w-full gap-4">
-            <div className="flex-1 flex flex-col">
+          <div className='flex flex-col md:flex-row w-full gap-4'>
+            <div className='flex-1 flex flex-col'>
               <ShortSummary
                 summaryItems={summaryItems}
-                layout="grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-4 items-stretch"
+                layout='grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-4 items-stretch'
               />
             </div>
 
-            <div className="flex flex-row gap-4 items-stretch md:items-center">
+            <div className='flex flex-row gap-4 items-stretch md:items-center'>
               <Select
                 options={dateWithSessions.map((d) => ({
                   value: d.value,
@@ -336,7 +331,7 @@ export default function IMU() {
                 onChange={(option) => {
                   setSelectedDate(option);
                   const selected = dateWithSessions.find(
-                    (d) => d.value === option?.value
+                    (d) => d.value === option?.value,
                   );
                   if (selected?.sessions.length) {
                     setSelectedSession(selected.sessions[0]);
@@ -345,13 +340,13 @@ export default function IMU() {
                   }
                 }}
                 isSearchable={false}
-                className="flex-1"
+                className='flex-1'
               />
               <Select
                 options={
                   selectedDate
                     ? dateWithSessions.find(
-                        (d) => d.value === selectedDate.value
+                        (d) => d.value === selectedDate.value,
                       )?.sessions || []
                     : []
                 }
@@ -360,7 +355,7 @@ export default function IMU() {
                 onChange={setSelectedSession}
                 isSearchable={false}
                 isDisabled={!selectedDate}
-                className="flex-1"
+                className='flex-1'
               />
             </div>
           </div>

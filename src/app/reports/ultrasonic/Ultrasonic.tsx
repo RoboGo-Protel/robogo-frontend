@@ -144,9 +144,9 @@ export default function Ultrasonic() {
     const fetchAllData = async () => {
       setIsLoading(true);
       try {
-        // Fetch dates with sessions first
+        
         const datesRes = await fetch(
-          "/api/reports/ultrasonic/dates-with-sessions"
+          '/api/reports/ultrasonic/dates-with-sessions',
         );
         const datesData = await datesRes.json();
         const data = datesData.data;
@@ -165,7 +165,6 @@ export default function Ultrasonic() {
           }
         }
 
-        // Fetch summaries for the selected date and session (or first if not selected)
         const useDate =
           date ||
           (data.length > 0
@@ -179,7 +178,7 @@ export default function Ultrasonic() {
 
         if (useDate && useSession) {
           const summariesRes = await fetch(
-            `/api/reports/ultrasonic/summaries/date/${useDate.value}/session/${useSession.value}`
+            `/api/reports/ultrasonic/summaries/date/${useDate.value}/session/${useSession.value}`,
           );
           const summariesData = await summariesRes.json();
           setSummaries({
@@ -190,7 +189,7 @@ export default function Ultrasonic() {
           });
         }
 
-        // If both date and session are selected, fetch reports
+        
         if (
           (date && session) ||
           (data.length > 0 && data[0].sessions.length > 0)
