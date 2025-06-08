@@ -17,10 +17,11 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
-    console.log('Forwarding to backend:', `${backendUrl}/api/v1/auth/google`);
+    const backendUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    console.log('Forwarding to backend:', `${backendUrl}/auth/google`);
 
-    const backendResponse = await fetch(`${backendUrl}/api/v1/auth/google`, {
+    const backendResponse = await fetch(`${backendUrl}/auth/google`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

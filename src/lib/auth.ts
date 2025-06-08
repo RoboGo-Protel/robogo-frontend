@@ -12,10 +12,18 @@ export const authOptions = {
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       console.log('Redirect callback:', { url, baseUrl });
 
-      if (url.startsWith('/api/auth/signin') || url === baseUrl) {
-        return `${baseUrl}/api/auth/callback`;
+      // If URL is relative, make it absolute
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
       }
-      return url.startsWith(baseUrl) ? url : baseUrl;
+
+      // If URL is on the same domain, allow it
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+
+      // Default to base URL
+      return baseUrl;
     },
     async signIn({ user, account }: { user: any; account: any }) {
       console.log('SignIn callback triggered:', { user, account });
@@ -23,7 +31,11 @@ export const authOptions = {
       if (account?.provider === 'google') {
         console.log('Google provider detected, proceeding with auth...');
         try {
-          const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+          const baseUrl =
+            process.env.NEXTAUTH_URL ||
+            (typeof window !== 'undefined'
+              ? window.location.origin
+              : 'https://robogo.website');
           console.log('Calling Google auth API:', `${baseUrl}/api/auth/google`);
 
           const response = await fetch(`${baseUrl}/api/auth/google`, {

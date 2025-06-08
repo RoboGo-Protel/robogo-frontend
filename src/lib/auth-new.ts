@@ -23,7 +23,11 @@ export const authOptions = {
       if (account?.provider === 'google') {
         console.log('Google provider detected, proceeding with auth...');
         try {
-          const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+          const baseUrl =
+            process.env.NEXTAUTH_URL ||
+            (typeof window !== 'undefined'
+              ? window.location.origin
+              : 'https://robogo.website');
           console.log('Calling Google auth API:', `${baseUrl}/api/auth/google`);
 
           const response = await fetch(`${baseUrl}/api/auth/google`, {

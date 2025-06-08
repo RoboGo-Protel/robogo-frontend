@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function PUT() {
   try {
@@ -14,7 +14,7 @@ export async function PUT() {
         { status: 401 },
       );
     }
-    const response = await fetch(`${BACKEND_URL}/others/user/skip-onboarding`, {
+    const response = await fetch(`${apiUrl}/others/user/skip-onboarding`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
