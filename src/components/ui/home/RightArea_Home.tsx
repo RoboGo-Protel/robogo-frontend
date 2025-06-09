@@ -1,11 +1,11 @@
-/* eslint-disable @next/next/no-img-element */
-import React, { useState } from "react";
-import { Icon } from "@iconify/react";
-import Image from "next/image";
-import { infoItems } from "@/utils/info";
-import { motion, AnimatePresence } from "framer-motion";
-import ShortInfo from "@/components/cards/ShortInfoCard";
-import { useDarkMode } from "@/context/DarkModeContext";
+import React, { useState, useEffect } from 'react';
+import { Icon } from '@iconify/react';
+import Image from 'next/image';
+import { infoItems } from '@/utils/info';
+import { motion, AnimatePresence } from 'framer-motion';
+import ShortInfo from '@/components/cards/ShortInfoCard';
+import { useDarkMode } from '@/context/DarkModeContext';
+import WebSocketVideoStream from '@/components/WebSocketVideoStream';
 
 export default function RightArea_Home() {
   const { isDark } = useDarkMode();
@@ -13,8 +13,61 @@ export default function RightArea_Home() {
   const [flashOn, setFlashOn] = useState(false);
   const [fps] = useState(0);
   const [resolution] = useState({ width: 0, height: 0 });
-  const [deviceCamera] = useState("None");
+  const [deviceCamera] = useState('None');
   const [isStreamActive] = useState(false);
+  const [cameraUrl, setCameraUrl] = useState<string>('');
+  const [cameraUrlError, setCameraUrlError] = useState<string>('');
+
+  // Fetch user configuration on component mount
+  useEffect(() => {
+    const fetchUserConfig = async () => {
+      try {
+        const response = await fetch('/api/user/config');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data?.cameraStreamUrl) {
+            setCameraUrl(data.data.cameraStreamUrl);
+            setCameraUrlError('');
+          } else {
+            setCameraUrl(
+              'http://localhost:4000/api/v1/monitoring/camera-stream',
+            ); // fallback to original hardcoded URL
+          }
+        } else {
+          console.warn('Failed to fetch user config, using fallback URL');
+          setCameraUrl('http://localhost:4000/api/v1/monitoring/camera-stream');
+        }
+      } catch (error) {
+        console.error('Error fetching user config:', error);
+        setCameraUrl('http://localhost:4000/api/v1/monitoring/camera-stream'); // fallback to original hardcoded URL
+      }
+    };
+
+    fetchUserConfig();
+  }, []);
+
+  // Validate camera URL for WebSocket and other protocols
+  const validateCameraUrl = (url: string): boolean => {
+    if (!url.trim()) return false;
+
+    try {
+      const urlObj = new URL(url);
+      const validProtocols = [
+        'http:',
+        'https:',
+        'ws:',
+        'wss:',
+        'rtsp:',
+        'rtmp:',
+      ];
+      return validProtocols.includes(urlObj.protocol);
+    } catch {
+      return false;
+    }
+  };
+
+  // Check if current camera URL is valid
+  const isCameraUrlValid = validateCameraUrl(cameraUrl);
 
   return (
     <div
@@ -71,7 +124,6 @@ export default function RightArea_Home() {
                     {resolution.height}P | {fps}
                   </motion.p>
                 </AnimatePresence>
-
                 <button
                   onClick={() => setFlashOn(!flashOn)}
                   type='button'
@@ -86,14 +138,36 @@ export default function RightArea_Home() {
                   } text-white`}
                 >
                   <Icon icon='fluent:flash-32-filled' width={20} height={20} />
-                </button>
+                </button>{' '}
               </div>
 
-              <img
-                src='http://localhost:4000/api/v1/monitoring/camera-stream'
-                alt='Live Camera Stream'
-                className='rounded-2xl w-auto h-full object-cover max-h-[400px]'
-              />
+              {cameraUrl && isCameraUrlValid ? (
+                <WebSocketVideoStream
+                  url={cameraUrl}
+                  alt='Live Camera Stream'
+                  className='rounded-2xl w-auto h-full object-cover max-h-[400px]'
+                  onError={(error) => {
+                    console.error('Camera stream error:', error);
+                    setCameraUrlError(error);
+                  }}
+                  onLoad={() => setCameraUrlError('')}
+                />
+              ) : (
+                <div className='flex flex-col items-center justify-center w-full h-full min-h-[300px]'>
+                  <Icon
+                    icon='fluent:video-off-24-filled'
+                    width={48}
+                    height={48}
+                    className='text-gray-400 mb-2'
+                  />
+                  <p className='text-gray-400 text-center'>
+                    {cameraUrlError || 'Invalid camera URL'}
+                  </p>
+                  <p className='text-xs text-gray-500 mt-2 text-center'>
+                    Configure camera URL in Settings
+                  </p>
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div

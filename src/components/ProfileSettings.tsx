@@ -43,6 +43,36 @@ export default function ProfileSettings({
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [cameraUrlError, setCameraUrlError] = useState<string | null>(null);
+
+  // Valid protocols for camera stream URLs
+  const validProtocols = ['http:', 'https:', 'ws:', 'wss:', 'rtsp:', 'rtmp:'];
+
+  const validateCameraUrl = (url: string): boolean => {
+    if (!url.trim()) return true; // Allow empty URL
+
+    try {
+      const urlObj = new URL(url);
+      return validProtocols.includes(urlObj.protocol);
+    } catch {
+      return false;
+    }
+  };
+
+  const handleCameraUrlChange = (value: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      cameraStreamUrl: value,
+    }));
+
+    if (value.trim() && !validateCameraUrl(value)) {
+      setCameraUrlError(
+        'Please enter a valid URL with supported protocol (http, https, ws, wss, rtsp, rtmp)',
+      );
+    } else {
+      setCameraUrlError(null);
+    }
+  };
 
   const fetchUserConfig = useCallback(async () => {
     try {
@@ -161,8 +191,19 @@ export default function ProfileSettings({
       setSaving(false);
     }
   };
-
   const handleSaveSettings = () => {
+    // Validate camera URL before saving
+    if (
+      config.cameraStreamUrl.trim() &&
+      !validateCameraUrl(config.cameraStreamUrl)
+    ) {
+      showToast(
+        'Please enter a valid camera URL with supported protocol',
+        'error',
+      );
+      return;
+    }
+
     saveConfig();
   };
 
@@ -389,27 +430,30 @@ export default function ProfileSettings({
                       className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
                     >
                       Camera Stream URL
-                    </label>
+                    </label>{' '}
                     <input
                       type='url'
                       value={config.cameraStreamUrl}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          cameraStreamUrl: e.target.value,
-                        }))
-                      }
-                      placeholder='http://192.168.1.100/stream'
+                      onChange={(e) => handleCameraUrlChange(e.target.value)}
+                      placeholder='ws://192.168.1.100:8080/stream or http://192.168.1.100/stream'
                       className={`w-full px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
-                        isDark
-                          ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400'
-                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                        cameraUrlError
+                          ? 'border-red-500 focus:ring-red-500'
+                          : isDark
+                            ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400'
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                       }`}
                     />
+                    {cameraUrlError && (
+                      <p className='text-xs mt-1 text-red-500'>
+                        {cameraUrlError}
+                      </p>
+                    )}
                     <p
                       className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
                     >
-                      Enter the IP camera or streaming URL for robot camera feed
+                      Supports HTTP/HTTPS, WebSocket (WS/WSS), RTSP, and RTMP
+                      protocols
                     </p>
                   </div>
 

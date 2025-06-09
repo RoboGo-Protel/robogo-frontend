@@ -1,16 +1,15 @@
-/* eslint-disable @next/next/no-img-element */
-import React, { useState } from "react";
-import { Icon } from "@iconify/react";
-import { motion, AnimatePresence } from "framer-motion";
-import StatCardList from "@/components/cards/StatsCard";
-import DirectionalControl from "@/components/DirectionalControl";
-import CompassHUD from "@/components/CompassHUD";
-import BoatOrientationHUD from "@/components/OrientationHUD";
-import { useDarkMode } from "@/context/DarkModeContext";
-import { useToast } from "@/context/ToastProvider";
-import StopMonitoringResult from "./StopMonitoringResult";
-import { useStopMonitoringResult } from "./StopMonitoringResultContext";
-
+import React, { useState, useEffect } from 'react';
+import { Icon } from '@iconify/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import StatCardList from '@/components/cards/StatsCard';
+import DirectionalControl from '@/components/DirectionalControl';
+import CompassHUD from '@/components/CompassHUD';
+import BoatOrientationHUD from '@/components/OrientationHUD';
+import { useDarkMode } from '@/context/DarkModeContext';
+import { useToast } from '@/context/ToastProvider';
+import StopMonitoringResult from './StopMonitoringResult';
+import { useStopMonitoringResult } from './StopMonitoringResultContext';
+import WebSocketVideoStream from '@/components/WebSocketVideoStream';
 
 interface ImportLogResult {
   totalData: number;
@@ -88,69 +87,120 @@ export default function MidArea_Monitoring({
   dataMonitoring,
   currentSession = 0,
 }: MidAreaMonitoringProps) {
-  const [recordingState, setRecordingState] = useState<"idle" | "recording">(
-    "idle"
+  const [recordingState, setRecordingState] = useState<'idle' | 'recording'>(
+    'idle',
   );
   const { promise } = useToast();
   const { isDark } = useDarkMode();
   const [flashOn, setFlashOn] = useState(false);
   const [fps] = useState(0);
   const [resolution] = useState({ width: 0, height: 0 });
-  const [deviceCamera] = useState("None");
+  const [deviceCamera] = useState('None');
   const [isStreamActive] = useState(false);
   const { stopResult, setStopResult } = useStopMonitoringResult();
+  const [cameraUrl, setCameraUrl] = useState<string>('');
+  const [cameraUrlError, setCameraUrlError] = useState<string>('');
+
+  // Fetch user configuration on component mount
+  useEffect(() => {
+    const fetchUserConfig = async () => {
+      try {
+        const response = await fetch('/api/user/config');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data?.cameraStreamUrl) {
+            setCameraUrl(data.data.cameraStreamUrl);
+            setCameraUrlError('');
+          } else {
+            setCameraUrl('http://192.168.171.17/stream'); // fallback to original hardcoded URL
+          }
+        } else {
+          console.warn('Failed to fetch user config, using fallback URL');
+          setCameraUrl('http://192.168.171.17/stream');
+        }
+      } catch (error) {
+        console.error('Error fetching user config:', error);
+        setCameraUrl('http://192.168.171.17/stream'); // fallback to original hardcoded URL
+      }
+    };
+
+    fetchUserConfig();
+  }, []);
+
+  // Validate camera URL for WebSocket and other protocols
+  const validateCameraUrl = (url: string): boolean => {
+    if (!url.trim()) return false;
+
+    try {
+      const urlObj = new URL(url);
+      const validProtocols = [
+        'http:',
+        'https:',
+        'ws:',
+        'wss:',
+        'rtsp:',
+        'rtmp:',
+      ];
+      return validProtocols.includes(urlObj.protocol);
+    } catch {
+      return false;
+    }
+  };
+
+  // Check if current camera URL is valid
+  const isCameraUrlValid = validateCameraUrl(cameraUrl);
 
   const latestData = dataMonitoring[dataMonitoring.length - 1];
 
   const handleRecordClick = async () => {
     try {
-      if (recordingState === "idle") {
-        const res = await fetch("http://localhost:4000/record/start");
+      if (recordingState === 'idle') {
+        const res = await fetch('http://localhost:4000/record/start');
         const json = await res.json();
         if (json.success) {
-          setRecordingState("recording");
-          alert("Recording started!");
+          setRecordingState('recording');
+          alert('Recording started!');
         } else {
-          alert("❌ Failed: " + json.message);
+          alert('❌ Failed: ' + json.message);
         }
       } else {
-        const res = await fetch("http://localhost:4000/record/stop");
+        const res = await fetch('http://localhost:4000/record/stop');
         const json = await res.json();
         if (json.success && json.saved) {
-          alert("📁 Recording saved to:\n" + json.saved);
+          alert('📁 Recording saved to:\n' + json.saved);
         } else {
-          alert("❌ Failed to stop/save recording.");
+          alert('❌ Failed to stop/save recording.');
         }
-        setRecordingState("idle");
+        setRecordingState('idle');
       }
     } catch (err) {
-      console.error("Recording error:", err);
-      alert("❌ Error saat menghubungi server.");
+      console.error('Recording error:', err);
+      alert('❌ Error saat menghubungi server.');
     }
   };
 
   const handleStartMonitoring = async () => {
     try {
       await promise(
-        fetch("/api/monitoring/realtime/start-monitoring", {
-          method: "GET",
+        fetch('/api/monitoring/realtime/start-monitoring', {
+          method: 'GET',
         }).then((res) => {
           if (!res.ok) {
             return res.text().then((text) => {
               throw new Error(
-                text || res.statusText || "Failed to start monitoring"
+                text || res.statusText || 'Failed to start monitoring',
               );
             });
           }
         }),
         {
-          loading: "Starting monitoring...",
-          success: "Monitoring started successfully!",
-          error: "Failed to start monitoring. Please try again.",
-        }
+          loading: 'Starting monitoring...',
+          success: 'Monitoring started successfully!',
+          error: 'Failed to start monitoring. Please try again.',
+        },
       );
     } catch (error) {
-      console.error("Error starting monitoring:", error);
+      console.error('Error starting monitoring:', error);
     }
   };
 
@@ -160,26 +210,26 @@ export default function MidArea_Monitoring({
 
   const handleStopMonitoring = async () => {
     try {
-      const res = await fetch("/api/monitoring/realtime/stop-monitoring", {
-        method: "GET",
+      const res = await fetch('/api/monitoring/realtime/stop-monitoring', {
+        method: 'GET',
       });
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || res.statusText || "Failed to stop monitoring");
+        throw new Error(text || res.statusText || 'Failed to stop monitoring');
       }
       const json = await res.json();
       showStopResult(json);
       await promise(Promise.resolve(), {
-        loading: "Stopping monitoring...",
-        success: "Monitoring stopped successfully!",
-        error: "Failed to stop monitoring. Please try again.",
+        loading: 'Stopping monitoring...',
+        success: 'Monitoring stopped successfully!',
+        error: 'Failed to stop monitoring. Please try again.',
       });
     } catch (error) {
-      console.error("Error stopping monitoring:", error);
+      console.error('Error stopping monitoring:', error);
       await promise(Promise.reject(), {
-        loading: "Stopping monitoring...",
-        success: "Monitoring stopped successfully!",
-        error: "Failed to stop monitoring. Please try again.",
+        loading: 'Stopping monitoring...',
+        success: 'Monitoring stopped successfully!',
+        error: 'Failed to stop monitoring. Please try again.',
       });
     }
   };
@@ -257,7 +307,6 @@ export default function MidArea_Monitoring({
                     {resolution.height}P | {fps}
                   </motion.p>
                 </AnimatePresence>
-
                 <div className='absolute top-0 px-4 py-2.5 flex flex-row items-center justify-center w-full'>
                   <div className='font-semibold flex flex-row items-center gap-2 text-white p-2.5'>
                     <p>{deviceCamera}</p>
@@ -268,7 +317,6 @@ export default function MidArea_Monitoring({
                     />
                   </div>
                 </div>
-
                 <button
                   onClick={() => setFlashOn(!flashOn)}
                   type='button'
@@ -283,14 +331,33 @@ export default function MidArea_Monitoring({
                   }`}
                 >
                   <Icon icon='fluent:flash-32-filled' width={20} height={20} />
-                </button>
+                </button>{' '}
               </div>
 
-              <img
-                src='http://192.168.171.17/stream'
-                alt='Live Camera Stream'
-                className='w-full h-full object-cover'
-              />
+              {cameraUrl && isCameraUrlValid ? (
+                <WebSocketVideoStream
+                  url={cameraUrl}
+                  alt='Live Camera Stream'
+                  className='w-full h-full object-cover'
+                  onError={(error) => {
+                    console.error('Camera stream error:', error);
+                    setCameraUrlError(error);
+                  }}
+                  onLoad={() => setCameraUrlError('')}
+                />
+              ) : (
+                <div className='flex flex-col items-center justify-center w-full h-full'>
+                  <Icon
+                    icon='fluent:video-off-24-filled'
+                    width={48}
+                    height={48}
+                    className='text-gray-400 mb-2'
+                  />
+                  <p className='text-gray-400 text-center'>
+                    {cameraUrlError || 'Invalid camera URL'}
+                  </p>
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
