@@ -61,10 +61,8 @@ export default function AuthCookieSetter() {
         setCookieSet(false);
         setAttempts(0);
       }
-    };
-
-    setCookie();
-  }, [session, status, cookieSet, attempts, extendedSession?.accessToken]);
+    };    setCookie();
+  }, [session, status, cookieSet, attempts]);
 
   // Reset when session changes
   useEffect(() => {

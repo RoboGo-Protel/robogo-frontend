@@ -8,8 +8,7 @@ export const authOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
-  callbacks: {
-    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+  callbacks: {    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       console.log('Redirect callback:', { url, baseUrl });
 
       // If URL is relative, make it absolute
@@ -58,33 +57,6 @@ export const authOptions = {
 
             user.accessToken = data.token;
             user.backendUser = data.user;
-
-            // Set the robogo_token cookie immediately after successful auth
-            try {
-              const setCookieResponse = await fetch(
-                `${baseUrl}/api/auth/set-cookie-direct`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    token: data.token,
-                  }),
-                },
-              );
-
-              if (setCookieResponse.ok) {
-                console.log('Cookie set successfully in signIn callback');
-              } else {
-                console.error('Failed to set cookie in signIn callback');
-              }
-            } catch (cookieError) {
-              console.error(
-                'Error setting cookie in signIn callback:',
-                cookieError,
-              );
-            }
 
             console.log(
               'SignIn callback returning TRUE - authentication successful',

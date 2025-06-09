@@ -34,30 +34,31 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
       isOnboardingRoute: pathname === onboardingRoute,
     });
 
-    if (
-      userLoading ||
-      publicRoutes.includes(pathname) ||
-      pathname === onboardingRoute
-    ) {
+    // Skip checks for loading states and public routes
+    if (userLoading || publicRoutes.includes(pathname)) {
       return;
     }
 
+    // If no user, stay on current page
     if (!user) {
       console.log('No user found, staying on current page');
       return;
     }
 
+    // Wait for status to load
     if (statusLoading) {
       console.log('Status still loading, waiting...');
       return;
     }
 
+    // If user needs onboarding and not on onboarding page, redirect to onboarding
     if (status?.needsOnboarding && pathname !== onboardingRoute) {
       console.log('User needs onboarding, redirecting to onboarding');
       router.replace(onboardingRoute);
       return;
     }
 
+    // If user doesn't need onboarding and is on onboarding page, redirect to home
     if (!status?.needsOnboarding && pathname === onboardingRoute) {
       console.log('User completed onboarding, redirecting to home');
       router.replace('/');
