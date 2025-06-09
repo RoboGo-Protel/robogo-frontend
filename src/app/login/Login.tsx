@@ -30,13 +30,16 @@ export default function Login() {
   }, []);
 
   const router = useRouter();
-
   const handleGoogleSignIn = async () => {
     try {
-      await signIn('google', {
+      console.log('Starting Google sign-in with callback:', callbackUrl);
+
+      const result = await signIn('google', {
         callbackUrl: callbackUrl,
         redirect: true,
       });
+
+      console.log('Google signIn result:', result);
     } catch (error) {
       console.error('Google sign-in error:', error);
     }

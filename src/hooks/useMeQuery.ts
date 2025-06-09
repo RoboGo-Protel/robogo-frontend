@@ -11,19 +11,26 @@ export const useMeQuery = () => {
   const query = useQuery<MeResponse, Error>({
     queryKey: ["me"],
     queryFn: async () => {
-      const res = await fetch("/api/auth/me", {
-        cache: "no-store",
+      console.log('useMeQuery: Fetching user data...');
+
+      const res = await fetch('/api/auth/me', {
+        cache: 'no-store',
       });
 
+      console.log('useMeQuery: Response status:', res.status);
+
       if (res.status === 401) {
-        throw new Error("Unauthorized");
+        console.log('useMeQuery: User not authenticated');
+        throw new Error('Unauthorized');
       }
 
       if (!res.ok) {
-        throw new Error("Failed to fetch user");
+        console.log('useMeQuery: Failed to fetch user');
+        throw new Error('Failed to fetch user');
       }
 
       const json = await res.json();
+      console.log('useMeQuery: User data fetched successfully:', json.data);
       return json.data;
     },
     staleTime: 1000 * 60 * 5,

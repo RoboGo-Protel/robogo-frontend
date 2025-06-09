@@ -1,37 +1,16 @@
+// Custom callback endpoint - disabled for production build
+// This endpoint was used for custom authentication callback handling
+// It has been disabled since NextAuth handles callbacks automatically
+// and to resolve NextAuth v4 compatibility issues during build
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
-  try {
-    console.log('Auth callback triggered');
+  console.log('Custom callback endpoint called but disabled for production');
 
-    const session = await getServerSession(authOptions);
-    console.log('Session in callback:', session);
+  // Redirect to home since authentication is handled by NextAuth
+  const url = new URL(request.url);
+  const callbackUrl = url.searchParams.get('callbackUrl') || '/';
 
-    if (session?.accessToken) {
-      console.log('Setting robogo_token cookie from session');
-
-      const response = NextResponse.redirect(new URL('/', request.url));
-
-      response.cookies.set('robogo_token', session.accessToken as string, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60,
-        path: '/',
-      });
-
-      console.log('Redirecting to home with robogo_token cookie set');
-      return response;
-    }
-
-    console.log('No session or access token, redirecting to login');
-    return NextResponse.redirect(new URL('/login', request.url));
-  } catch (error) {
-    console.error('Auth callback error:', error);
-    return NextResponse.redirect(
-      new URL('/login?error=callback_error', request.url),
-    );
-  }
+  return NextResponse.redirect(new URL(callbackUrl, request.url));
 }

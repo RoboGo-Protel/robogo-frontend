@@ -4,19 +4,20 @@ import "./globals.css";
 import { DarkModeProvider } from "@/context/DarkModeContext";
 import AppWrapper from "@/components/AppWrapper";
 import OnboardingGuard from '@/components/OnboardingGuard';
-import { ToastProvider } from "@/context/ToastProvider";
-import { Providers } from "./provider";
+import AuthCookieSetter from '@/components/AuthCookieSetter';
+import { ToastProvider } from '@/context/ToastProvider';
+import { Providers } from './provider';
 
 const poppins = Poppins({
-  subsets: ["latin"],
-  variable: "--font-poppins",
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
+  subsets: ['latin'],
+  variable: '--font-poppins',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
-  title: "Dashboard - RoboGo",
-  description: "Dashboard untuk mengontrol Robot Gorong Gorong",
+  title: 'Dashboard - RoboGo',
+  description: 'Dashboard untuk mengontrol Robot Gorong Gorong',
 };
 
 export default function RootLayout({
@@ -30,6 +31,7 @@ export default function RootLayout({
         <Providers>
           <DarkModeProvider>
             <ToastProvider position='bottom-center'>
+              <AuthCookieSetter />
               <OnboardingGuard>
                 <AppWrapper>{children}</AppWrapper>
               </OnboardingGuard>

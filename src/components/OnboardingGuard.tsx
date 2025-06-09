@@ -23,8 +23,17 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
     [],
   );
   const onboardingRoute = '/onboarding';
-
   useEffect(() => {
+    console.log('OnboardingGuard check:', {
+      pathname,
+      user: !!user,
+      userLoading,
+      status,
+      statusLoading,
+      isPublicRoute: publicRoutes.includes(pathname),
+      isOnboardingRoute: pathname === onboardingRoute,
+    });
+
     if (
       userLoading ||
       publicRoutes.includes(pathname) ||
@@ -34,22 +43,28 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
     }
 
     if (!user) {
+      console.log('No user found, staying on current page');
       return;
     }
 
     if (statusLoading) {
+      console.log('Status still loading, waiting...');
       return;
     }
 
     if (status?.needsOnboarding && pathname !== onboardingRoute) {
+      console.log('User needs onboarding, redirecting to onboarding');
       router.replace(onboardingRoute);
       return;
     }
 
     if (!status?.needsOnboarding && pathname === onboardingRoute) {
+      console.log('User completed onboarding, redirecting to home');
       router.replace('/');
       return;
     }
+
+    console.log('OnboardingGuard check complete, no action needed');
   }, [
     user,
     userLoading,

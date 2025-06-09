@@ -52,13 +52,40 @@ export const authOptions = {
           });
 
           console.log('Google auth API response status:', response.status);
-
           if (response.ok) {
             const data = await response.json();
             console.log('Google auth API response data:', data);
 
             user.accessToken = data.token;
             user.backendUser = data.user;
+
+            // Set the robogo_token cookie immediately after successful auth
+            try {
+              const setCookieResponse = await fetch(
+                `${baseUrl}/api/auth/set-cookie-direct`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    token: data.token,
+                  }),
+                },
+              );
+
+              if (setCookieResponse.ok) {
+                console.log('Cookie set successfully in signIn callback');
+              } else {
+                console.error('Failed to set cookie in signIn callback');
+              }
+            } catch (cookieError) {
+              console.error(
+                'Error setting cookie in signIn callback:',
+                cookieError,
+              );
+            }
+
             console.log(
               'SignIn callback returning TRUE - authentication successful',
             );
@@ -85,6 +112,7 @@ export const authOptions = {
       if (user?.accessToken) {
         token.accessToken = user.accessToken;
         token.backendUser = user.backendUser;
+        console.log('Storing accessToken in JWT token:', !!token.accessToken);
       }
       return token;
     },
@@ -93,6 +121,7 @@ export const authOptions = {
       if (token.accessToken) {
         session.accessToken = token.accessToken as string;
         session.user = token.backendUser || session.user;
+        console.log('Session contains accessToken:', !!session.accessToken);
       }
       return session;
     },
@@ -103,5 +132,20 @@ export const authOptions = {
   },
   session: {
     strategy: 'jwt' as const,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
   },
 };
