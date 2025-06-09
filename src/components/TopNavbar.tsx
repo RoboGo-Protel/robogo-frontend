@@ -1,18 +1,19 @@
-"use client";
+'use client';
 
-import { Icon } from "@iconify/react";
-import Image from "next/image";
-import React, { useEffect, useRef, useState } from "react";
-import { useDarkMode } from "@/context/DarkModeContext";
-import NavMenuDesktop from "./NavMenuDesktop";
-import { useToast } from "@/context/ToastProvider";
-import Link from "next/link";
-import { useMeQuery } from "@/hooks/useMeQuery";
-import PopUpConfirmation from "./PopUpConfirmation";
-import { AnimatePresence, motion } from "framer-motion";
-import { database } from "../firebase/firebase";
-import { ref, onValue } from "firebase/database";
-
+import { Icon } from '@iconify/react';
+import Image from 'next/image';
+import React, { useEffect, useRef, useState } from 'react';
+import { useDarkMode } from '@/context/DarkModeContext';
+import NavMenuDesktop from './NavMenuDesktop';
+import { useToast } from '@/context/ToastProvider';
+import Link from 'next/link';
+import { useMeQuery } from '@/hooks/useMeQuery';
+import PopUpConfirmation from './PopUpConfirmation';
+import { AnimatePresence, motion } from 'framer-motion';
+import { database } from '../firebase/firebase';
+import { ref, onValue } from 'firebase/database';
+import { useUserConfig } from '@/hooks/useUserConfig';
+import { truncateProfileName } from '@/utils/nameUtils';
 
 export default function TopNavbar() {
   const { isDark, toggleDark } = useDarkMode();
@@ -23,6 +24,16 @@ export default function TopNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Device selector state
+  const [deviceSelectorOpen, setDeviceSelectorOpen] = useState(false);
+  const deviceSelectorRef = useRef<HTMLDivElement>(null);
+  const {
+    selectedDevice,
+    userDevices,
+    updateSelectedDevice,
+    loading: deviceLoading,
+  } = useUserConfig();
 
   const [signalStatus, setSignalStatus] = useState<string>('-');
   const [rssiValue, setRssiValue] = useState<number | null>(null);
@@ -41,13 +52,23 @@ export default function TopNavbar() {
       ) {
         setMobileMenuOpen(false);
       }
+      if (
+        deviceSelectorRef.current &&
+        !deviceSelectorRef.current.contains(event.target as Node)
+      ) {
+        setDeviceSelectorOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
   useEffect(() => {
-    const sessionRef = ref(database, 'current_session');
+    if (!user?.id || !selectedDevice?.id) {
+      setCurrentSession(null);
+      return;
+    }
+
+    const sessionRef = ref(database, `users/${user.id}/${selectedDevice.id}/current_session`);
     const unsubscribe = onValue(sessionRef, (snapshot) => {
       const session = snapshot.val();
       const sessionNumber =
@@ -55,15 +76,14 @@ export default function TopNavbar() {
       setCurrentSession(isNaN(sessionNumber) ? null : sessionNumber);
     });
     return () => unsubscribe();
-  }, []);
-
+  }, [user?.id, selectedDevice?.id]);
   useEffect(() => {
-    if (currentSession === null) {
+    if (currentSession === null || !user?.id || !selectedDevice?.id) {
       setSignalStatus('-');
       setRssiValue(null);
       return;
     }
-    const dbRef = ref(database, `realtime_monitoring/${currentSession}`);
+    const dbRef = ref(database, `users/${user.id}/${selectedDevice.id}/realtime_monitoring/${currentSession}`);
     const unsubscribe = onValue(dbRef, (snapshot) => {
       const value = snapshot.val();
       let latestRssi: number | null = null;
@@ -98,9 +118,8 @@ export default function TopNavbar() {
         }
       }
       setSignalStatus(status);
-    });
-    return () => unsubscribe();
-  }, [currentSession]);
+    });    return () => unsubscribe();
+  }, [currentSession, user?.id, selectedDevice?.id]);
 
   const handleLogout = async () => {
     const res = await fetch('/api/auth/logout', { method: 'POST' });
@@ -235,9 +254,127 @@ export default function TopNavbar() {
               )}
               <span className='hidden sm:block'>
                 {signalStatus.replace(/^[^ ]+ /, '')}
-              </span>
+              </span>{' '}
               {rssiValue !== null && (
                 <span className='text-xs'>({rssiValue} dBm)</span>
+              )}
+            </div>
+          )}
+
+          {/* Device Selector - only show when user is authenticated and has devices */}
+          {user && userDevices.length > 0 && (
+            <div ref={deviceSelectorRef} className='relative'>
+              <div
+                onClick={() => setDeviceSelectorOpen(!deviceSelectorOpen)}
+                className={`flex items-center gap-2 px-3 py-2 min-h-12 rounded-xl border transition duration-200 ease-in-out cursor-pointer select-none ${
+                  isDark
+                    ? 'bg-[#0F1B2D] border-blue-400/30 text-white hover:bg-[#1a2332]'
+                    : 'bg-white border-blue-400 text-black hover:bg-gray-50'
+                }`}
+                title={
+                  selectedDevice
+                    ? `Currently selected: ${selectedDevice.deviceName}`
+                    : 'Select a device'
+                }
+              >
+                <Icon icon='material-symbols:devices' className='text-lg' />
+                <span className='hidden md:block text-sm'>
+                  {deviceLoading
+                    ? 'Loading...'
+                    : selectedDevice
+                      ? selectedDevice.deviceName
+                      : 'Select Device'}
+                </span>
+                <Icon
+                  icon={
+                    deviceSelectorOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'
+                  }
+                  className='text-sm'
+                />
+              </div>
+
+              {deviceSelectorOpen && (
+                <div
+                  className={`absolute right-0 top-full mt-2 w-48 rounded-lg shadow-lg border ${
+                    isDark
+                      ? 'border-gray-700 bg-[#112133] text-white'
+                      : 'border-gray-300 bg-white text-black'
+                  } flex flex-col z-50 max-h-60 overflow-y-auto`}
+                >
+                  {userDevices.map((device) => (
+                    <div
+                      key={device.id}                      onClick={async () => {
+                        // Close dropdown immediately for better UX
+                        setDeviceSelectorOpen(false);
+                        
+                        // Reset signal status while switching
+                        setSignalStatus('-');
+                        setRssiValue(null);
+                        setCurrentSession(null);
+                        
+                        try {
+                          const success = await updateSelectedDevice(device.id);
+                          if (success) {
+                            showToast(
+                              `Device switched to ${device.deviceName}`,
+                              'success',
+                            );
+                            
+                            // Force a small delay to ensure all state updates propagate
+                            await new Promise(resolve => setTimeout(resolve, 200));
+                            
+                            // Manually trigger a re-render by updating a state that forces components to remount
+                            console.log(`Device switch completed for: ${device.deviceName}`);
+                          } else {
+                            showToast('Failed to switch device', 'error');
+                          }
+                        } catch (error) {
+                          console.error('Device switch error:', error);
+                          showToast('Error switching device', 'error');
+                        }
+                      }}
+                      className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 cursor-pointer ${
+                        selectedDevice?.id === device.id
+                          ? isDark
+                            ? 'bg-blue-600/20 border-l-4 border-blue-400'
+                            : 'bg-blue-100 border-l-4 border-blue-500'
+                          : isDark
+                            ? 'hover:bg-blue-400/10'
+                            : 'hover:bg-blue-50'
+                      } ${userDevices.indexOf(device) === 0 ? 'rounded-t-lg' : ''} ${
+                        userDevices.indexOf(device) === userDevices.length - 1
+                          ? 'rounded-b-lg'
+                          : ''
+                      }`}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          device.status === 'online'
+                            ? 'bg-green-500'
+                            : 'bg-gray-400'
+                        }`}
+                      />
+                      <div className='flex-1'>
+                        <div className='text-sm font-medium'>
+                          {device.deviceName}
+                        </div>
+                        <div
+                          className={`text-xs ${
+                            isDark ? 'text-gray-400' : 'text-gray-500'
+                          }`}
+                        >
+                          {device.status === 'ON' ? 'Online' : 'Offline'}
+                        </div>
+                      </div>
+                      {selectedDevice?.id === device.id && (
+                        <Icon
+                          icon='mdi:check'
+                          className='text-blue-500 text-lg'
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -255,7 +392,9 @@ export default function TopNavbar() {
                     : 'bg-white border-blue-400 text-black'
                 }`}
               >
-                <p className='md:block hidden'>{user?.name}</p>
+                <p className='md:block hidden'>
+                  {truncateProfileName(user?.name)}
+                </p>
                 <Icon icon='mage:user-square-fill' fontSize={24} />
               </div>
               {dropdownOpen && (

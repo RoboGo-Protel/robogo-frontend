@@ -10,6 +10,7 @@ import { useToast } from '@/context/ToastProvider';
 import StopMonitoringResult from './StopMonitoringResult';
 import { useStopMonitoringResult } from './StopMonitoringResultContext';
 import WebSocketVideoStream from '@/components/WebSocketVideoStream';
+import { useUserConfig } from '@/hooks/useUserConfig';
 
 interface ImportLogResult {
   totalData: number;
@@ -100,11 +101,21 @@ export default function MidArea_Monitoring({
   const { stopResult, setStopResult } = useStopMonitoringResult();
   const [cameraUrl, setCameraUrl] = useState<string>('');
   const [cameraUrlError, setCameraUrlError] = useState<string>('');
+  // Device management
+  const { selectedDevice, config } = useUserConfig();
 
   // Fetch user configuration on component mount
   useEffect(() => {
     const fetchUserConfig = async () => {
       try {
+        // Use config from useUserConfig hook if available
+        if (config?.cameraStreamUrl) {
+          setCameraUrl(config.cameraStreamUrl);
+          setCameraUrlError('');
+          return;
+        }
+
+        // Fallback to API call if config not loaded yet
         const response = await fetch('/api/user/config');
         if (response.ok) {
           const data = await response.json();
@@ -125,7 +136,7 @@ export default function MidArea_Monitoring({
     };
 
     fetchUserConfig();
-  }, []);
+  }, [config]);
 
   // Validate camera URL for WebSocket and other protocols
   const validateCameraUrl = (url: string): boolean => {
@@ -178,13 +189,23 @@ export default function MidArea_Monitoring({
       alert('❌ Error saat menghubungi server.');
     }
   };
-
   const handleStartMonitoring = async () => {
+    if (!selectedDevice) {
+      await promise(Promise.reject(new Error('No device selected')), {
+        loading: 'Starting monitoring...',
+        success: 'Monitoring started successfully!',
+        error: 'Please select a device before starting monitoring.',
+      });
+      return;
+    }
     try {
       await promise(
-        fetch('/api/monitoring/realtime/start-monitoring', {
-          method: 'GET',
-        }).then((res) => {
+        fetch(
+          `/api/monitoring/realtime/start-monitoring?deviceName=${encodeURIComponent(selectedDevice.deviceName)}`,
+          {
+            method: 'GET',
+          },
+        ).then((res) => {
           if (!res.ok) {
             return res.text().then((text) => {
               throw new Error(
@@ -195,7 +216,7 @@ export default function MidArea_Monitoring({
         }),
         {
           loading: 'Starting monitoring...',
-          success: 'Monitoring started successfully!',
+          success: `Monitoring started for device: ${selectedDevice.deviceName}!`,
           error: 'Failed to start monitoring. Please try again.',
         },
       );
@@ -207,12 +228,22 @@ export default function MidArea_Monitoring({
   const showStopResult = (result: StopMonitoringResultType) => {
     setStopResult(result);
   };
-
   const handleStopMonitoring = async () => {
-    try {
-      const res = await fetch('/api/monitoring/realtime/stop-monitoring', {
-        method: 'GET',
+    if (!selectedDevice) {
+      await promise(Promise.reject(new Error('No device selected')), {
+        loading: 'Stopping monitoring...',
+        success: 'Monitoring stopped successfully!',
+        error: 'Please select a device before stopping monitoring.',
       });
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/monitoring/realtime/stop-monitoring?deviceName=${encodeURIComponent(selectedDevice.deviceName)}`,
+        {
+          method: 'GET',
+        },
+      );
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || res.statusText || 'Failed to stop monitoring');
@@ -221,7 +252,7 @@ export default function MidArea_Monitoring({
       showStopResult(json);
       await promise(Promise.resolve(), {
         loading: 'Stopping monitoring...',
-        success: 'Monitoring stopped successfully!',
+        success: `Monitoring stopped for device: ${selectedDevice.deviceName}!`,
         error: 'Failed to stop monitoring. Please try again.',
       });
     } catch (error) {
@@ -387,7 +418,6 @@ export default function MidArea_Monitoring({
           )}
         </AnimatePresence>
       </div>
-
       {dataMonitoring && dataMonitoring.length > 0 ? (
         <div className='flex flex-col gap-4 items-stretch w-full h-fit'>
           <StatCardList
@@ -465,21 +495,14 @@ export default function MidArea_Monitoring({
         >
           Start monitoring to show the data
         </div>
-      )}
-
+      )}{' '}
+      {/* Control buttons - always visible */}
       <div className='flex flex-col md:flex-row w-full gap-4'>
-        <DirectionalControl onDirectionClick={(dir) => console.log(dir)} />
+        {/* Conditionally render directional control based on user config */}
+        {!config?.hideMonitoringControls && (
+          <DirectionalControl onDirectionClick={(dir) => console.log(dir)} />
+        )}
         <div className='flex flex-col w-full gap-2.5'>
-          <div
-            className={`flex flex-row items-center justify-center gap-2.5 w-full h-fit rounded-xl px-4 py-2 ${
-              isDark
-                ? 'bg-[#113541] text-white'
-                : 'bg-gradient-to-br from-blue-500 to-blue-400 text-white'
-            }`}
-          >
-            <Icon icon='mingcute:settings-1-fill' width={20} height={20} />
-            <span className='font-semibold text-base'>Tools</span>
-          </div>
           <div className='grid grid-cols-1 md:grid-cols-6 gap-2.5 w-full h-fit'>
             <button
               onClick={handleStartMonitoring}
@@ -521,7 +544,7 @@ export default function MidArea_Monitoring({
                   }`}
                 >
                   {item.text}
-                </p>{' '}
+                </p>
                 <Icon
                   icon={item.icon}
                   width={20}
@@ -533,7 +556,6 @@ export default function MidArea_Monitoring({
           </div>
         </div>
       </div>
-
       {/* Dialog Stop Monitoring Result */}
       <AnimatePresence>
         {stopResult && (

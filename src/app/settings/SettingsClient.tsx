@@ -20,6 +20,7 @@ interface UserConfig {
   cameraStreamUrl: string;
   streamQuality: 'low' | 'medium' | 'high';
   assignedDevices: string[];
+  hideMonitoringControls?: boolean;
 }
 
 const modalVariants = {
@@ -60,12 +61,14 @@ export default function SettingsClient() {
     cameraStreamUrl: 'http://192.168.1.100/stream',
     streamQuality: 'medium',
     assignedDevices: [],
+    hideMonitoringControls: false,
   });
   const [originalConfig, setOriginalConfig] = useState<UserConfig>({
     selectedDevice: null,
     cameraStreamUrl: 'http://192.168.1.100/stream',
     streamQuality: 'medium',
     assignedDevices: [],
+    hideMonitoringControls: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,6 +114,7 @@ export default function SettingsClient() {
               data.data.cameraStreamUrl || 'http://192.168.1.100/stream',
             streamQuality: data.data.streamQuality || 'medium',
             assignedDevices: data.data.assignedDevices || [],
+            hideMonitoringControls: data.data.hideMonitoringControls || false,
           };
           setConfig(newConfig);
           setOriginalConfig(newConfig);
@@ -498,8 +502,7 @@ export default function SettingsClient() {
                       Enter the camera streaming URL (supports HTTP/HTTPS,
                       WebSocket, RTSP, RTMP protocols)
                     </p>
-                  </div>
-
+                  </div>{' '}
                   <div>
                     <label
                       className={`block text-sm font-medium mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
@@ -527,6 +530,60 @@ export default function SettingsClient() {
                       <option value='medium'>Medium (640x480)</option>
                       <option value='high'>High (1280x720)</option>
                     </select>
+                  </div>
+                  <div>
+                    <label
+                      className={`block text-sm font-medium mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      Monitoring Interface
+                    </label>
+                    <div
+                      className={`flex items-center justify-between p-4 rounded-xl border ${
+                        isDark
+                          ? 'bg-gray-700 border-gray-600'
+                          : 'bg-white border-gray-300'
+                      }`}
+                    >
+                      <div className='flex flex-col'>
+                        {' '}
+                        <span
+                          className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}
+                        >
+                          Hide Directional Controls
+                        </span>
+                        <span
+                          className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+                        >
+                          Hide directional buttons (up, down, left, right) in
+                          monitoring
+                        </span>
+                      </div>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          setConfig((prev) => ({
+                            ...prev,
+                            hideMonitoringControls:
+                              !prev.hideMonitoringControls,
+                          }))
+                        }
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                          config.hideMonitoringControls
+                            ? 'bg-blue-500'
+                            : isDark
+                              ? 'bg-gray-600'
+                              : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${
+                            config.hideMonitoringControls
+                              ? 'translate-x-6'
+                              : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

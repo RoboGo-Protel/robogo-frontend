@@ -1,22 +1,43 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiUrl}/monitoring/realtime/start-monitoring`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+    // Get auth token from cookies
+    const token = request.cookies.get('robogo_token')?.value;
+
+    // Extract deviceName from query parameters
+    const { searchParams } = new URL(request.url);
+    const deviceName = searchParams.get('deviceName');
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add Bearer token if available
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Build the URL with deviceName parameter if provided
+    let backendUrl = `${apiUrl}/monitoring/realtime/start-monitoring`;
+    if (deviceName) {
+      backendUrl += `?deviceName=${encodeURIComponent(deviceName)}`;
+    }
+
+    const res = await fetch(backendUrl, {
+      method: 'GET',
+      headers,
     });
+
     const data = await res.json();
 
-    return NextResponse.json({ status: "success", data: data.data || [] });
+    return NextResponse.json({ status: 'success', data: data.data || [] });
   } catch (error) {
-    console.error("Error fetching monitoring data:", error);
+    console.error('Error fetching monitoring data:', error);
     return NextResponse.json(
-      { status: "error", message: "Failed to fetch monitoring data" },
-      { status: 500 }
+      { status: 'error', message: 'Failed to fetch monitoring data' },
+      { status: 500 },
     );
   }
 }

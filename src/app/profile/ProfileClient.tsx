@@ -6,6 +6,7 @@ import { Icon } from '@iconify/react';
 import { useDarkMode } from '@/context/DarkModeContext';
 import { useToast } from '@/context/ToastProvider';
 import { useMeQuery } from '@/hooks/useMeQuery';
+import { truncateProfileName } from '@/utils/nameUtils';
 
 export default function ProfileClient() {
   const { isDark } = useDarkMode();
@@ -86,7 +87,9 @@ export default function ProfileClient() {
         paddingTop: topNavbarHeight,
         paddingBottom: bottomNavbarHeight + 20,
       }}
-    >      <div className='max-w-4xl mx-auto px-4 py-8'>
+    >
+      {' '}
+      <div className='max-w-4xl mx-auto px-4 py-8'>
         {/* Header */}
         <div className='mb-8'>
           <div className='flex items-center space-x-3 mb-4'>
@@ -132,7 +135,7 @@ export default function ProfileClient() {
                       isDark ? 'text-white' : 'text-gray-900'
                     }`}
                   >
-                    {user.name}
+                    {truncateProfileName(user.name)}
                   </h2>
                   <p
                     className={`text-sm mb-4 ${

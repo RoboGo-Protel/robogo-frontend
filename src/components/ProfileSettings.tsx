@@ -18,6 +18,7 @@ interface UserConfig {
   cameraStreamUrl: string;
   streamQuality: 'low' | 'medium' | 'high';
   assignedDevices: string[];
+  hideMonitoringControls?: boolean;
 }
 
 interface ProfileSettingsProps {
@@ -40,6 +41,7 @@ export default function ProfileSettings({
     cameraStreamUrl: 'http://192.168.1.100/stream',
     streamQuality: 'medium',
     assignedDevices: [],
+    hideMonitoringControls: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
