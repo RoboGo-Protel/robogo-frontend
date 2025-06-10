@@ -9,8 +9,9 @@ import { useDarkMode } from "@/context/DarkModeContext";
 import clsx from "clsx";
 import RemoveImagePopup from "./PopUpRemoveImage";
 import ImageWithAnalysis from "./ImageWithAnalysis";
+import { useUserConfig } from '@/hooks/useUserConfig';
 
-type SensorKey = "ultrasonic" | "battery" | "gps" | "obstacle";
+type SensorKey = 'ultrasonic' | 'battery' | 'gps' | 'obstacle';
 
 interface Metadata {
   ultrasonic: number;
@@ -67,9 +68,9 @@ const backdropVariants = {
 };
 
 const modalVariants = {
-  hidden: { y: "-10vh", opacity: 0 },
-  visible: { y: "0", opacity: 1 },
-  exit: { y: "10vh", opacity: 0 },
+  hidden: { y: '-10vh', opacity: 0 },
+  visible: { y: '0', opacity: 1 },
+  exit: { y: '10vh', opacity: 0 },
 };
 
 const tabContentVariants = {
@@ -80,14 +81,14 @@ const tabContentVariants = {
 
 const menuItems = [
   {
-    name: "Information",
-    fillIcon: "ph:read-cv-logo-fill",
-    outlineIcon: "ph:read-cv-logo",
+    name: 'Information',
+    fillIcon: 'ph:read-cv-logo-fill',
+    outlineIcon: 'ph:read-cv-logo',
   },
   {
-    name: "Paths",
-    fillIcon: "bxs:navigation",
-    outlineIcon: "bx:navigation",
+    name: 'Paths',
+    fillIcon: 'bxs:navigation',
+    outlineIcon: 'bx:navigation',
   },
 ];
 
@@ -155,6 +156,8 @@ export default function PhotoDetailsWithPaths({
   details,
   onClose,
 }: PhotoDetailsProps) {
+  const { selectedDevice } = useUserConfig();
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
 
@@ -190,10 +193,16 @@ export default function PhotoDetailsWithPaths({
     }
     return null;
   };
-
   const handleDownload = async () => {
     try {
-      const res = await fetch(`/api/reports/gallery/download/${details.id}`);
+      const deviceName = selectedDevice?.deviceName;      if (!deviceName) {
+        console.log('No device selected - cannot download image');
+        return;
+      }
+
+      const res = await fetch(
+        `/api/reports/gallery/download/${details.id}?deviceName=${encodeURIComponent(deviceName)}`,
+      );
       if (!res.ok) {
         throw new Error('Failed to get image download URL');
       }

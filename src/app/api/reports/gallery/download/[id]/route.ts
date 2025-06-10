@@ -1,13 +1,26 @@
 import { NextResponse } from "next/server";
+import { NextRequest } from 'next/server';
 
 export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const { searchParams } = new URL(request.url);
+  const deviceName = searchParams.get('deviceName');
+
+  if (!deviceName) {
+    return NextResponse.json(
+      { status: 'error', message: 'deviceName parameter is required' },
+      { status: 400 },
+    );
+  }
+
   const { id } = await context.params;
   try {
-    const res = await fetch(`${apiUrl}/reports/gallery/download/${id}`);
+    const res = await fetch(
+      `${apiUrl}/reports/gallery/download/${id}?deviceName=${encodeURIComponent(deviceName)}`,
+    );
 
     const headers = new Headers();
     res.headers.forEach((value, key) => {
@@ -19,10 +32,10 @@ export async function GET(
       headers,
     });
   } catch (error) {
-    console.error("Error downloading file:", error);
+    console.error('Error downloading file:', error);
     return NextResponse.json(
-      { status: "error", message: "Failed to download file" },
-      { status: 500 }
+      { status: 'error', message: 'Failed to download file' },
+      { status: 500 },
     );
   }
 }

@@ -6,9 +6,11 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { AnimatePresence } from "framer-motion";
 import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
 import SyncLoader from "react-spinners/SyncLoader";
+import { PulseLoader } from "react-spinners";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
+import { useUserConfig } from '@/hooks/useUserConfig';
 
 interface Image {
   id: string;
@@ -65,6 +67,7 @@ export default function Gallery() {
   const [listPhotoWithDate, setListPhotoWithDate] = useState<Image[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isDark } = useDarkMode();
+  const { selectedDevice } = useUserConfig();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -112,19 +115,28 @@ export default function Gallery() {
   useEffect(() => {
     const fetchImagesList = async () => {
       try {
-        const response = await fetch("/api/monitoring/realtime/images");
+        const deviceName = selectedDevice?.deviceName;
+        if (!deviceName) {
+          console.log('Waiting for device to be selected...');
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch(
+          `/api/monitoring/realtime/images?deviceName=${encodeURIComponent(deviceName)}`,
+        );
         const data = await response.json();
 
         setListPhotoWithDate(data.data || []);
         setIsLoading(false);
       } catch (error) {
-        console.error("Error fetching images list:", error);
+        console.error('Error fetching images list:', error);
         setIsLoading(false);
       }
     };
 
     fetchImagesList();
-  }, []);
+  }, [selectedDevice?.deviceName]);
 
   const groupPhotosByDate = (photos: Image[]) => {
     const grouped: { [date: string]: Image[] } = {};
@@ -150,6 +162,40 @@ export default function Gallery() {
   }, [topNavbarHeight, reportsNavbarHeight]);
 
   const groupedPhotos = groupPhotosByDate(listPhotoWithDate);
+
+  // Don't render content until we have a selected device
+  if (!selectedDevice?.deviceName) {
+    return (
+      <div
+        className={clsx(
+          'flex flex-col justify-center items-center p-5',
+          isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
+        )}
+        style={{
+          paddingTop: topNavbarHeight + reportsNavbarHeight,
+          paddingBottom: bottomNavbarHeight + 20,
+          height: `calc(100vh - ${
+            topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
+          }px)`,
+        }}
+      >
+        <PulseLoader
+          color='#60a5fa'
+          loading={true}
+          size={15}
+          margin={5}
+        />
+        <p
+          className={clsx(
+            'mt-4 text-lg text-center',
+            isDark ? 'text-gray-300' : 'text-gray-500',
+          )}
+        >
+          Loading device configuration...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>

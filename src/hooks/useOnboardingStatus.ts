@@ -15,7 +15,10 @@ export function useOnboardingStatus() {
   const checkStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/user/onboarding-status');
+      setError(null);
+      const response = await fetch('/api/user/onboarding-status', {
+        cache: 'no-store', // Force fresh data
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch onboarding status');
@@ -23,7 +26,6 @@ export function useOnboardingStatus() {
 
       const data = await response.json();
       setStatus(data.data);
-      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setStatus(null);

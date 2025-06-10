@@ -7,6 +7,7 @@ import UltrasonicSensorTable from "@/components/UltrasonicSensorTable";
 import { PulseLoader } from "react-spinners";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { useUserConfig } from '@/hooks/useUserConfig';
 
 interface OptionType {
   value: string;
@@ -63,6 +64,7 @@ interface Ultrasonic {
 
 export default function Ultrasonic() {
   const { isDark } = useDarkMode();
+  const { selectedDevice } = useUserConfig();
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
   const [reportsNavbarHeight, setReportsNavbarHeight] = useState(0);
@@ -78,14 +80,14 @@ export default function Ultrasonic() {
   >([]);
   const [selectedDate, setSelectedDate] = useState<OptionType | null>(null);
   const [selectedSession, setSelectedSession] = useState<OptionType | null>(
-    null
+    null,
   );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const reports = document.querySelector("#reports-navbar");
-    const top = document.querySelector("#top-navbar");
-    const bottom = document.querySelector("#bottom-navbar");
+    const reports = document.querySelector('#reports-navbar');
+    const top = document.querySelector('#top-navbar');
+    const bottom = document.querySelector('#bottom-navbar');
 
     if (top) setTopNavbarHeight(top.clientHeight);
     if (bottom) setBottomNavbarHeight(bottom.clientHeight);
@@ -97,8 +99,8 @@ export default function Ultrasonic() {
       if (reports) setReportsNavbarHeight(reports.clientHeight);
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [topNavbarHeight, bottomNavbarHeight, reportsNavbarHeight]);
 
   const customStyles: StylesConfig<OptionType, false> = {
@@ -144,9 +146,15 @@ export default function Ultrasonic() {
     const fetchAllData = async () => {
       setIsLoading(true);
       try {
-        
+        const deviceName = selectedDevice?.deviceName;
+        if (!deviceName) {
+          console.log('Waiting for device to be selected...');
+          setIsLoading(false);
+          return;
+        }
+
         const datesRes = await fetch(
-          '/api/reports/ultrasonic/dates-with-sessions',
+          `/api/reports/ultrasonic/dates-with-sessions?deviceName=${encodeURIComponent(deviceName)}`,
         );
         const datesData = await datesRes.json();
         const data = datesData.data;
@@ -178,7 +186,7 @@ export default function Ultrasonic() {
 
         if (useDate && useSession) {
           const summariesRes = await fetch(
-            `/api/reports/ultrasonic/summaries/date/${useDate.value}/session/${useSession.value}`,
+            `/api/reports/ultrasonic/summaries/date/${useDate.value}/session/${useSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
           );
           const summariesData = await summariesRes.json();
           setSummaries({
@@ -189,33 +197,32 @@ export default function Ultrasonic() {
           });
         }
 
-        
         if (
           (date && session) ||
           (data.length > 0 && data[0].sessions.length > 0)
         ) {
           const useSession = session || data[0].sessions[0];
           const reportsRes = await fetch(
-            `/api/reports/ultrasonic/date/${useDate?.value}/session/${useSession.value}`
+            `/api/reports/ultrasonic/date/${useDate?.value}/session/${useSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
           );
           const reportsData = await reportsRes.json();
           const sortedReports = (reportsData.data || []).sort(
             (a: Ultrasonic, b: Ultrasonic) =>
-              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
           );
           setReports(sortedReports);
         } else {
           setReports([]);
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error('Error fetching data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAllData();
-  }, [selectedDate, selectedSession]);
+  }, [selectedDate, selectedSession, selectedDevice?.deviceName]);
 
   const summaryItems = [
     {
@@ -239,6 +246,40 @@ export default function Ultrasonic() {
       summary: `${summaries.averageDistance} cm`,
     },
   ];
+
+  // Don't render content until we have a selected device
+  if (!selectedDevice?.deviceName) {
+    return (
+      <div
+        className={clsx(
+          'flex flex-col justify-center items-center p-4 md:p-5',
+          isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
+        )}
+        style={{
+          paddingTop: topNavbarHeight + reportsNavbarHeight,
+          paddingBottom: bottomNavbarHeight + 20,
+          height: `calc(100vh - ${
+            topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
+          }px)`,
+        }}
+      >
+        <PulseLoader
+          color='#60a5fa'
+          loading={true}
+          size={15}
+          margin={5}
+        />
+        <p
+          className={clsx(
+            'mt-4 text-lg text-center',
+            isDark ? 'text-gray-300' : 'text-gray-500',
+          )}
+        >
+          Loading device configuration...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div

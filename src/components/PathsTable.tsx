@@ -90,13 +90,11 @@ export default function PathsTable({ reports }: PathsTableProps) {
         className={`overflow-x-auto rounded-xl shadow-sm ${
           isDark ? 'bg-[#112133]' : 'bg-white'
         }`}
-      >
-        <table
+      >        <table
           className={`min-w-[700px] w-full text-sm text-left ${
             isDark ? 'text-gray-100' : 'text-gray-900'
           }`}
         >
-          {' '}
           <thead
             className={`border-b border-gray-200 ${
               isDark ? 'bg-blue-400/10' : 'bg-blue-400/10'

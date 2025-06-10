@@ -7,6 +7,7 @@ import IMUTable from "@/components/IMUTable";
 import { PulseLoader } from "react-spinners";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { useUserConfig } from '@/hooks/useUserConfig';
 
 interface OptionType {
   value: string;
@@ -52,6 +53,7 @@ interface IMULogs {
 
 export default function IMU() {
   const { isDark } = useDarkMode();
+  const { selectedDevice } = useUserConfig();
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
   const [reportsNavbarHeight, setReportsNavbarHeight] = useState(0);
@@ -134,7 +136,16 @@ export default function IMU() {
     const fetchAllData = async () => {
       setIsLoading(true);
       try {
-        const datesRes = await fetch('/api/reports/imu/dates-with-sessions');
+        const deviceName = selectedDevice?.deviceName;
+        if (!deviceName) {
+          console.log('Waiting for device to be selected...');
+          setIsLoading(false);
+          return;
+        }
+
+        const datesRes = await fetch(
+          `/api/reports/imu/dates-with-sessions?deviceName=${encodeURIComponent(deviceName)}`,
+        );
         const datesData = await datesRes.json();
         const data = datesData.data;
         setDateWithSessions(data);
@@ -165,7 +176,7 @@ export default function IMU() {
 
         if (useDate && useSession) {
           const summariesRes = await fetch(
-            `/api/reports/imu/summaries/date/${useDate.value}/session/${useSession.value}`,
+            `/api/reports/imu/summaries/date/${useDate.value}/session/${useSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
           );
           const summariesData = await summariesRes.json();
           const s = summariesData.data || {};
@@ -180,7 +191,7 @@ export default function IMU() {
           });
 
           const reportsRes = await fetch(
-            `/api/reports/imu/date/${useDate.value}/session/${useSession.value}`,
+            `/api/reports/imu/date/${useDate.value}/session/${useSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
           );
           const reportsResult = await reportsRes.json();
           const sortedReports = (reportsResult.data || []).sort(
@@ -199,7 +210,7 @@ export default function IMU() {
     };
 
     fetchAllData();
-  }, [selectedDate, selectedSession]);
+  }, [selectedDate, selectedSession, selectedDevice?.deviceName]);
 
   function getDirectionFromHeading(heading: number): string {
     const directions = [
@@ -247,6 +258,40 @@ export default function IMU() {
       summary: `${(summaries.max_turn_angle ?? 0).toFixed(2)}°`,
     },
   ] as const;
+
+  // Don't render content until we have a selected device
+  if (!selectedDevice?.deviceName) {
+    return (
+      <div
+        className={clsx(
+          'flex flex-col justify-center items-center p-5',
+          isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
+        )}
+        style={{
+          paddingTop: topNavbarHeight + reportsNavbarHeight,
+          paddingBottom: bottomNavbarHeight + 20,
+          height: `calc(100vh - ${
+            topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
+          }px)`,
+        }}
+      >
+        <PulseLoader
+          color='#60a5fa'
+          loading={true}
+          size={15}
+          margin={5}
+        />
+        <p
+          className={clsx(
+            'mt-4 text-lg text-center',
+            isDark ? 'text-gray-300' : 'text-gray-500',
+          )}
+        >
+          Loading device configuration...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div

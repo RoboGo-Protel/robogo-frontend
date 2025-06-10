@@ -15,7 +15,7 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: user, isLoading: userLoading } = useMeQuery();
-  const { status, loading: statusLoading } = useOnboardingStatus();
+  const { status, loading: statusLoading, refetch } = useOnboardingStatus();
   const { isDark } = useDarkMode();
 
   const publicRoutes = useMemo(
@@ -23,6 +23,23 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
     [],
   );
   const onboardingRoute = '/onboarding';
+
+  // Listen for custom events to refetch status
+  useEffect(() => {
+    const handleRefetchStatus = () => {
+      console.log('Refetching onboarding status due to custom event');
+      refetch();
+    };
+
+    window.addEventListener('onboarding-status-changed', handleRefetchStatus);
+    return () => {
+      window.removeEventListener(
+        'onboarding-status-changed',
+        handleRefetchStatus,
+      );
+    };
+  }, [refetch]);
+
   useEffect(() => {
     console.log('OnboardingGuard check:', {
       pathname,
@@ -51,15 +68,21 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
       return;
     }
 
+    // If status is null, try to refetch
+    if (status === null) {
+      console.log('Status is null, staying put');
+      return;
+    }
+
     // If user needs onboarding and not on onboarding page, redirect to onboarding
-    if (status?.needsOnboarding && pathname !== onboardingRoute) {
+    if (status.needsOnboarding && pathname !== onboardingRoute) {
       console.log('User needs onboarding, redirecting to onboarding');
       router.replace(onboardingRoute);
       return;
     }
 
     // If user doesn't need onboarding and is on onboarding page, redirect to home
-    if (!status?.needsOnboarding && pathname === onboardingRoute) {
+    if (!status.needsOnboarding && pathname === onboardingRoute) {
       console.log('User completed onboarding, redirecting to home');
       router.replace('/');
       return;

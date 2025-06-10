@@ -5,7 +5,7 @@ import { Icon } from '@iconify/react';
 import { useDarkMode } from '@/context/DarkModeContext';
 import { useToast } from '@/context/ToastProvider';
 import { useMeQuery } from '@/hooks/useMeQuery';
-import { useRouter } from 'next/navigation';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { ClipLoader } from 'react-spinners';
 
 interface ComponentStatus {
@@ -33,7 +33,7 @@ export default function OnboardingClient() {
   const { isDark } = useDarkMode();
   const { showToast } = useToast();
   const { data: user } = useMeQuery();
-  const router = useRouter();
+  const { refetch: refetchOnboardingStatus } = useOnboardingStatus();
 
   // Helper function to format device status for display
   const formatDeviceStatus = (status: string | ComponentStatus): string => {
@@ -147,23 +147,35 @@ export default function OnboardingClient() {
     try {
       setSaving(true);
 
+      // Add onboardingCompleted flag to config
+      const completedConfig = {
+        ...config,
+        onboardingCompleted: true,
+      };
+
       const response = await fetch('/api/user/config', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(config),
+        body: JSON.stringify(completedConfig),
       });
 
       if (!response.ok) {
         throw new Error('Failed to save configuration');
       }
-
       showToast('Setup completed successfully!', 'success');
 
+      // Refetch onboarding status to trigger guard re-evaluation
+      await refetchOnboardingStatus();
+
+      // Dispatch custom event to notify OnboardingGuard
+      window.dispatchEvent(new CustomEvent('onboarding-status-changed'));
+
+      // Small delay then redirect
       setTimeout(() => {
-        router.push('/');
-      }, 2000);
+        window.location.href = '/';
+      }, 500);
     } catch (error) {
       console.error('Error saving config:', error);
       showToast('Failed to complete setup', 'error');
@@ -185,15 +197,21 @@ export default function OnboardingClient() {
       if (!response.ok) {
         throw new Error('Failed to skip onboarding');
       }
-
       showToast(
         'Setup skipped successfully! You can configure your device later in settings.',
         'success',
       );
 
+      // Refetch onboarding status to trigger guard re-evaluation
+      await refetchOnboardingStatus();
+
+      // Dispatch custom event to notify OnboardingGuard
+      window.dispatchEvent(new CustomEvent('onboarding-status-changed'));
+
+      // Small delay then redirect
       setTimeout(() => {
-        router.push('/');
-      }, 1500);
+        window.location.href = '/';
+      }, 500);
     } catch (error) {
       console.error('Error skipping onboarding:', error);
       showToast('Failed to skip setup', 'error');

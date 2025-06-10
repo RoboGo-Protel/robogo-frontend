@@ -261,7 +261,7 @@ export default function MidArea_Monitoring({
         throw new Error(text || res.statusText || 'Failed to stop monitoring');
       }
       const json = await res.json();
-      showStopResult(json);
+      showStopResult(json.data);
       await promise(Promise.resolve(), {
         loading: 'Stopping monitoring...',
         success: `Monitoring stopped for device: ${selectedDevice.deviceName}!`,
