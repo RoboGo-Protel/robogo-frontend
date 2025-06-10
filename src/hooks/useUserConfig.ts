@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
 
+interface ComponentStatus {
+  main: 'ON' | 'OFF';
+  camera: 'ON' | 'OFF';
+  ultrasonic: 'ON' | 'OFF';
+  imu: 'ON' | 'OFF';
+}
+
 interface Device {
   id: string;
   deviceName: string;
-  status: string;
+  status: string | ComponentStatus;
   user_id: string | null;
 }
 

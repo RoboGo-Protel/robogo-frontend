@@ -9,7 +9,7 @@ import { useDarkMode } from '@/context/DarkModeContext';
 import { useToast } from '@/context/ToastProvider';
 import StopMonitoringResult from './StopMonitoringResult';
 import { useStopMonitoringResult } from './StopMonitoringResultContext';
-import WebSocketVideoStream from '@/components/WebSocketVideoStream';
+import DynamicVideoStream from '@/components/DynamicVideoStream';
 import { useUserConfig } from '@/hooks/useUserConfig';
 
 interface ImportLogResult {
@@ -97,7 +97,6 @@ export default function MidArea_Monitoring({
   const [fps] = useState(0);
   const [resolution] = useState({ width: 0, height: 0 });
   const [deviceCamera] = useState('None');
-  const [isStreamActive] = useState(false);
   const { stopResult, setStopResult } = useStopMonitoringResult();
   const [cameraUrl, setCameraUrl] = useState<string>('');
   const [cameraUrlError, setCameraUrlError] = useState<string>('');
@@ -110,6 +109,7 @@ export default function MidArea_Monitoring({
       try {
         // Use config from useUserConfig hook if available
         if (config?.cameraStreamUrl) {
+          console.log('Using camera URL from config:', config.cameraStreamUrl);
           setCameraUrl(config.cameraStreamUrl);
           setCameraUrlError('');
           return;
@@ -119,10 +119,16 @@ export default function MidArea_Monitoring({
         const response = await fetch('/api/user/config');
         if (response.ok) {
           const data = await response.json();
+          console.log('API response:', data);
           if (data.data?.cameraStreamUrl) {
+            console.log(
+              'Using camera URL from API:',
+              data.data.cameraStreamUrl,
+            );
             setCameraUrl(data.data.cameraStreamUrl);
             setCameraUrlError('');
           } else {
+            console.log('No camera URL in API response, using fallback');
             setCameraUrl('http://192.168.171.17/stream'); // fallback to original hardcoded URL
           }
         } else {
@@ -156,10 +162,16 @@ export default function MidArea_Monitoring({
     } catch {
       return false;
     }
-  };
-
-  // Check if current camera URL is valid
+  }; // Check if current camera URL is valid
   const isCameraUrlValid = validateCameraUrl(cameraUrl);
+
+  // Debug logs
+  console.log('Camera URL:', cameraUrl);
+  console.log('Camera URL valid:', isCameraUrlValid);
+
+  // Stream is active when we have a valid camera URL
+  const isStreamActive = cameraUrl && isCameraUrlValid;
+  console.log('Stream active:', isStreamActive);
 
   const latestData = dataMonitoring[dataMonitoring.length - 1];
 
@@ -363,18 +375,21 @@ export default function MidArea_Monitoring({
                 >
                   <Icon icon='fluent:flash-32-filled' width={20} height={20} />
                 </button>{' '}
-              </div>
-
+              </div>{' '}
               {cameraUrl && isCameraUrlValid ? (
-                <WebSocketVideoStream
+                <DynamicVideoStream
                   url={cameraUrl}
                   alt='Live Camera Stream'
-                  className='w-full h-full object-cover'
-                  onError={(error) => {
+                  className='w-full h-full object-cover absolute inset-0'
+                  onError={(error: string) => {
                     console.error('Camera stream error:', error);
                     setCameraUrlError(error);
                   }}
-                  onLoad={() => setCameraUrlError('')}
+                  onLoad={() => {
+                    console.log('Camera stream loaded successfully');
+                    setCameraUrlError('');
+                  }}
+                  refreshInterval={500} // 500ms refresh for HTTP streams
                 />
               ) : (
                 <div className='flex flex-col items-center justify-center w-full h-full'>

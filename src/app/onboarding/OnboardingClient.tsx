@@ -8,10 +8,17 @@ import { useMeQuery } from '@/hooks/useMeQuery';
 import { useRouter } from 'next/navigation';
 import { ClipLoader } from 'react-spinners';
 
+interface ComponentStatus {
+  main: 'ON' | 'OFF';
+  camera: 'ON' | 'OFF';
+  ultrasonic: 'ON' | 'OFF';
+  imu: 'ON' | 'OFF';
+}
+
 interface Device {
   id: string;
   deviceName: string;
-  status: string;
+  status: string | ComponentStatus;
   user_id: string | null;
 }
 
@@ -27,6 +34,35 @@ export default function OnboardingClient() {
   const { showToast } = useToast();
   const { data: user } = useMeQuery();
   const router = useRouter();
+
+  // Helper function to format device status for display
+  const formatDeviceStatus = (status: string | ComponentStatus): string => {
+    if (typeof status === 'string') {
+      return status;
+    }
+
+    if (typeof status === 'object' && status !== null) {
+      // Count how many components are ON
+      const onComponents = Object.entries(status).filter(
+        ([, value]) => value === 'ON',
+      );
+      const totalComponents = Object.keys(status).length;
+
+      if (onComponents.length === 0) {
+        return 'All OFF';
+      } else if (onComponents.length === totalComponents) {
+        return 'All ON';
+      } else {
+        // Show which components are ON
+        const onComponentNames = onComponents.map(
+          ([key]) => key.charAt(0).toUpperCase() + key.slice(1),
+        );
+        return `${onComponentNames.join(', ')} ON`;
+      }
+    }
+
+    return 'Unknown';
+  };
 
   const [currentStep, setCurrentStep] = useState(1);
   const [availableDevices, setAvailableDevices] = useState<Device[]>([]);
@@ -342,11 +378,11 @@ export default function OnboardingClient() {
                               className={`font-semibold text-lg ${isDark ? 'text-white' : 'text-gray-900'}`}
                             >
                               {device.deviceName}
-                            </h3>
+                            </h3>{' '}
                             <p
                               className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
                             >
-                              Status: {device.status}
+                              Status: {formatDeviceStatus(device.status)}
                             </p>
                           </div>
                         </div>

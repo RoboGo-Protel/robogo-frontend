@@ -5,10 +5,13 @@ import { infoItems } from '@/utils/info';
 import { motion, AnimatePresence } from 'framer-motion';
 import ShortInfo from '@/components/cards/ShortInfoCard';
 import { useDarkMode } from '@/context/DarkModeContext';
-import WebSocketVideoStream from '@/components/WebSocketVideoStream';
+import DynamicVideoStream from '@/components/DynamicVideoStream';
+import { useUserConfig } from '@/hooks/useUserConfig';
+import { useDeviceStatus } from '@/hooks/useDeviceStatus';
 
 export default function RightArea_Home() {
   const { isDark } = useDarkMode();
+  const { config } = useUserConfig();
 
   const [flashOn, setFlashOn] = useState(false);
   const [fps] = useState(0);
@@ -17,35 +20,99 @@ export default function RightArea_Home() {
   const [isStreamActive] = useState(false);
   const [cameraUrl, setCameraUrl] = useState<string>('');
   const [cameraUrlError, setCameraUrlError] = useState<string>('');
+  const [deviceName, setDeviceName] = useState<string | null>(null);
+  // Use the device status hook
+  const {
+    status: deviceStatus,
+    deviceData,
+    refreshStatus,
+    loading,
+  } = useDeviceStatus(deviceName);
 
-  // Fetch user configuration on component mount
+  // Handle refresh with loading state
+  const handleRefresh = async () => {
+    if (deviceName) {
+      await refreshStatus();
+    }
+  };
+
+  // Get deviceName from selected device
+  useEffect(() => {
+    const fetchDeviceName = async () => {
+      if (!config?.selectedDevice) {
+        setDeviceName(null);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/devices/user');
+        if (response.ok) {
+          const data = await response.json();
+          const selectedDeviceData = data.data?.find(
+            (device: { id: string; deviceName: string }) =>
+              device.id === config.selectedDevice,
+          );
+          if (selectedDeviceData) {
+            setDeviceName(selectedDeviceData.deviceName);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching device name:', error);
+      }
+    };
+
+    fetchDeviceName();
+  }, [config?.selectedDevice]);
+
+  // Update camera URL when device data changes
+  useEffect(() => {
+    if (deviceData?.cameraStreamUrl) {
+      setCameraUrl(deviceData.cameraStreamUrl);
+      setCameraUrlError('');
+    }
+  }, [deviceData]);
+
+  // Fetch user configuration for camera URL fallback
   useEffect(() => {
     const fetchUserConfig = async () => {
       try {
         const response = await fetch('/api/user/config');
         if (response.ok) {
           const data = await response.json();
-          if (data.data?.cameraStreamUrl) {
+          if (data.data?.cameraStreamUrl && !cameraUrl) {
             setCameraUrl(data.data.cameraStreamUrl);
             setCameraUrlError('');
-          } else {
+          } else if (!cameraUrl) {
             setCameraUrl(
               'http://localhost:4000/api/v1/monitoring/camera-stream',
             ); // fallback to original hardcoded URL
           }
         } else {
           console.warn('Failed to fetch user config, using fallback URL');
-          setCameraUrl('http://localhost:4000/api/v1/monitoring/camera-stream');
+          if (!cameraUrl) {
+            setCameraUrl(
+              'http://localhost:4000/api/v1/monitoring/camera-stream',
+            );
+          }
         }
       } catch (error) {
         console.error('Error fetching user config:', error);
-        setCameraUrl('http://localhost:4000/api/v1/monitoring/camera-stream'); // fallback to original hardcoded URL
+        if (!cameraUrl) {
+          setCameraUrl('http://localhost:4000/api/v1/monitoring/camera-stream'); // fallback to original hardcoded URL
+        }
       }
     };
 
-    fetchUserConfig();
-  }, []);
+    if (!cameraUrl) {
+      fetchUserConfig();
+    }
+  }, [cameraUrl]);
 
+  // Create dynamic info items with status from device
+  const dynamicInfoItems = infoItems.map((item) => ({
+    ...item,
+    status: deviceStatus ? deviceStatus[item.component] : item.status,
+  }));
   // Validate camera URL for WebSocket and other protocols
   const validateCameraUrl = (url: string): boolean => {
     if (!url.trim()) return false;
@@ -87,11 +154,44 @@ export default function RightArea_Home() {
           height={180}
           className='select-none'
         />
-      </div>
-
+      </div>{' '}
       {/* Info Cards */}
-      <ShortInfo infoItems={infoItems} />
-
+      <div className='flex flex-col w-full gap-3'>
+        <div className='flex justify-between items-center'>
+          <h2
+            className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}
+          >
+            Device Status
+          </h2>
+          {deviceName && (
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                loading
+                  ? 'cursor-not-allowed opacity-50'
+                  : 'hover:scale-105 active:scale-95'
+              } ${
+                isDark
+                  ? 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20'
+                  : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
+              }`}
+              title='Refresh device status'
+            >
+              <Icon
+                icon={
+                  loading ? 'mingcute:loading-line' : 'mingcute:refresh-2-line'
+                }
+                width={16}
+                height={16}
+                className={loading ? 'animate-spin' : ''}
+              />
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </button>
+          )}
+        </div>
+        <ShortInfo infoItems={dynamicInfoItems} />
+      </div>
       {/* Camera Stream */}
       <div className='h-full w-full rounded-2xl flex items-center justify-center relative min-h-[300px]'>
         <AnimatePresence mode='wait'>
@@ -110,7 +210,6 @@ export default function RightArea_Home() {
                   <Icon icon='fluent:video-24-filled' width={20} height={20} />
                 </div>
               </div>
-
               <div className='absolute bottom-0 px-4 py-2.5 flex flex-row items-center justify-between w-full'>
                 <AnimatePresence mode='wait'>
                   <motion.p
@@ -139,18 +238,18 @@ export default function RightArea_Home() {
                 >
                   <Icon icon='fluent:flash-32-filled' width={20} height={20} />
                 </button>{' '}
-              </div>
-
+              </div>{' '}
               {cameraUrl && isCameraUrlValid ? (
-                <WebSocketVideoStream
+                <DynamicVideoStream
                   url={cameraUrl}
                   alt='Live Camera Stream'
                   className='rounded-2xl w-auto h-full object-cover max-h-[400px]'
-                  onError={(error) => {
+                  onError={(error: string) => {
                     console.error('Camera stream error:', error);
                     setCameraUrlError(error);
                   }}
                   onLoad={() => setCameraUrlError('')}
+                  refreshInterval={500} // 500ms refresh for HTTP streams
                 />
               ) : (
                 <div className='flex flex-col items-center justify-center w-full h-full min-h-[300px]'>

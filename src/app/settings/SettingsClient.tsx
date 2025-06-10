@@ -8,10 +8,17 @@ import { useDarkMode } from '@/context/DarkModeContext';
 import { useToast } from '@/context/ToastProvider';
 import { useMeQuery } from '@/hooks/useMeQuery';
 
+interface ComponentStatus {
+  main: 'ON' | 'OFF';
+  camera: 'ON' | 'OFF';
+  ultrasonic: 'ON' | 'OFF';
+  imu: 'ON' | 'OFF';
+}
+
 interface Device {
   id: string;
   deviceName: string;
-  status: string;
+  status: string | ComponentStatus;
   user_id: string | null;
 }
 
@@ -73,8 +80,35 @@ export default function SettingsClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cameraUrlError, setCameraUrlError] = useState<string | null>(null);
+  // Helper function to format device status for display
+  const formatDeviceStatus = (status: string | ComponentStatus): string => {
+    if (typeof status === 'string') {
+      return status;
+    }
 
-  // Valid protocols for camera stream URLs
+    if (typeof status === 'object' && status !== null) {
+      // Count how many components are ON
+      const onComponents = Object.entries(status).filter(
+        ([, value]) => value === 'ON',
+      );
+      const totalComponents = Object.keys(status).length;
+
+      if (onComponents.length === 0) {
+        return 'All OFF';
+      } else if (onComponents.length === totalComponents) {
+        return 'All ON';
+      } else {
+        // Show which components are ON
+        const onComponentNames = onComponents.map(
+          ([key]) => key.charAt(0).toUpperCase() + key.slice(1),
+        );
+        return `${onComponentNames.join(', ')} ON`;
+      }
+    }
+
+    return 'Unknown';
+  };
+
   const validProtocols = ['http:', 'https:', 'ws:', 'wss:', 'rtsp:', 'rtmp:'];
 
   const validateCameraUrl = (url: string): boolean => {
@@ -104,7 +138,8 @@ export default function SettingsClient() {
   };
   const fetchUserConfig = useCallback(async () => {
     try {
-      const response = await fetch('/api/user/config');
+      // Use optimized endpoint that bypasses cache and gets fresh data
+      const response = await fetch('/api/user/config/with-devices');
       if (response.ok) {
         const data = await response.json();
         if (data.data) {
@@ -380,11 +415,11 @@ export default function SettingsClient() {
                                   className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}
                                 >
                                   {device.deviceName}
-                                </p>
+                                </p>{' '}
                                 <p
                                   className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
                                 >
-                                  Status: {device.status}
+                                  Status: {formatDeviceStatus(device.status)}
                                 </p>
                               </div>
                             </div>{' '}
@@ -713,7 +748,7 @@ export default function SettingsClient() {
                                   isDark ? 'text-gray-400' : 'text-gray-600'
                                 }`}
                               >
-                                Status: {device.status}
+                                Status: {formatDeviceStatus(device.status)}
                               </p>
                             </div>
                           </div>

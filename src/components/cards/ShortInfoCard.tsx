@@ -1,12 +1,7 @@
 import React from "react";
 import { Icon } from "@iconify/react";
 import { useDarkMode } from "@/context/DarkModeContext";
-
-interface InfoItem {
-  icon: string;
-  status: "ON" | "OFF";
-  title: string;
-}
+import { InfoItem } from '@/utils/info';
 
 interface ShortInfoProps {
   infoItems: readonly InfoItem[];
