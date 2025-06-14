@@ -1,4 +1,11 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import { Icon } from '@iconify/react';
 import { useUserConfig } from '@/hooks/useUserConfig';
 import CompassHUD from '@/components/CompassHUD';
@@ -16,9 +23,16 @@ interface StableCameraStreamProps {
   metadata?: Metadata;
 }
 
-export default function StableCameraStream({
-  metadata,
-}: StableCameraStreamProps) {
+export interface StableCameraStreamRef {
+  captureFrame: () => Promise<Blob>;
+  isConnected: boolean;
+  toggleFlipVertical: () => void;
+}
+
+const StableCameraStream = forwardRef<
+  StableCameraStreamRef,
+  StableCameraStreamProps
+>(({ metadata }, ref) => {
   const imgRef = useRef<HTMLImageElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef<number>(0);
@@ -27,12 +41,37 @@ export default function StableCameraStream({
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isFlippedVertical, setIsFlippedVertical] = useState(false);
 
-  const { config } = useUserConfig();
-
-  // Memoize camera URL to prevent unnecessary re-connections
+  const { config } = useUserConfig(); // Memoize camera URL to prevent unnecessary re-connections
   const cameraUrl = useMemo(() => {
-    return config?.cameraStreamUrl || '';
+    let url = config?.cameraStreamUrl || '';
+
+    // Auto-upgrade WebSocket URL to secure if page is loaded over HTTPS
+    if (
+      url.startsWith('ws://') &&
+      typeof window !== 'undefined' &&
+      window.location.protocol === 'https:'
+    ) {
+      console.warn(
+        '🔐 [STABLE] Auto-upgrading WebSocket URL from ws:// to wss:// for HTTPS page',
+      );
+      url = url.replace('ws://', 'wss://');
+    }
+
+    // Development fallback: if wss:// fails and we're on localhost, provide warning
+    if (
+      url.startsWith('wss://') &&
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1')
+    ) {
+      console.info(
+        '🔧 [STABLE] Development mode detected. If wss:// fails, consider using HTTP stream instead.',
+      );
+    }
+
+    return url;
   }, [config?.cameraStreamUrl]);
 
   // Memoize stream type determination
@@ -46,6 +85,61 @@ export default function StableCameraStream({
     }
     return 'direct';
   }, [cameraUrl]);
+  // Expose capture function via ref
+  useImperativeHandle(
+    ref,
+    () => ({
+      captureFrame: () => {
+        return new Promise<Blob>((resolve, reject) => {
+          if (!imgRef.current || !imgRef.current.src || !isConnected) {
+            reject(new Error('No camera stream available to capture'));
+            return;
+          }
+
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          if (!ctx) {
+            reject(new Error('Failed to create canvas context'));
+            return;
+          }
+
+          const img = imgRef.current;
+          canvas.width = img.naturalWidth || img.width || 640;
+          canvas.height = img.naturalHeight || img.height || 480;
+
+          try {
+            // Apply flip transformation if enabled
+            if (isFlippedVertical) {
+              ctx.scale(1, -1);
+              ctx.translate(0, -canvas.height);
+            }
+
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('Failed to create blob from canvas'));
+                }
+              },
+              'image/jpeg',
+              0.9,
+            );
+          } catch (error) {
+            reject(error);
+          }
+        });
+      },
+      isConnected,
+      toggleFlipVertical: () => {
+        setIsFlippedVertical((prev) => !prev);
+      },
+    }),
+    [isConnected, isFlippedVertical],
+  );
 
   // Stable WebSocket connection function
   const connectWebSocket = useMemo(() => {
@@ -96,10 +190,9 @@ export default function StableCameraStream({
             console.error('❌ [STABLE] Error processing frame:', err);
           }
         };
-
         ws.onerror = (error) => {
           console.error('❌ [STABLE] WebSocket error:', error);
-          setError('Connection error');
+          setError('WebSocket connection failed');
           setIsConnected(false);
           setIsLoading(false);
         };
@@ -131,7 +224,28 @@ export default function StableCameraStream({
         };
       } catch (err) {
         console.error('❌ [STABLE] Failed to create WebSocket:', err);
-        setError('Failed to connect');
+        // Handle specific SecurityError for mixed content
+        if (err instanceof DOMException && err.name === 'SecurityError') {
+          const currentUrl = window.location.href;
+          console.error(
+            '🔒 [STABLE] Mixed content security error - HTTPS page trying to connect to ws://',
+          );
+
+          setError(`WebSocket Security Error: Cannot connect to insecure WebSocket (ws://) from HTTPS page.
+          
+Solutions:
+1. Change camera URL to use wss:// (secure WebSocket)
+2. Use HTTP stream instead (http://)
+3. Access this page via HTTP instead of HTTPS
+
+Current page: ${currentUrl}
+Camera URL: ${cameraUrl}`);
+        } else {
+          setError(
+            'Failed to connect to camera: ' +
+              (err instanceof Error ? err.message : 'Unknown error'),
+          );
+        }
         setIsLoading(false);
       }
     };
@@ -216,12 +330,14 @@ export default function StableCameraStream({
   return (
     <div className='relative w-full h-full bg-black rounded-2xl overflow-hidden'>
       {' '}
-      {/* Video Stream */}
+      {/* Video Stream */}{' '}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
         alt='RoboGo Camera Stream'
-        className='w-full h-full object-cover'
+        className={`w-full h-full object-cover transition-transform duration-300 ${
+          isFlippedVertical ? 'scale-y-[-1]' : ''
+        }`}
         style={{ display: isConnected ? 'block' : 'none' }}
       />
       {/* Loading State */}
@@ -237,24 +353,82 @@ export default function StableCameraStream({
             <p className='text-sm'>Connecting to camera...</p>
           </div>
         </div>
-      )}
+      )}{' '}
       {/* Error State */}
       {error && !isLoading && (
-        <div className='absolute inset-0 flex items-center justify-center bg-gray-900'>
-          <div className='text-center text-red-400'>
+        <div className='absolute inset-0 flex items-center justify-center bg-gray-900 p-6'>
+          <div className='text-center max-w-lg'>
             <Icon
-              icon='fluent:error-circle-24-regular'
+              icon={
+                error.includes('Security Error')
+                  ? 'fluent:shield-error-24-regular'
+                  : 'fluent:error-circle-24-regular'
+              }
               width={48}
               height={48}
-              className='mx-auto mb-2'
+              className='mx-auto mb-4 text-red-400'
             />
-            <p className='mb-4'>{error}</p>
-            <button
-              onClick={handleReconnect}
-              className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
-            >
-              Reconnect
-            </button>
+
+            {error.includes('Security Error') ? (
+              <div className='space-y-4'>
+                <h3 className='text-lg font-semibold text-red-400'>
+                  WebSocket Security Error
+                </h3>
+                <p className='text-sm text-gray-300'>
+                  Cannot connect to insecure WebSocket (ws://) from secure HTTPS
+                  page.
+                </p>
+
+                <div className='bg-gray-800 rounded-lg p-4 text-left'>
+                  <p className='text-sm font-semibold text-yellow-400 mb-2'>
+                    Solutions:
+                  </p>
+                  <ul className='text-xs text-gray-300 space-y-1'>
+                    <li>
+                      • Change camera URL to use{' '}
+                      <span className='text-green-400 font-mono'>wss://</span>{' '}
+                      (secure WebSocket)
+                    </li>
+                    <li>
+                      • Use{' '}
+                      <span className='text-blue-400 font-mono'>http://</span>{' '}
+                      stream instead
+                    </li>
+                    <li>
+                      • Access this page via HTTP (not recommended for
+                      production)
+                    </li>
+                  </ul>
+                </div>
+
+                <div className='flex flex-col sm:flex-row gap-2 justify-center'>
+                  <button
+                    onClick={() => window.open('/settings', '_blank')}
+                    className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm'
+                  >
+                    Open Settings
+                  </button>
+                  <button
+                    onClick={handleReconnect}
+                    className='px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm'
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className='space-y-4'>
+                <p className='text-red-400 text-sm whitespace-pre-line'>
+                  {error}
+                </p>
+                <button
+                  onClick={handleReconnect}
+                  className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+                >
+                  Reconnect
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -289,7 +463,11 @@ export default function StableCameraStream({
             </div>
           )}
         </>
-      )}
+      )}{' '}
     </div>
   );
-}
+});
+
+StableCameraStream.displayName = 'StableCameraStream';
+
+export default StableCameraStream;

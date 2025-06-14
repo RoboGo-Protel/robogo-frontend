@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StatCardList from '@/components/cards/StatsCard';
@@ -7,7 +7,9 @@ import { useToast } from '@/context/ToastProvider';
 import StopMonitoringResult from './StopMonitoringResult';
 import { useStopMonitoringResult } from './StopMonitoringResultContext';
 import { useUserConfig } from '@/hooks/useUserConfig';
-import StableCameraStream from './StableCameraStream';
+import StableCameraStream, {
+  StableCameraStreamRef,
+} from './StableCameraStream';
 
 interface ImportLogResult {
   totalData: number;
@@ -88,6 +90,9 @@ export default function MidArea_Monitoring({
   const { promise } = useToast();
   const { selectedDevice } = useUserConfig();
   const { stopResult, setStopResult } = useStopMonitoringResult();
+
+  // Ref for camera stream
+  const cameraStreamRef = useRef<StableCameraStreamRef>(null);
 
   // States for monitoring controls
   const [recordingState, setRecordingState] = useState<'idle' | 'recording'>(
@@ -216,24 +221,150 @@ export default function MidArea_Monitoring({
     }
   };
 
-  // Take photo handler
+  // Toggle vertical flip handler
+  const handleToggleFlip = () => {
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.toggleFlipVertical();
+    }
+  };
+
+  // Take photo handler - capture from websocket and post to realtime endpoint
   const handleTakePhoto = async () => {
+    console.log('🔍 [DEBUG] handleTakePhoto called - using NEW implementation');
+
+    if (!selectedDevice) {
+      await promise(Promise.reject(new Error('No device selected')), {
+        loading: 'Taking photo...',
+        success: 'Photo captured!',
+        error: 'Please select a device before taking photo.',
+      });
+      return;
+    }
+
+    if (!cameraStreamRef.current?.isConnected) {
+      await promise(Promise.reject(new Error('Camera not connected')), {
+        loading: 'Taking photo...',
+        success: 'Photo captured!',
+        error: 'Camera stream is not connected.',
+      });
+      return;
+    }
+
+    console.log('🔍 [DEBUG] Starting capture process from websocket...');
+
     try {
       await promise(
-        fetch('http://localhost:4000/capture').then((res) => {
-          if (!res.ok) {
-            throw new Error('Failed to capture photo');
+        new Promise<void>(async (resolve, reject) => {
+          try {
+            console.log('🔍 [DEBUG] Calling captureFrame...');
+            // Capture frame from camera stream
+            const blob = await cameraStreamRef.current!.captureFrame();
+            console.log('🔍 [DEBUG] Frame captured, size:', blob.size);
+
+            // Create FormData to send image and metadata
+            const formData = new FormData();
+            formData.append('image', blob, `capture_${Date.now()}.jpg`);
+            formData.append('obstacle', 'false');
+            formData.append('takenWith', 'websocket_capture');
+
+            console.log(
+              '🔍 [DEBUG] FormData created, preparing to POST to /api/monitoring/realtime',
+            );
+
+            // Add current metadata if available
+            if (latestData?.metadata) {
+              const metadata = latestData.metadata;
+              if (metadata.ultrasonic !== undefined)
+                formData.append('ultrasonic', metadata.ultrasonic.toString());
+              if (metadata.heading !== undefined)
+                formData.append('heading', metadata.heading.toString());
+              if (metadata.pitch !== undefined)
+                formData.append('pitch', metadata.pitch.toString());
+              if (metadata.roll !== undefined)
+                formData.append('roll', metadata.roll.toString());
+              if (metadata.yaw !== undefined)
+                formData.append('yaw', metadata.yaw.toString());
+
+              // Add distance data
+              if (metadata.distances) {
+                if (metadata.distances.distTotal !== undefined)
+                  formData.append(
+                    'distTotal',
+                    metadata.distances.distTotal.toString(),
+                  );
+                if (metadata.distances.distX !== undefined)
+                  formData.append('distX', metadata.distances.distX.toString());
+                if (metadata.distances.distY !== undefined)
+                  formData.append('distY', metadata.distances.distY.toString());
+              }
+
+              // Add velocity data
+              if (metadata.velocity) {
+                if (metadata.velocity.velocity !== undefined)
+                  formData.append(
+                    'velocity',
+                    metadata.velocity.velocity.toString(),
+                  );
+                if (metadata.velocity.velocityX !== undefined)
+                  formData.append(
+                    'velocityX',
+                    metadata.velocity.velocityX.toString(),
+                  );
+                if (metadata.velocity.velocityY !== undefined)
+                  formData.append(
+                    'velocityY',
+                    metadata.velocity.velocityY.toString(),
+                  );
+              }
+
+              // Add position data
+              if (metadata.position) {
+                if (metadata.position.positionX !== undefined)
+                  formData.append(
+                    'positionX',
+                    metadata.position.positionX.toString(),
+                  );
+                if (metadata.position.positionY !== undefined)
+                  formData.append(
+                    'positionY',
+                    metadata.position.positionY.toString(),
+                  );
+              }
+            }
+
+            const endpoint = `/api/monitoring/realtime?deviceName=${encodeURIComponent(selectedDevice.deviceName)}`;
+            console.log('🔍 [DEBUG] POSTing to:', endpoint);
+
+            // Post to monitoring/realtime endpoint
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              body: formData,
+            });
+
+            console.log('🔍 [DEBUG] Response status:', response.status);
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('🔍 [DEBUG] Response error:', errorText);
+              throw new Error(errorText || 'Failed to save captured photo');
+            }
+
+            const result = await response.json();
+            console.log('🔍 [DEBUG] Photo saved successfully:', result);
+            resolve();
+          } catch (error) {
+            console.error('🔍 [DEBUG] Error in capture process:', error);
+            reject(error);
           }
-          return res.json();
         }),
         {
-          loading: 'Taking photo...',
-          success: 'Photo captured successfully!',
-          error: 'Failed to capture photo.',
+          loading: 'Capturing and saving photo...',
+          success: `Photo captured and saved for device: ${selectedDevice.deviceName}!`,
+          error: 'Failed to capture photo from stream.',
         },
       );
     } catch (error) {
-      console.error('Capture failed:', error);
+      console.error('🔍 [DEBUG] Photo capture failed:', error);
     }
   };
 
@@ -278,7 +409,10 @@ export default function MidArea_Monitoring({
       {' '}
       <div className='relative flex-1 w-full h-[300px] md:h-full rounded-2xl overflow-hidden'>
         {/* 🎥 STABLE CAMERA STREAM - Optimized WebSocket management */}
-        <StableCameraStream metadata={latestData?.metadata} />
+        <StableCameraStream
+          ref={cameraStreamRef}
+          metadata={latestData?.metadata}
+        />
       </div>
       {/* Stats and monitoring data display */}
       {dataMonitoring && dataMonitoring.length > 0 ? (
@@ -361,29 +495,28 @@ export default function MidArea_Monitoring({
       )}
       {/* Compact Control Panel - Always Visible */}
       <div className='flex flex-col w-full gap-2.5'>
-        <div className='grid grid-cols-1 md:grid-cols-6 gap-2.5 w-full h-fit'>
+        <div className='grid grid-cols-1 md:grid-cols-8 gap-2.5 w-full h-fit'>
+          {' '}
           {/* Start Monitoring Button */}
           <motion.button
             onClick={handleStartMonitoring}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className='flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 text-white col-span-1 md:col-span-3'
+            className='flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 text-white col-span-1 md:col-span-4'
           >
             <Icon icon='mingcute:play-fill' width={20} height={20} />
             <p className='font-semibold text-sm text-white'>Start Monitoring</p>
           </motion.button>
-
           {/* Stop Monitoring Button */}
           <motion.button
             onClick={handleStopMonitoring}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className='flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-red-500 to-red-700 text-white col-span-1 md:col-span-3'
+            className='flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-red-500 to-red-700 text-white col-span-1 md:col-span-4'
           >
             <Icon icon='mingcute:stop-fill' width={20} height={20} />
             <p className='font-semibold text-sm text-white'>Stop Monitoring</p>
           </motion.button>
-
           {/* Recording Button */}
           <motion.button
             onClick={handleRecordClick}
@@ -414,8 +547,7 @@ export default function MidArea_Monitoring({
               height={20}
               className={isDark ? 'text-blue-500' : 'text-[#39A9F9]'}
             />
-          </motion.button>
-
+          </motion.button>{' '}
           {/* Take Photo Button */}
           <motion.button
             onClick={handleTakePhoto}
@@ -443,7 +575,33 @@ export default function MidArea_Monitoring({
               className={isDark ? 'text-blue-500' : 'text-[#39A9F9]'}
             />
           </motion.button>
-
+          {/* Flip Camera Button */}
+          <motion.button
+            onClick={handleToggleFlip}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl col-span-1 md:col-span-2 ${
+              isDark
+                ? 'border-blue-500/10 bg-[#0A1625] text-white'
+                : 'border-blue-400/20 bg-white text-black'
+            }`}
+          >
+            <p
+              className={`font-semibold text-sm ${
+                isDark
+                  ? 'text-white'
+                  : 'bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text'
+              }`}
+            >
+              Flip
+            </p>
+            <Icon
+              icon='material-symbols:flip-camera-ios'
+              width={20}
+              height={20}
+              className={isDark ? 'text-blue-500' : 'text-[#39A9F9]'}
+            />
+          </motion.button>
           {/* Calibrate IMU Button */}
           <motion.button
             onClick={handleRecalibrateIMU}

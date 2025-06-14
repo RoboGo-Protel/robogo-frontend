@@ -525,12 +525,47 @@ export default function SettingsClient() {
                             ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                             : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                       }`}
-                    />
+                    />{' '}
                     {cameraUrlError && (
                       <p className='text-red-500 text-xs mt-1'>
                         {cameraUrlError}
                       </p>
                     )}
+                    {/* WebSocket Security Warning */}
+                    {config.cameraStreamUrl.startsWith('ws://') &&
+                      typeof window !== 'undefined' &&
+                      window.location.protocol === 'https:' && (
+                        <div className='mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
+                          <div className='flex items-start'>
+                            <Icon
+                              icon='fluent:warning-24-regular'
+                              className='text-yellow-600 mt-0.5 mr-2 flex-shrink-0'
+                              width={16}
+                              height={16}
+                            />
+                            <div className='text-xs'>
+                              <p className='font-semibold text-yellow-800 mb-1'>
+                                Security Warning
+                              </p>
+                              <p className='text-yellow-700 mb-2'>
+                                Insecure WebSocket (ws://) cannot be used on
+                                HTTPS pages.
+                              </p>
+                              <p className='text-yellow-700'>
+                                <strong>Solutions:</strong> Use{' '}
+                                <span className='font-mono bg-green-100 px-1 rounded'>
+                                  wss://
+                                </span>{' '}
+                                for secure WebSocket or{' '}
+                                <span className='font-mono bg-blue-100 px-1 rounded'>
+                                  http://
+                                </span>{' '}
+                                for HTTP stream.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     <p
                       className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
                     >
