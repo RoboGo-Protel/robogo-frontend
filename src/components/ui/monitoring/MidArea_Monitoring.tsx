@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StatCardList from '@/components/cards/StatsCard';
-import DirectionalControl from '@/components/DirectionalControl';
-import CompassHUD from '@/components/CompassHUD';
-import BoatOrientationHUD from '@/components/OrientationHUD';
 import { useDarkMode } from '@/context/DarkModeContext';
 import { useToast } from '@/context/ToastProvider';
 import StopMonitoringResult from './StopMonitoringResult';
 import { useStopMonitoringResult } from './StopMonitoringResultContext';
-import DynamicVideoStream from '@/components/DynamicVideoStream';
 import { useUserConfig } from '@/hooks/useUserConfig';
+import StableCameraStream from './StableCameraStream';
 
 interface ImportLogResult {
   totalData: number;
@@ -86,121 +83,21 @@ interface MidAreaMonitoringProps {
 
 export default function MidArea_Monitoring({
   dataMonitoring,
-  currentSession = 0,
 }: MidAreaMonitoringProps) {
+  const { isDark } = useDarkMode();
+  const { promise } = useToast();
+  const { selectedDevice } = useUserConfig();
+  const { stopResult, setStopResult } = useStopMonitoringResult();
+
+  // States for monitoring controls
   const [recordingState, setRecordingState] = useState<'idle' | 'recording'>(
     'idle',
   );
-  const { promise } = useToast();
-  const { isDark } = useDarkMode();
-  const [flashOn, setFlashOn] = useState(false);
-  const [fps] = useState(0);
-  const [resolution] = useState({ width: 0, height: 0 });
-  const [deviceCamera] = useState('None');
-  const { stopResult, setStopResult } = useStopMonitoringResult();
-  const [cameraUrl, setCameraUrl] = useState<string>('');
-  const [cameraUrlError, setCameraUrlError] = useState<string>('');
-  // Device management
-  const { selectedDevice, config } = useUserConfig();
 
-  // Fetch user configuration on component mount
-  useEffect(() => {
-    const fetchUserConfig = async () => {
-      try {
-        // Use config from useUserConfig hook if available
-        if (config?.cameraStreamUrl) {
-          console.log('Using camera URL from config:', config.cameraStreamUrl);
-          setCameraUrl(config.cameraStreamUrl);
-          setCameraUrlError('');
-          return;
-        }
-
-        // Fallback to API call if config not loaded yet
-        const response = await fetch('/api/user/config');
-        if (response.ok) {
-          const data = await response.json();
-          console.log('API response:', data);
-          if (data.data?.cameraStreamUrl) {
-            console.log(
-              'Using camera URL from API:',
-              data.data.cameraStreamUrl,
-            );
-            setCameraUrl(data.data.cameraStreamUrl);
-            setCameraUrlError('');
-          } else {
-            console.log('No camera URL in API response, using fallback');
-            setCameraUrl('http://192.168.171.17/stream'); // fallback to original hardcoded URL
-          }
-        } else {
-          console.warn('Failed to fetch user config, using fallback URL');
-          setCameraUrl('http://192.168.171.17/stream');
-        }
-      } catch (error) {
-        console.error('Error fetching user config:', error);
-        setCameraUrl('http://192.168.171.17/stream'); // fallback to original hardcoded URL
-      }
-    };
-
-    fetchUserConfig();
-  }, [config]);
-
-  // Validate camera URL for WebSocket and other protocols
-  const validateCameraUrl = (url: string): boolean => {
-    if (!url.trim()) return false;
-
-    try {
-      const urlObj = new URL(url);
-      const validProtocols = [
-        'http:',
-        'https:',
-        'ws:',
-        'wss:',
-        'rtsp:',
-        'rtmp:',
-      ];
-      return validProtocols.includes(urlObj.protocol);
-    } catch {
-      return false;
-    }
-  }; // Check if current camera URL is valid
-  const isCameraUrlValid = validateCameraUrl(cameraUrl);
-
-  // Debug logs
-  console.log('Camera URL:', cameraUrl);
-  console.log('Camera URL valid:', isCameraUrlValid);
-
-  // Stream is active when we have a valid camera URL
-  const isStreamActive = cameraUrl && isCameraUrlValid;
-  console.log('Stream active:', isStreamActive);
-
+  // Latest monitoring data for StableCameraStream
   const latestData = dataMonitoring[dataMonitoring.length - 1];
 
-  const handleRecordClick = async () => {
-    try {
-      if (recordingState === 'idle') {
-        const res = await fetch('http://localhost:4000/record/start');
-        const json = await res.json();
-        if (json.success) {
-          setRecordingState('recording');
-          alert('Recording started!');
-        } else {
-          alert('❌ Failed: ' + json.message);
-        }
-      } else {
-        const res = await fetch('http://localhost:4000/record/stop');
-        const json = await res.json();
-        if (json.success && json.saved) {
-          alert('📁 Recording saved to:\n' + json.saved);
-        } else {
-          alert('❌ Failed to stop/save recording.');
-        }
-        setRecordingState('idle');
-      }
-    } catch (err) {
-      console.error('Recording error:', err);
-      alert('❌ Error saat menghubungi server.');
-    }
-  };
+  // Start monitoring handler
   const handleStartMonitoring = async () => {
     if (!selectedDevice) {
       await promise(Promise.reject(new Error('No device selected')), {
@@ -210,13 +107,12 @@ export default function MidArea_Monitoring({
       });
       return;
     }
+
     try {
       await promise(
         fetch(
           `/api/monitoring/realtime/start-monitoring?deviceName=${encodeURIComponent(selectedDevice.deviceName)}`,
-          {
-            method: 'GET',
-          },
+          { method: 'GET' },
         ).then((res) => {
           if (!res.ok) {
             return res.text().then((text) => {
@@ -237,9 +133,7 @@ export default function MidArea_Monitoring({
     }
   };
 
-  const showStopResult = (result: StopMonitoringResultType) => {
-    setStopResult(result);
-  };
+  // Stop monitoring handler
   const handleStopMonitoring = async () => {
     if (!selectedDevice) {
       await promise(Promise.reject(new Error('No device selected')), {
@@ -249,19 +143,21 @@ export default function MidArea_Monitoring({
       });
       return;
     }
+
     try {
       const res = await fetch(
         `/api/monitoring/realtime/stop-monitoring?deviceName=${encodeURIComponent(selectedDevice.deviceName)}`,
-        {
-          method: 'GET',
-        },
+        { method: 'GET' },
       );
+
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || res.statusText || 'Failed to stop monitoring');
       }
+
       const json = await res.json();
-      showStopResult(json.data);
+      setStopResult(json.data);
+
       await promise(Promise.resolve(), {
         loading: 'Stopping monitoring...',
         success: `Monitoring stopped for device: ${selectedDevice.deviceName}!`,
@@ -277,37 +173,100 @@ export default function MidArea_Monitoring({
     }
   };
 
-  const listButtons = [
-    {
-      icon:
-        recordingState === 'idle'
-          ? 'fluent:video-recording-20-filled'
-          : 'fluent:stop-24-filled',
-      text: recordingState === 'idle' ? 'Start Recording' : 'Stop Recording',
-      onClick: handleRecordClick,
-    },
-    {
-      icon: 'mynaui:chip-solid',
-      text: 'Recalibrate IMU',
-      onClick: () => {},
-    },
-    {
-      icon: 'mingcute:camera-2-ai-fill',
-      text: 'Take Photo',
-      onClick: () => {
-        fetch('http://localhost:4000/capture')
-          .then((res) => res.json())
-          .then((data) => {
-            console.log('📸 Captured:', data);
-            alert('Snapshot berhasil disimpan!');
-          })
-          .catch((err) => {
-            console.error('Capture failed:', err);
+  // Recording handler
+  const handleRecordClick = async () => {
+    try {
+      if (recordingState === 'idle') {
+        const res = await fetch('http://localhost:4000/record/start');
+        const json = await res.json();
+        if (json.success) {
+          setRecordingState('recording');
+          await promise(Promise.resolve(), {
+            loading: 'Starting recording...',
+            success: 'Recording started successfully!',
+            error: 'Failed to start recording.',
           });
-      },
-    },
-  ];
+        } else {
+          throw new Error(json.message || 'Failed to start recording');
+        }
+      } else {
+        const res = await fetch('http://localhost:4000/record/stop');
+        const json = await res.json();
+        if (json.success && json.saved) {
+          setRecordingState('idle');
+          await promise(Promise.resolve(), {
+            loading: 'Stopping recording...',
+            success: `Recording saved to: ${json.saved}`,
+            error: 'Failed to stop recording.',
+          });
+        } else {
+          throw new Error('Failed to stop/save recording');
+        }
+      }
+    } catch (error) {
+      console.error('Recording error:', error);
+      await promise(Promise.reject(error), {
+        loading: 'Processing...',
+        success: 'Success!',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Recording operation failed.',
+      });
+    }
+  };
 
+  // Take photo handler
+  const handleTakePhoto = async () => {
+    try {
+      await promise(
+        fetch('http://localhost:4000/capture').then((res) => {
+          if (!res.ok) {
+            throw new Error('Failed to capture photo');
+          }
+          return res.json();
+        }),
+        {
+          loading: 'Taking photo...',
+          success: 'Photo captured successfully!',
+          error: 'Failed to capture photo.',
+        },
+      );
+    } catch (error) {
+      console.error('Capture failed:', error);
+    }
+  };
+
+  // Recalibrate IMU handler
+  const handleRecalibrateIMU = async () => {
+    if (!selectedDevice) {
+      await promise(Promise.reject(new Error('No device selected')), {
+        loading: 'Calibrating...',
+        success: 'IMU calibrated!',
+        error: 'Please select a device first.',
+      });
+      return;
+    }
+
+    try {
+      await promise(
+        fetch(`/api/devices/${selectedDevice.id}/calibrate-imu`, {
+          method: 'POST',
+        }).then((res) => {
+          if (!res.ok) {
+            throw new Error('Failed to calibrate IMU');
+          }
+        }),
+        {
+          loading: 'Calibrating IMU...',
+          success: 'IMU calibration completed!',
+          error: 'Failed to calibrate IMU.',
+        },
+      );
+    } catch (error) {
+      console.error('IMU calibration failed:', error);
+    }
+  };
   return (
     <div
       className={`flex flex-col items-start justify-start h-full gap-4 rounded-xl p-4 md:p-5 w-full border-2 ${
@@ -316,123 +275,12 @@ export default function MidArea_Monitoring({
           : 'border-[#ECECEC] bg-white text-black'
       }`}
     >
+      {' '}
       <div className='relative flex-1 w-full h-[300px] md:h-full rounded-2xl overflow-hidden'>
-        <AnimatePresence mode='wait'>
-          {isStreamActive ? (
-            <motion.div
-              key='stream-off'
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`flex flex-col gap-2.5 p-4 items-center justify-center w-full h-full rounded-2xl border-2 ${
-                isDark
-                  ? 'bg-[#0F1B2B] border-[#113541]'
-                  : 'bg-gradient-to-br from-blue-500/10 to-blue-400/10 border-blue-500/20'
-              }`}
-            >
-              <CompassHUD heading={dataMonitoring[0]?.metadata?.heading ?? 0} />
-              <div className='absolute top-0 left-0 w-full h-full flex items-center justify-center'>
-                <BoatOrientationHUD
-                  roll={dataMonitoring[0]?.metadata?.roll ?? 0}
-                />
-              </div>
-              <div className='absolute bottom-0 px-4 py-2.5 flex flex-row items-center justify-between w-full z-10'>
-                <AnimatePresence mode='wait'>
-                  <motion.p
-                    key={`${resolution.width}x${resolution.height}-${fps}`}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.25 }}
-                    className='text-white p-2.5'
-                  >
-                    {resolution.height}P | {fps}
-                  </motion.p>
-                </AnimatePresence>
-                <div className='absolute top-0 px-4 py-2.5 flex flex-row items-center justify-center w-full'>
-                  <div className='font-semibold flex flex-row items-center gap-2 text-white p-2.5'>
-                    <p>{deviceCamera}</p>
-                    <Icon
-                      icon='fluent:video-24-filled'
-                      width={20}
-                      height={20}
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={() => setFlashOn(!flashOn)}
-                  type='button'
-                  aria-label='Flash'
-                  title='Flash'
-                  className={`text-white text-sm font-semibold p-2.5 rounded-xl shadow-md transition-all ${
-                    flashOn
-                      ? 'bg-gradient-to-br from-blue-500 to-blue-400'
-                      : isDark
-                        ? 'bg-white/10 hover:bg-white/20'
-                        : 'bg-white/20 hover:bg-[#285ec9]'
-                  }`}
-                >
-                  <Icon icon='fluent:flash-32-filled' width={20} height={20} />
-                </button>{' '}
-              </div>{' '}
-              {cameraUrl && isCameraUrlValid ? (
-                <DynamicVideoStream
-                  url={cameraUrl}
-                  alt='Live Camera Stream'
-                  className='w-full h-full object-cover absolute inset-0'
-                  onError={(error: string) => {
-                    console.error('Camera stream error:', error);
-                    setCameraUrlError(error);
-                  }}
-                  onLoad={() => {
-                    console.log('Camera stream loaded successfully');
-                    setCameraUrlError('');
-                  }}
-                  refreshInterval={500} // 500ms refresh for HTTP streams
-                />
-              ) : (
-                <div className='flex flex-col items-center justify-center w-full h-full'>
-                  <Icon
-                    icon='fluent:video-off-24-filled'
-                    width={48}
-                    height={48}
-                    className='text-gray-400 mb-2'
-                  />
-                  <p className='text-gray-400 text-center'>
-                    {cameraUrlError || 'Invalid camera URL'}
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key='stream-off'
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className='flex flex-col gap-2.5 p-4 items-center justify-center bg-gradient-to-br from-blue-500/10 to-blue-400/10 w-full h-full rounded-2xl border-2 border-blue-500/20'
-            >
-              {' '}
-              <div className='p-2 rounded-xl shadow-md bg-gradient-to-br from-blue-500 to-blue-400'>
-                <Icon
-                  icon='fluent:video-off-24-filled'
-                  width={28}
-                  height={28}
-                  className='text-white'
-                />
-              </div>
-              <p className='font-semibold text-lg bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text text-center'>
-                Video Stream Unavailable!
-              </p>
-              <div className='flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-500 to-blue-400 rounded-full text-white text-sm text-center'>
-                Please check RoboGo connection!
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* 🎥 STABLE CAMERA STREAM - Optimized WebSocket management */}
+        <StableCameraStream metadata={latestData?.metadata} />
       </div>
+      {/* Stats and monitoring data display */}
       {dataMonitoring && dataMonitoring.length > 0 ? (
         <div className='flex flex-col gap-4 items-stretch w-full h-fit'>
           <StatCardList
@@ -500,7 +348,7 @@ export default function MidArea_Monitoring({
                   ]
                 : []
             }
-          />
+          />{' '}
         </div>
       ) : (
         <div
@@ -510,91 +358,124 @@ export default function MidArea_Monitoring({
         >
           Start monitoring to show the data
         </div>
-      )}{' '}
-      {/* Control buttons - always visible */}
-      <div className='flex flex-col md:flex-row w-full gap-4'>
-        {/* Conditionally render directional control based on user config */}
-        {!config?.hideMonitoringControls && (
-          <DirectionalControl onDirectionClick={(dir) => console.log(dir)} />
-        )}
-        <div className='flex flex-col w-full gap-2.5'>
-          <div className='grid grid-cols-1 md:grid-cols-6 gap-2.5 w-full h-fit'>
-            <button
-              onClick={handleStartMonitoring}
-              disabled={!!currentSession && currentSession > 0}
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 text-white col-span-1 md:col-span-3 ${!!currentSession && currentSession > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <Icon icon='mingcute:play-fill' width={20} height={20} />
-              <p className={`font-semibold text-sm text-white`}>
-                Start Monitoring
-              </p>
-            </button>
-
-            <button
-              onClick={handleStopMonitoring}
-              disabled={!currentSession || currentSession === 0}
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl col-span-1 md:col-span-3 ${currentSession && currentSession > 0 ? 'bg-gradient-to-br from-red-500 to-red-700 text-white' : 'bg-gradient-to-br from-blue-500 to-blue-400 text-white opacity-50 cursor-not-allowed'}`}
-            >
-              <Icon icon='mingcute:stop-fill' width={20} height={20} />
-              <p className={`font-semibold text-sm text-white`}>
-                Stop Monitoring
-              </p>
-            </button>
-
-            {listButtons.map((item, index) => (
-              <button
-                key={index}
-                onClick={item.onClick}
-                className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl col-span-1 md:col-span-2 ${
-                  isDark
-                    ? 'border-blue-500/10 bg-[#0A1625] text-white'
-                    : 'border-blue-400/20 bg-white text-black'
-                }`}
-              >
-                <p
-                  className={`font-semibold text-sm ${
-                    isDark
-                      ? 'text-white'
-                      : 'bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text'
-                  }`}
-                >
-                  {item.text}
-                </p>
-                <Icon
-                  icon={item.icon}
-                  width={20}
-                  height={20}
-                  className={isDark ? 'text-blue-500' : 'text-[#39A9F9]'}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-      {/* Dialog Stop Monitoring Result */}
-      <AnimatePresence>
-        {stopResult && (
-          <motion.div
-            key='stop-result-popup'
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 40, scale: 0.95 }}
-            transition={{ duration: 0.25 }}
-            className='fixed inset-0 z-50 flex items-center justify-center bg-black/40'
+      )}
+      {/* Compact Control Panel - Always Visible */}
+      <div className='flex flex-col w-full gap-2.5'>
+        <div className='grid grid-cols-1 md:grid-cols-6 gap-2.5 w-full h-fit'>
+          {/* Start Monitoring Button */}
+          <motion.button
+            onClick={handleStartMonitoring}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className='flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 text-white col-span-1 md:col-span-3'
           >
-            <div className='bg-white rounded-xl shadow-xl p-0 md:p-0 max-w-lg w-full relative dark:bg-[#101c2b]'>
-              <button
-                className='absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white text-xl font-bold z-10 p-2 rounded-full transition-colors'
-                onClick={() => setStopResult(null)}
-                aria-label='Close'
-                type='button'
-              >
-                <Icon icon='mingcute:close-line' width={24} height={24} />
-              </button>
-              <StopMonitoringResult result={stopResult} />
-            </div>
-          </motion.div>
-        )}
+            <Icon icon='mingcute:play-fill' width={20} height={20} />
+            <p className='font-semibold text-sm text-white'>Start Monitoring</p>
+          </motion.button>
+
+          {/* Stop Monitoring Button */}
+          <motion.button
+            onClick={handleStopMonitoring}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className='flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-red-500 to-red-700 text-white col-span-1 md:col-span-3'
+          >
+            <Icon icon='mingcute:stop-fill' width={20} height={20} />
+            <p className='font-semibold text-sm text-white'>Stop Monitoring</p>
+          </motion.button>
+
+          {/* Recording Button */}
+          <motion.button
+            onClick={handleRecordClick}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl col-span-1 md:col-span-2 ${
+              isDark
+                ? 'border-blue-500/10 bg-[#0A1625] text-white'
+                : 'border-blue-400/20 bg-white text-black'
+            }`}
+          >
+            <p
+              className={`font-semibold text-sm ${
+                isDark
+                  ? 'text-white'
+                  : 'bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text'
+              }`}
+            >
+              {recordingState === 'idle' ? 'Record' : 'Stop Rec'}
+            </p>
+            <Icon
+              icon={
+                recordingState === 'idle'
+                  ? 'fluent:video-recording-20-filled'
+                  : 'fluent:stop-24-filled'
+              }
+              width={20}
+              height={20}
+              className={isDark ? 'text-blue-500' : 'text-[#39A9F9]'}
+            />
+          </motion.button>
+
+          {/* Take Photo Button */}
+          <motion.button
+            onClick={handleTakePhoto}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl col-span-1 md:col-span-2 ${
+              isDark
+                ? 'border-blue-500/10 bg-[#0A1625] text-white'
+                : 'border-blue-400/20 bg-white text-black'
+            }`}
+          >
+            <p
+              className={`font-semibold text-sm ${
+                isDark
+                  ? 'text-white'
+                  : 'bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text'
+              }`}
+            >
+              Photo
+            </p>
+            <Icon
+              icon='mingcute:camera-2-ai-fill'
+              width={20}
+              height={20}
+              className={isDark ? 'text-blue-500' : 'text-[#39A9F9]'}
+            />
+          </motion.button>
+
+          {/* Calibrate IMU Button */}
+          <motion.button
+            onClick={handleRecalibrateIMU}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className={`flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl col-span-1 md:col-span-2 ${
+              isDark
+                ? 'border-blue-500/10 bg-[#0A1625] text-white'
+                : 'border-blue-400/20 bg-white text-black'
+            }`}
+          >
+            <p
+              className={`font-semibold text-sm ${
+                isDark
+                  ? 'text-white'
+                  : 'bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text'
+              }`}
+            >
+              Calibrate
+            </p>
+            <Icon
+              icon='mynaui:chip-solid'
+              width={20}
+              height={20}
+              className={isDark ? 'text-blue-500' : 'text-[#39A9F9]'}
+            />
+          </motion.button>
+        </div>
+      </div>{' '}
+      {/* Stop Monitoring Result Modal */}
+      <AnimatePresence>
+        {stopResult && <StopMonitoringResult result={stopResult} />}
       </AnimatePresence>
     </div>
   );
