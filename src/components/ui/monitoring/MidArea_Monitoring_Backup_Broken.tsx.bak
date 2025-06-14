@@ -877,10 +877,10 @@ export default function MidArea_Monitoring({
                   height={28}
                   className='text-white'
                 />
-              </div>
-              <p className='font-semibold text-lg bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text text-center'>
+              </div>              <p className='font-semibold text-lg bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text text-center'>
                 Video Stream Unavailable!
-              </p>              <div className='flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-500 to-blue-400 rounded-full text-white text-sm text-center'>
+              </p>
+              <div className='flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-500 to-blue-400 rounded-full text-white text-sm text-center'>
                 Please check RoboGo connection!
               </div>
             </motion.div>

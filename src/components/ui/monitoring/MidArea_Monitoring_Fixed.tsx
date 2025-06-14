@@ -7,29 +7,29 @@ import CompassHUD from '@/components/CompassHUD';
 import BoatOrientationHUD from '@/components/OrientationHUD';
 import { useDarkMode } from '@/context/DarkModeContext';
 import { useToast } from '@/context/ToastProvider';
-import StopMonitoringResult from './StopMonitoringResult';
-import { useStopMonitoringResult } from './StopMonitoringResultContext';
+// import StopMonitoringResult from './StopMonitoringResult';
+// import { useStopMonitoringResult } from './StopMonitoringResultContext';
 import DynamicVideoStream from '@/components/DynamicVideoStreamOptimized';
 import { useUserConfig } from '@/hooks/useUserConfig';
 
-interface ImportLogResult {
-  totalData: number;
-  success: boolean;
-  duplication: boolean;
-  message: string;
-}
+// interface ImportLogResult {
+//   totalData: number;
+//   success: boolean;
+//   duplication: boolean;
+//   message: string;
+// }
 
-interface ImportedReport {
-  ultrasonic_logs: ImportLogResult;
-  imu_logs: ImportLogResult;
-}
+// interface ImportedReport {
+//   ultrasonic_logs: ImportLogResult;
+//   imu_logs: ImportLogResult;
+// }
 
-export interface StopMonitoringResultType {
-  stopped: boolean;
-  sessionId: number;
-  date: string;
-  importedReport: ImportedReport;
-}
+// export interface StopMonitoringResultType {
+//   stopped: boolean;
+//   sessionId: number;
+//   date: string;
+//   importedReport: ImportedReport;
+// }
 
 interface Metadata {
   ultrasonic: number;
@@ -86,34 +86,32 @@ interface MidAreaMonitoringProps {
 
 export default function MidArea_Monitoring({
   dataMonitoring,
-  currentSession = 0,
+  // currentSession = 0,
 }: MidAreaMonitoringProps) {
-  const [recordingState, setRecordingState] = useState<'idle' | 'recording'>(
-    'idle',
-  );
+  // const [recordingState, setRecordingState] = useState<'idle' | 'recording'>(
+  //   'idle',
+  // );
   const { promise } = useToast();
   const { isDark } = useDarkMode();
   const [fps] = useState(0);
   const [resolution] = useState({ width: 0, height: 0 });
-  const [deviceCamera] = useState('None');
-
-  const { stopResult, setStopResult } = useStopMonitoringResult();
+  const [deviceCamera] = useState('None');  // const { stopResult, setStopResult } = useStopMonitoringResult();
   const [cameraUrl, setCameraUrl] = useState<string>('');
-  const [cameraUrlError, setCameraUrlError] = useState<string>('');
+  const [, setCameraUrlError] = useState<string>('');
   const [streamType, setStreamType] = useState<string>('');
   const [hasWebSocketError, setHasWebSocketError] = useState<boolean>(false);
   const [isWebSocketConnecting, setIsWebSocketConnecting] =
     useState<boolean>(false);
   const [isStreamLoaded, setIsStreamLoaded] = useState<boolean>(false);
-  const [showUrlConfig, setShowUrlConfig] = useState<boolean>(false);
-  const [newCameraUrl, setNewCameraUrl] = useState<string>('');
+  // const [showUrlConfig, setShowUrlConfig] = useState<boolean>(false);
+  // const [newCameraUrl, setNewCameraUrl] = useState<string>('');
   const [showStreamSettings, setShowStreamSettings] = useState<boolean>(false);
   const [streamQuality, setStreamQuality] = useState<string>('NORMAL');
-  const [isChangingQuality, setIsChangingQuality] = useState<boolean>(false);
+  const [, setIsChangingQuality] = useState<boolean>(false);
   const [currentFlashState, setCurrentFlashState] = useState<string>('off');
 
   // Device management
-  const { selectedDevice, config } = useUserConfig();
+  const { config } = useUserConfig();
 
   // Fetch user configuration on component mount
   useEffect(() => {

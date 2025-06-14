@@ -670,9 +670,9 @@ export default function MidArea_Monitoring({
                       setHasWebSocketError(false); // Reset error state on successful load
                       setIsWebSocketConnecting(false); // Reset connecting state
                       setIsStreamLoaded(true); // Mark stream as loaded
-                    }}
-                    refreshInterval={1000} // 1 second refresh for HTTP streams
-                  />                  {/* HUD Overlays - Show when stream is active */}
+                    }}                    refreshInterval={1000} // 1 second refresh for HTTP streams
+                  />
+                  {/* HUD Overlays - Show when stream is active */}
                   {(isStreamLoaded || cameraUrl) && (
                     <>
                       <div className='absolute top-4 left-4 z-30 p-2 bg-black/20 rounded-lg backdrop-blur-sm'>
