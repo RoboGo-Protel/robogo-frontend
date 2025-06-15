@@ -42,35 +42,11 @@ const StableCameraStream = forwardRef<
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isFlippedVertical, setIsFlippedVertical] = useState(false);
-
   const { config } = useUserConfig(); // Memoize camera URL to prevent unnecessary re-connections
   const cameraUrl = useMemo(() => {
-    let url = config?.cameraStreamUrl || '';
+    const url = config?.cameraStreamUrl || '';
 
-    // Auto-upgrade WebSocket URL to secure if page is loaded over HTTPS
-    if (
-      url.startsWith('ws://') &&
-      typeof window !== 'undefined' &&
-      window.location.protocol === 'https:'
-    ) {
-      console.warn(
-        '🔐 [STABLE] Auto-upgrading WebSocket URL from ws:// to wss:// for HTTPS page',
-      );
-      url = url.replace('ws://', 'wss://');
-    }
-
-    // Development fallback: if wss:// fails and we're on localhost, provide warning
-    if (
-      url.startsWith('wss://') &&
-      typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1')
-    ) {
-      console.info(
-        '🔧 [STABLE] Development mode detected. If wss:// fails, consider using HTTP stream instead.',
-      );
-    }
-
+    // Simply use the URL as configured without auto-upgrade
     return url;
   }, [config?.cameraStreamUrl]);
 
