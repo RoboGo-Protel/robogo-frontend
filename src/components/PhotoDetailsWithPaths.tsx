@@ -28,7 +28,8 @@ interface Metadata {
     magnetometerX: number;
     magnetometerY: number;
     magnetometerZ: number;
-  };  position?: {
+  };
+  position?: {
     positionX?: number;
     positionY?: number;
     posX?: number;
@@ -49,6 +50,7 @@ interface PhotoDetailsProps {
     fileName: string;
     createdAt: string;
     metadata?: Metadata;
+    fromTab?: string; // Track which tab the photo came from ('original' or 'metadata')
   };
   onClose: () => void;
 }
@@ -149,6 +151,76 @@ export default function PhotoDetailsWithPaths({
   onClose,
 }: PhotoDetailsProps) {
   const { selectedDevice } = useUserConfig();
+  // Only show tabs if photo is from 'original' tab and has metadata
+  const showTabs = details.fromTab === 'original';
+  // Removed strict metadata check - tabs should always show for original photos
+  // Debug logging for metadata
+  useEffect(() => {
+    console.log(
+      '📸 [PHOTO DETAILS DEBUG] Component mounted with details:',
+      details,
+    );
+    console.log('📸 [PHOTO DETAILS DEBUG] fromTab:', details.fromTab);
+    console.log('📸 [PHOTO DETAILS DEBUG] showTabs:', showTabs);
+    console.log('📸 [PHOTO DETAILS DEBUG] showTabs condition check:');
+    console.log(
+      '  - details.fromTab === "original":',
+      details.fromTab === 'original',
+    );
+    console.log(
+      '📸 [PHOTO DETAILS DEBUG] Metadata received:',
+      details.metadata,
+    );
+    console.log(
+      '📸 [PHOTO DETAILS DEBUG] Metadata keys:',
+      details.metadata ? Object.keys(details.metadata) : 'No metadata',
+    );
+    console.log(
+      '📸 [PHOTO DETAILS DEBUG] Metadata length:',
+      details.metadata ? Object.keys(details.metadata).length : 0,
+    ); // Debug specific values
+    if (details.metadata) {
+      console.log(
+        '📸 [PHOTO DETAILS DEBUG] ultrasonic value:',
+        details.metadata.ultrasonic,
+        typeof details.metadata.ultrasonic,
+      );
+      console.log(
+        '📸 [PHOTO DETAILS DEBUG] heading value:',
+        details.metadata.heading,
+        typeof details.metadata.heading,
+      );
+      console.log(
+        '📸 [PHOTO DETAILS DEBUG] direction value:',
+        details.metadata.direction,
+        typeof details.metadata.direction,
+      );
+      console.log(
+        '📸 [PHOTO DETAILS DEBUG] position data:',
+        details.metadata.position,
+        typeof details.metadata.position,
+      );
+      // Debug position X and Y specifically
+      if (details.metadata.position) {
+        console.log(
+          '📸 [PHOTO DETAILS DEBUG] positionX:',
+          details.metadata.position.positionX,
+          'posX:',
+          details.metadata.position.posX,
+        );
+        console.log(
+          '📸 [PHOTO DETAILS DEBUG] positionY:',
+          details.metadata.position.positionY,
+          'posY:',
+          details.metadata.position.posY,
+        );
+      }
+      console.log(
+        '📸 [PHOTO DETAILS DEBUG] metadata object check:',
+        details.metadata && Object.keys(details.metadata).length > 0,
+      );
+    }
+  }, [details, showTabs]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -293,20 +365,18 @@ export default function PhotoDetailsWithPaths({
                   See the details of the captured photo
                 </p>
               </div>
-            </div>
-
+            </div>{' '}
             <hr
               className={clsx(
                 'w-full mb-2.5',
                 isDark ? 'border-white/15' : 'border-black/15',
               )}
-            />
-            {details.metadata && Object.keys(details.metadata).length > 0 && (
+            />{' '}
+            {showTabs && (
               <TabMenu activeIndex={activeTab} onTabChange={setActiveTab} />
             )}
-
             <AnimatePresence mode='wait'>
-              {activeTab === 0 ? (
+              {activeTab === 0 || !showTabs ? (
                 <motion.div
                   key='information'
                   variants={tabContentVariants}
@@ -316,41 +386,26 @@ export default function PhotoDetailsWithPaths({
                   transition={{ duration: 0.4 }}
                   className='w-full flex flex-col gap-4'
                 >
-                  <div className='w-full flex flex-col md:flex-row items-center md:items-start justify-center gap-4'>
+                  <div
+                    className={clsx(
+                      'w-full flex gap-4',
+                      details.fromTab === 'metadata'
+                        ? 'flex-col items-center justify-center'
+                        : 'flex-col md:flex-row items-center md:items-start justify-center',
+                    )}
+                  >
                     <ImageWithAnalysis details={details} isDark={isDark} />
-                    <div
-                      className={clsx(
-                        'flex flex-col gap-5 items-start justify-start w-full md:w-96 p-4 border rounded-xl',
-                        isDark
-                          ? 'border-[#27426C] bg-[#1A2B48] text-white'
-                          : 'border-[#DFDFDF] bg-white text-black',
-                      )}
-                    >
-                      <div className='flex flex-col gap-1 w-full'>
-                        <div
-                          className={clsx(
-                            'flex flex-row items-center gap-2 text-sm font-bold',
-                            isDark ? 'text-white' : 'text-black',
-                          )}
-                        >
-                          <Icon
-                            icon='material-symbols:info-rounded'
-                            width={16}
-                            height={16}
-                          />
-                          <p>ID</p>
-                        </div>
-                        <p
-                          className={clsx(
-                            'text-sm',
-                            isDark ? 'text-white' : 'text-black',
-                          )}
-                        >
-                          {details.id}
-                        </p>
-                      </div>
 
-                      {details.fileName && (
+                    {/* Only show info panel for original tab photos */}
+                    {details.fromTab === 'original' && (
+                      <div
+                        className={clsx(
+                          'flex flex-col gap-5 items-start justify-start w-96 p-4 border rounded-xl break-words',
+                          isDark
+                            ? 'border-[#27426C] bg-[#1A2B48] text-white'
+                            : 'border-[#DFDFDF] bg-white text-black',
+                        )}
+                      >
                         <div className='flex flex-col gap-1 w-full'>
                           <div
                             className={clsx(
@@ -359,118 +414,136 @@ export default function PhotoDetailsWithPaths({
                             )}
                           >
                             <Icon
-                              icon='ic:round-drive-file-rename-outline'
+                              icon='material-symbols:info-rounded'
                               width={16}
                               height={16}
                             />
-                            <p>File Name</p>
+                            <p>ID</p>
                           </div>
                           <p
                             className={clsx(
-                              'text-sm break-words',
+                              'text-sm',
                               isDark ? 'text-white' : 'text-black',
                             )}
                           >
-                            {details.fileName}
+                            {details.id}
                           </p>
                         </div>
-                      )}
 
-                      <div className='flex flex-col gap-1 w-full'>
-                        <div
-                          className={clsx(
-                            'flex flex-row items-center gap-2 text-sm font-bold',
-                            isDark ? 'text-white' : 'text-black',
-                          )}
-                        >
-                          <Icon
-                            icon='mingcute:time-fill'
-                            width={16}
-                            height={16}
-                          />
-                          <p>Date & Time</p>
-                        </div>
-                        <p
-                          className={clsx(
-                            'text-sm',
-                            isDark ? 'text-white' : 'text-black',
-                          )}
-                        >
-                          {formatDateTime(details.createdAt)}
-                        </p>
-                      </div>
-
-                      <div className='flex flex-col gap-1 w-full'>
-                        <div
-                          className={clsx(
-                            'flex flex-row items-center gap-2 text-sm font-bold',
-                            isDark ? 'text-white' : 'text-black',
-                          )}
-                        >
-                          <Icon icon='solar:tag-bold' width={16} height={16} />
-                          <p>Categories</p>
-                        </div>
-                        {details.obstacle ? (
-                          <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs font-normal flex items-center gap-1'>
-                            <Icon
-                              icon='fluent:scan-object-24-filled'
-                              width={16}
-                              height={16}
-                            />
-                            <p>Obstacles</p>
-                          </div>
-                        ) : (
-                          <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 text-white text-xs font-normal flex items-center gap-1'>
-                            <Icon
-                              icon='material-symbols:check-rounded'
-                              width={16}
-                              height={16}
-                            />
-                            <p>Normal</p>
+                        {details.fileName && (
+                          <div className='flex flex-col gap-1 w-full'>
+                            <div
+                              className={clsx(
+                                'flex flex-row items-center gap-2 text-sm font-bold',
+                                isDark ? 'text-white' : 'text-black',
+                              )}
+                            >
+                              <Icon
+                                icon='ic:round-drive-file-rename-outline'
+                                width={16}
+                                height={16}
+                              />
+                              <p>File Name</p>
+                            </div>
+                            <p
+                              className={clsx(
+                                'text-sm break-words',
+                                isDark ? 'text-white' : 'text-black',
+                              )}
+                            >
+                              {details.fileName}
+                            </p>
                           </div>
                         )}
-                      </div>
 
-                      <div className='flex flex-col gap-1 w-full'>
-                        <div
-                          className={clsx(
-                            'flex flex-row items-center gap-2 text-sm font-bold',
-                            isDark ? 'text-white' : 'text-black',
-                          )}
-                        >
-                          <Icon
-                            icon='mingcute:camera-2-ai-fill'
-                            width={16}
-                            height={16}
-                          />
-                          <p>Shot with</p>
+                        <div className='flex flex-col gap-1 w-full'>
+                          <div
+                            className={clsx(
+                              'flex flex-row items-center gap-2 text-sm font-bold',
+                              isDark ? 'text-white' : 'text-black',
+                            )}
+                          >
+                            <Icon
+                              icon='mingcute:time-fill'
+                              width={16}
+                              height={16}
+                            />
+                            <p>Date & Time</p>
+                          </div>
+                          <p
+                            className={clsx(
+                              'text-sm',
+                              isDark ? 'text-white' : 'text-black',
+                            )}
+                          >
+                            {formatDateTime(details.createdAt)}
+                          </p>
                         </div>
-                        <p
-                          className={clsx(
-                            'text-sm',
-                            isDark ? 'text-white' : 'text-black',
-                          )}
-                        >
-                          ESP32-CAM
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className='flex flex-col md:flex-row gap-4 items-center w-full h-fit'>
-                    {' '}
-                    {details.metadata?.distanceTraveled && (
-                      <StatCardList
-                        variant='distance'
-                        infoItems={[
-                          {
-                            title: 'Distance Traveled',
-                            value: details.metadata.distanceTraveled.toString(),
-                          },
-                        ]}
-                      />
+                        <div className='flex flex-col gap-1 w-full'>
+                          <div
+                            className={clsx(
+                              'flex flex-row items-center gap-2 text-sm font-bold',
+                              isDark ? 'text-white' : 'text-black',
+                            )}
+                          >
+                            <Icon
+                              icon='solar:tag-bold'
+                              width={16}
+                              height={16}
+                            />
+                            <p>Categories</p>
+                          </div>
+                          {details.obstacle ? (
+                            <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs font-normal flex items-center gap-1'>
+                              <Icon
+                                icon='fluent:scan-object-24-filled'
+                                width={16}
+                                height={16}
+                              />
+                              <p>Obstacles</p>
+                            </div>
+                          ) : (
+                            <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 text-white text-xs font-normal flex items-center gap-1'>
+                              <Icon
+                                icon='material-symbols:check-rounded'
+                                width={16}
+                                height={16}
+                              />
+                              <p>Normal</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className='flex flex-col gap-1 w-full'>
+                          <div
+                            className={clsx(
+                              'flex flex-row items-center gap-2 text-sm font-bold',
+                              isDark ? 'text-white' : 'text-black',
+                            )}
+                          >
+                            <Icon
+                              icon='mingcute:camera-2-ai-fill'
+                              width={16}
+                              height={16}
+                            />
+                            <p>Shot with</p>
+                          </div>{' '}
+                          <p
+                            className={clsx(
+                              'text-sm',
+                              isDark ? 'text-white' : 'text-black',
+                            )}
+                          >
+                            ESP32-CAM
+                          </p>
+                        </div>
+                      </div>
                     )}
-                    {details.metadata?.velocity && (
+                  </div>
+                  {/* Velocity Card - only show for original tab photos */}
+                  {details.fromTab === 'original' &&
+                    details.metadata?.velocity && (
                       <StatCardList
                         variant='velocity'
                         infoItems={[
@@ -478,29 +551,28 @@ export default function PhotoDetailsWithPaths({
                             title: 'Velocity',
                             value:
                               details.metadata.velocity !== undefined
-                                ? String(details.metadata.velocity)
-                                : '0',
+                                ? `${details.metadata.velocity} cm/s`
+                                : '0 cm/s',
                           },
                           {
                             title: 'Velocity X',
                             value:
                               details.metadata.velocityX !== undefined
-                                ? String(details.metadata.velocityX)
-                                : '0',
+                                ? `${details.metadata.velocityX} cm/s`
+                                : '0 cm/s',
                           },
                           {
                             title: 'Velocity Y',
                             value:
                               details.metadata.velocityY !== undefined
-                                ? String(details.metadata.velocityY)
-                                : '0',
+                                ? `${details.metadata.velocityY} cm/s`
+                                : '0 cm/s',
                           },
                         ]}
                       />
                     )}
-                  </div>
-
-                  {details.metadata?.ultrasonic &&
+                  {details.fromTab === 'original' &&
+                    details.metadata?.ultrasonic &&
                     details.metadata?.heading && (
                       <div className='flex flex-col md:flex-row gap-4 items-center w-full'>
                         <MonitoringInfo<SensorKey>
@@ -549,6 +621,7 @@ export default function PhotoDetailsWithPaths({
                   transition={{ duration: 0.4 }}
                   className='w-full flex flex-col items-center justify-center'
                 >
+                  {' '}
                   <div
                     className={clsx(
                       'w-full h-full rounded-xl border flex items-center justify-center relative overflow-hidden',
@@ -557,12 +630,41 @@ export default function PhotoDetailsWithPaths({
                         : 'border-[#DFDFDF] bg-white',
                     )}
                   >
-                    <TunnelPath showStartpoint showEndpoint />
+                    <TunnelPath
+                      showStartpoint
+                      showEndpoint
+                      pathData={
+                        details.metadata?.position
+                          ? [
+                              {
+                                id: details.id,
+                                timestamp: details.createdAt,
+                                sessionId: 1,
+                                position: {
+                                  x:
+                                    details.metadata.position.positionX ??
+                                    details.metadata.position.posX ??
+                                    0,
+                                  y:
+                                    details.metadata.position.positionY ??
+                                    details.metadata.position.posY ??
+                                    0,
+                                },
+                                speed: details.metadata.velocity ?? 0,
+                                heading: details.metadata.heading ?? 0,
+                                status: 'active',
+                                createdAt: details.createdAt,
+                                imageUrl: details.src,
+                                isEndpoint: true,
+                              },
+                            ]
+                          : []
+                      }
+                    />
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-
             <div className='flex flex-col md:flex-row gap-4 items-center justify-center w-full h-fit mt-7'>
               <button
                 onClick={() => {
@@ -654,14 +756,12 @@ export default function PhotoDetailsWithPaths({
               'w-full',
               isDark ? 'border-white/15' : 'border-black/15',
             )}
-          />
-
-          {details.metadata && Object.keys(details.metadata).length > 0 && (
+          />{' '}
+          {showTabs && (
             <TabMenu activeIndex={activeTab} onTabChange={setActiveTab} />
           )}
-
           <AnimatePresence mode='wait'>
-            {activeTab === 0 ? (
+            {activeTab === 0 || !showTabs ? (
               <motion.div
                 key='information'
                 variants={tabContentVariants}
@@ -671,40 +771,27 @@ export default function PhotoDetailsWithPaths({
                 transition={{ duration: 0.4 }}
                 className='w-full flex flex-col gap-4'
               >
-                <div className='w-full flex items-stretch justify-start gap-3'>
+                {' '}
+                <div
+                  className={clsx(
+                    'w-full flex gap-3',
+                    details.fromTab === 'metadata'
+                      ? 'flex-col items-center justify-center'
+                      : 'items-stretch justify-start',
+                  )}
+                >
                   <ImageWithAnalysis details={details} isDark={isDark} />
-                  <div
-                    className={clsx(
-                      'flex flex-col gap-5 items-start justify-start w-96 p-4 border rounded-xl break-words',
-                      isDark
-                        ? 'border-[#27426C] bg-[#1A2B48] text-white'
-                        : 'border-[#DFDFDF] bg-white text-black',
-                    )}
-                  >
-                    <div className='flex flex-col gap-1 w-full'>
-                      <div
-                        className={clsx(
-                          'flex flex-row items-center gap-2 text-sm font-bold',
-                          isDark ? 'text-white' : 'text-black',
-                        )}
-                      >
-                        <Icon
-                          icon='material-symbols:info-rounded'
-                          width={16}
-                          height={16}
-                        />
-                        <p>ID</p>
-                      </div>
-                      <p
-                        className={clsx(
-                          'text-sm',
-                          isDark ? 'text-white' : 'text-black',
-                        )}
-                      >
-                        {details.id}
-                      </p>
-                    </div>
-                    {details.fileName && (
+
+                  {/* Only show info panel for original tab photos */}
+                  {details.fromTab === 'original' && (
+                    <div
+                      className={clsx(
+                        'flex flex-col gap-5 items-start justify-start w-96 p-4 border rounded-xl break-words',
+                        isDark
+                          ? 'border-[#27426C] bg-[#1A2B48] text-white'
+                          : 'border-[#DFDFDF] bg-white text-black',
+                      )}
+                    >
                       <div className='flex flex-col gap-1 w-full'>
                         <div
                           className={clsx(
@@ -713,11 +800,11 @@ export default function PhotoDetailsWithPaths({
                           )}
                         >
                           <Icon
-                            icon='ic:round-drive-file-rename-outline'
+                            icon='material-symbols:info-rounded'
                             width={16}
                             height={16}
                           />
-                          <p>File Name</p>
+                          <p>ID</p>
                         </div>
                         <p
                           className={clsx(
@@ -725,129 +812,145 @@ export default function PhotoDetailsWithPaths({
                             isDark ? 'text-white' : 'text-black',
                           )}
                         >
-                          {details.fileName}
+                          {details.id}
                         </p>
                       </div>
-                    )}
-                    <div className='flex flex-col gap-1 w-full'>
-                      <div
-                        className={clsx(
-                          'flex flex-row items-center gap-2 text-sm font-bold',
-                          isDark ? 'text-white' : 'text-black',
-                        )}
-                      >
-                        <Icon
-                          icon='mingcute:time-fill'
-                          width={16}
-                          height={16}
-                        />
-                        <p>Date & Time</p>
-                      </div>
-                      <p
-                        className={clsx(
-                          'text-sm',
-                          isDark ? 'text-white' : 'text-black',
-                        )}
-                      >
-                        {formatDateTime(details.createdAt)}
-                      </p>
-                    </div>
-                    <div className='flex flex-col gap-1 w-full'>
-                      <div
-                        className={clsx(
-                          'flex flex-row items-center gap-2 text-sm font-bold',
-                          isDark ? 'text-white' : 'text-black',
-                        )}
-                      >
-                        <Icon icon='solar:tag-bold' width={16} height={16} />
-                        <p>Categories</p>
-                      </div>
-                      {details.obstacle ? (
-                        <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs font-normal flex items-center gap-1'>
-                          <Icon
-                            icon='fluent:scan-object-24-filled'
-                            width={16}
-                            height={16}
-                          />
-                          <p>Obstacles</p>
-                        </div>
-                      ) : (
-                        <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 text-white text-xs font-normal flex items-center gap-1'>
-                          <Icon
-                            icon='material-symbols:check-rounded'
-                            width={16}
-                            height={16}
-                          />
-                          <p>Normal</p>
+                      {details.fileName && (
+                        <div className='flex flex-col gap-1 w-full'>
+                          <div
+                            className={clsx(
+                              'flex flex-row items-center gap-2 text-sm font-bold',
+                              isDark ? 'text-white' : 'text-black',
+                            )}
+                          >
+                            <Icon
+                              icon='ic:round-drive-file-rename-outline'
+                              width={16}
+                              height={16}
+                            />
+                            <p>File Name</p>
+                          </div>
+                          <p
+                            className={clsx(
+                              'text-sm',
+                              isDark ? 'text-white' : 'text-black',
+                            )}
+                          >
+                            {details.fileName}
+                          </p>
                         </div>
                       )}
-                    </div>
-                    <div className='flex flex-col gap-1 w-full'>
-                      <div
-                        className={clsx(
-                          'flex flex-row items-center gap-2 text-sm font-bold',
-                          isDark ? 'text-white' : 'text-black',
-                        )}
-                      >
-                        <Icon
-                          icon='mingcute:camera-2-ai-fill'
-                          width={16}
-                          height={16}
-                        />
-                        <p>Shot with</p>
+                      <div className='flex flex-col gap-1 w-full'>
+                        <div
+                          className={clsx(
+                            'flex flex-row items-center gap-2 text-sm font-bold',
+                            isDark ? 'text-white' : 'text-black',
+                          )}
+                        >
+                          <Icon
+                            icon='mingcute:time-fill'
+                            width={16}
+                            height={16}
+                          />
+                          <p>Date & Time</p>
+                        </div>
+                        <p
+                          className={clsx(
+                            'text-sm',
+                            isDark ? 'text-white' : 'text-black',
+                          )}
+                        >
+                          {formatDateTime(details.createdAt)}
+                        </p>
                       </div>
-                      <p
-                        className={clsx(
-                          'text-sm',
-                          isDark ? 'text-white' : 'text-black',
+                      <div className='flex flex-col gap-1 w-full'>
+                        <div
+                          className={clsx(
+                            'flex flex-row items-center gap-2 text-sm font-bold',
+                            isDark ? 'text-white' : 'text-black',
+                          )}
+                        >
+                          <Icon icon='solar:tag-bold' width={16} height={16} />
+                          <p>Categories</p>
+                        </div>
+                        {details.obstacle ? (
+                          <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs font-normal flex items-center gap-1'>
+                            <Icon
+                              icon='fluent:scan-object-24-filled'
+                              width={16}
+                              height={16}
+                            />
+                            <p>Obstacles</p>
+                          </div>
+                        ) : (
+                          <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 text-white text-xs font-normal flex items-center gap-1'>
+                            <Icon
+                              icon='material-symbols:check-rounded'
+                              width={16}
+                              height={16}
+                            />
+                            <p>Normal</p>
+                          </div>
                         )}
-                      >
-                        ESP32-CAM
-                      </p>
-                    </div>
-                  </div>
-                </div>{' '}
-                {details.metadata?.distanceTraveled &&
-                  details.metadata?.velocity && (
-                    <div className='flex flex-col md:flex-row gap-4 items-center w-full h-fit'>
-                      <StatCardList
-                        variant='distance'
-                        infoItems={[
-                          {
-                            title: 'Distance Traveled',
-                            value: details.metadata.distanceTraveled.toString(),
-                          },
-                        ]}
-                      />{' '}
-                      <StatCardList
-                        variant='velocity'
-                        infoItems={[
-                          {
-                            title: 'Velocity',
-                            value:
-                              details.metadata.velocity !== undefined
-                                ? String(details.metadata.velocity)
-                                : '0',
-                          },
-                          {
-                            title: 'Velocity X',
-                            value:
-                              details.metadata.velocityX !== undefined
-                                ? String(details.metadata.velocityX)
-                                : '0',
-                          },
-                          {
-                            title: 'Velocity Y',
-                            value:
-                              details.metadata.velocityY !== undefined
-                                ? String(details.metadata.velocityY)
-                                : '0',
-                          },
-                        ]}
-                      />
+                      </div>
+                      <div className='flex flex-col gap-1 w-full'>
+                        <div
+                          className={clsx(
+                            'flex flex-row items-center gap-2 text-sm font-bold',
+                            isDark ? 'text-white' : 'text-black',
+                          )}
+                        >
+                          <Icon
+                            icon='mingcute:camera-2-ai-fill'
+                            width={16}
+                            height={16}
+                          />
+                          <p>Shot with</p>
+                        </div>
+                        <p
+                          className={clsx(
+                            'text-sm',
+                            isDark ? 'text-white' : 'text-black',
+                          )}
+                        >
+                          ESP32-CAM
+                        </p>
+                      </div>
                     </div>
                   )}
-                {details.metadata &&
+                </div>
+                {/* Velocity Card - only show for original tab photos */}
+                {details.fromTab === 'original' &&
+                  details.metadata?.velocity && (
+                    <StatCardList
+                      variant='velocity'
+                      infoItems={[
+                        {
+                          title: 'Velocity',
+                          value:
+                            details.metadata.velocity !== undefined
+                              ? `${details.metadata.velocity} cm/s`
+                              : '0 cm/s',
+                        },
+                        {
+                          title: 'Velocity X',
+                          value:
+                            details.metadata.velocityX !== undefined
+                              ? `${details.metadata.velocityX} cm/s`
+                              : '0 cm/s',
+                        },
+                        {
+                          title: 'Velocity Y',
+                          value:
+                            details.metadata.velocityY !== undefined
+                              ? `${details.metadata.velocityY} cm/s`
+                              : '0 cm/s',
+                        },
+                      ]}
+                    />
+                  )}
+                {details.fromTab === 'original' &&
+                  details.metadata &&
                   Object.keys(details.metadata).length > 0 && (
                     <div className='flex flex-col md:flex-row gap-4 items-center w-full'>
                       <MonitoringInfo<SensorKey>
@@ -896,6 +999,7 @@ export default function PhotoDetailsWithPaths({
                 transition={{ duration: 0.4 }}
                 className='w-full flex flex-col items-start justify-start'
               >
+                {' '}
                 <div
                   className={clsx(
                     'w-full h-full rounded-xl border flex items-start justify-start relative overflow-hidden',
@@ -904,12 +1008,41 @@ export default function PhotoDetailsWithPaths({
                       : 'border-[#DFDFDF] bg-white',
                   )}
                 >
-                  <TunnelPath showStartpoint showEndpoint />
+                  <TunnelPath
+                    showStartpoint
+                    showEndpoint
+                    pathData={
+                      details.metadata?.position
+                        ? [
+                            {
+                              id: details.id,
+                              timestamp: details.createdAt,
+                              sessionId: 1,
+                              position: {
+                                x:
+                                  details.metadata.position.positionX ??
+                                  details.metadata.position.posX ??
+                                  0,
+                                y:
+                                  details.metadata.position.positionY ??
+                                  details.metadata.position.posY ??
+                                  0,
+                              },
+                              speed: details.metadata.velocity ?? 0,
+                              heading: details.metadata.heading ?? 0,
+                              status: 'active',
+                              createdAt: details.createdAt,
+                              imageUrl: details.src,
+                              isEndpoint: true,
+                            },
+                          ]
+                        : []
+                    }
+                  />
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-
           <div className='flex flex-row gap-4 items-center justify-center w-full h-fit mt-7'>
             <button
               onClick={() => {
@@ -944,7 +1077,6 @@ export default function PhotoDetailsWithPaths({
               />
             </button>
           </div>
-
           <button
             onClick={onClose}
             className={clsx(

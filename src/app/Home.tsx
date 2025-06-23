@@ -1,9 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import LeftArea_Home from "@/components/ui/home/LeftArea_Home";
-import MidArea_Home from "@/components/ui/home/MidArea_Home";
-import RightArea_Home from "@/components/ui/home/RightArea_Home";
-import { clsx } from "clsx";
+import MidArea_Home from '@/components/ui/home/MidArea_Home';
+import { clsx } from 'clsx';
 import { useDarkMode } from '@/context/DarkModeContext';
 
 export default function Home() {
@@ -32,17 +31,17 @@ export default function Home() {
   return (
     <div
       className={clsx(
-        'flex flex-col md:flex-row items-start md:items-center justify-center gap-4 min-h-screen md:h-screen p-5 overflow-auto transition-colors duration-300',
+        'flex flex-col md:flex-row items-stretch justify-center gap-4 min-h-screen p-5 transition-colors duration-300',
         isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
       )}
       style={{
         paddingTop: topNavbarHeight,
         paddingBottom: bottomNavbarHeight + 20,
+        minHeight: `calc(100vh - ${topNavbarHeight + bottomNavbarHeight + 40}px)`,
       }}
     >
       <LeftArea_Home />
       <MidArea_Home />
-      <RightArea_Home />
     </div>
   );
 }

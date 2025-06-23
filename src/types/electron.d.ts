@@ -30,12 +30,17 @@ interface ElectronAPI {
     content: string,
     filename: string,
   ) => Promise<{ success: boolean; filePath?: string; error?: string }>;
+  readFile?: (
+    relativeFilePath: string,
+  ) => Promise<{ success: boolean; content?: string; error?: string }>;
   checkFileExists?: (filePath: string) => Promise<boolean>; // Config API (Electron only)
   getLocalMode?: () => Promise<boolean>;
   setLocalMode?: (value: boolean) => Promise<boolean>;
   getConfig?: <T = unknown>(key: string) => Promise<T>;
   setConfig?: (key: string, value: unknown) => Promise<boolean>;
   resetConfig?: () => Promise<boolean>;
+  // Setup validation API (Electron only)
+  checkRoboGoSetupValidity?: () => Promise<boolean>;
   // Debug APIs (Electron only)
   getConfigFileLocation?: () => Promise<{
     configPath: string;
@@ -56,6 +61,24 @@ interface ElectronAPI {
       filePath: string;
       dateCreated: string;
       size: number;
+      stats?: {
+        mtime: Date;
+        ctime: Date;
+        size: number;
+      };
+    }>;
+    error?: string;
+  }>;
+
+  // Ultrasonic files reading API
+  getUltrasonicFiles?: (folderPath: string) => Promise<{
+    success: boolean;
+    images?: Array<{
+      fileName: string;
+      filePath: string;
+      dateCreated: string;
+      size: number;
+      isDirectory?: boolean;
       stats?: {
         mtime: Date;
         ctime: Date;

@@ -616,11 +616,14 @@ export default function MidArea_Monitoring({
                     async (resultBlob) => {
                       if (resultBlob) {
                         try {
-                          // Generate filename with timestamp and metadata
-                          const timestamp = new Date()
-                            .toLocaleString()
-                            .replace(/[\/:\s]/g, '-')
-                            .replace(/,/g, '');
+                          // Generate filename with date-time and metadata
+                          const now = new Date();
+                          const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+                          const timeStr = now
+                            .toTimeString()
+                            .split(' ')[0]
+                            .replace(/:/g, '-'); // HH-MM-SS
+                          const dateTime = `${dateStr}_${timeStr}`;
                           const deviceNameClean = isLocalMode
                             ? 'esp32_local'
                             : selectedDevice?.deviceName?.replace(
@@ -628,19 +631,10 @@ export default function MidArea_Monitoring({
                                 '_',
                               ) || 'unknown';
 
-                          // Add sensor data to filename if available
-                          let metadataInfo = '';
-                          if (displayData?.metadata) {
-                            const metadata = displayData.metadata;
-                            metadataInfo = `_U${metadata.ultrasonic?.toFixed(0) || 'NA'}_H${metadata.heading?.toFixed(0) || 'NA'}`;
-                          }
-
                           // Base filename without extension
-                          const baseFileName = `robogo_capture_${deviceNameClean}_${timestamp}${metadataInfo}`;
-
-                          // Different filenames for each type
+                          const baseFileName = `robogo_capture_${deviceNameClean}_${dateTime}`; // Different filenames for each type
                           const originalFileName = `${baseFileName}_original.jpg`;
-                          const metadataFileName = `${baseFileName}.jpg`;
+                          const metadataFileName = `${baseFileName}_metadata.jpg`;
                           const jsonFileName = `${baseFileName}.json`;
 
                           // Check if running in Electron and save locally
@@ -656,12 +650,11 @@ export default function MidArea_Monitoring({
                             // 2. Save metadata-enhanced image (current resultBlob)
                             const metadataBuffer = new Uint8Array(
                               await resultBlob.arrayBuffer(),
-                            );
-
-                            // 3. Create and save metadata JSON file
+                            ); // 3. Create and save metadata JSON file
                             const metadataJson = {
                               captureInfo: {
-                                timestamp: new Date().toISOString(),
+                                timestamp: now.toISOString(),
+                                createdAt: baseFileName, // Date-time format for categorization
                                 deviceName: deviceNameClean,
                                 captureMode: 'local',
                                 originalFileName: originalFileName,
@@ -692,21 +685,23 @@ export default function MidArea_Monitoring({
                             const jsonBuffer = new Uint8Array(
                               await jsonBlob.arrayBuffer(),
                             );
-
-                            const saveResults = [];
-
-                            // Determine save location based on session
-                            const saveLocation = localCurrentSession
+                            const saveResults = []; // Determine save location based on session
+                            const baseLocation = localCurrentSession
                               ? `monitoring/${localCurrentSession}`
-                              : 'images';
+                              : 'reports/gallery';
+
+                            // Define organized subfolders for each file type
+                            const originalLocation = `${baseLocation}/originals`;
+                            const metadataLocation = `${baseLocation}/metadata`;
+                            const jsonLocation = `${baseLocation}/json`;
 
                             try {
-                              // Save all three files
+                              // Save all three files to their respective organized folders
                               const originalResult =
                                 await window.electronAPI.saveImageToFolder(
                                   originalBuffer,
                                   originalFileName,
-                                  saveLocation,
+                                  originalLocation,
                                 );
                               saveResults.push({
                                 type: 'original',
@@ -717,7 +712,7 @@ export default function MidArea_Monitoring({
                                 await window.electronAPI.saveImageToFolder(
                                   metadataBuffer,
                                   metadataFileName,
-                                  saveLocation,
+                                  metadataLocation,
                                 );
                               saveResults.push({
                                 type: 'metadata',
@@ -729,7 +724,7 @@ export default function MidArea_Monitoring({
                                 await window.electronAPI.saveImageToFolder(
                                   jsonBuffer,
                                   jsonFileName,
-                                  saveLocation,
+                                  jsonLocation,
                                 );
                               saveResults.push({
                                 type: 'json',

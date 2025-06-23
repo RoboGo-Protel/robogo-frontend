@@ -14,10 +14,10 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
   const router = useRouter();
   const { data: user, isLoading, unauthorized } = useMeQuery();
   const { isDark } = useDarkMode();
-
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
   const [localMode, setLocalMode] = useState<null | boolean>(null);
   const [localModeChecked, setLocalModeChecked] = useState(false);
+  const [setupValid, setSetupValid] = useState<boolean>(true);
 
   // Ambil localMode dari Electron saat mount
   useEffect(() => {
@@ -54,10 +54,55 @@ const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
       const callbackUrl = window.location.pathname + window.location.search;
       router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
     }
-  }, [unauthorized, router, localMode, localModeChecked]);
+  }, [unauthorized, router, localMode, localModeChecked]); // Periodic check untuk validitas RoboGo setup (folder dan config)
+  useEffect(() => {
+    if (!isElectron) return;
 
+    const checkSetupValidity = async () => {
+      // Only check if document is visible (user is actively using the app)
+      if (document.hidden) return;
+
+      try {
+        if (window.electronAPI?.checkRoboGoSetupValidity) {
+          const isValid = await window.electronAPI.checkRoboGoSetupValidity();
+          if (!isValid) {
+            console.log('[SETUP] RoboGo setup invalid, redirecting to welcome');
+            setSetupValid(false);
+            router.replace('/welcome');
+          } else {
+            setSetupValid(true);
+          }
+        }
+      } catch (error) {
+        console.error('[SETUP] Error checking setup validity:', error);
+        setSetupValid(false);
+        router.replace('/welcome');
+      }
+    };
+
+    // Check setup validity when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkSetupValidity();
+      }
+    };
+
+    // Initial check
+    checkSetupValidity();
+
+    // Add visibility change listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Periodic check setiap 10 detik (hanya saat tab aktif)
+    const interval = setInterval(checkSetupValidity, 10000);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isElectron, router]);
   // Saat loading (belum cek localMode atau user), tampilkan loading spinner
-  if (!localModeChecked || isLoading) {
+  if (!localModeChecked || isLoading || !setupValid) {
     return (
       <div
         className={`flex items-center justify-center h-screen transition-colors duration-300 ${

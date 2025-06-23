@@ -51,24 +51,26 @@ const pathData = [
 
 export default function MidArea_Home() {
   const { isDark } = useDarkMode();
-
   return (
     <div
       className={clsx(
-        'flex flex-col items-start justify-start h-full w-full max-w-full gap-4 border-2 rounded-xl p-5',
+        'flex flex-col items-start justify-start w-full flex-1 gap-4 border-2 rounded-xl p-5 self-stretch',
         isDark ? 'border-[#113541]' : 'border-[#ECECEC]',
       )}
+      style={{ minHeight: '100%' }}
     >
       {' '}
       <div className='flex flex-row gap-2.5 items-center justify-center bg-gradient-to-br from-blue-500/10 to-blue-400/10 w-full h-fit rounded-xl border-2 border-blue-500/20 px-4 py-2 text-center'>
         <p className='font-semibold text-base bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text w-full'>
           Last Activity - March 24th, 2024
         </p>
+      </div>{' '}
+      <div className='flex-1 w-full min-h-0'>
+        <TunnelPath showStartpoint showEndpoint pathData={pathData} />
       </div>
-      <TunnelPath showStartpoint showEndpoint pathData={pathData} />
       <ShortSummary
         summaryItems={summaryItems}
-        layout='grid grid-cols-1 md:grid-cols-2 gap-4'
+        layout='grid grid-cols-2 gap-4'
       />
     </div>
   );

@@ -101,11 +101,10 @@ export default function LeftArea_Monitoring({
               console.log(
                 '📷 [LOCAL IMAGES] getImagesFromFolder method available:',
                 !!window.electronAPI.getImagesFromFolder,
+              ); // Get images from the reports/gallery/originals folder
+              const result = await window.electronAPI.getImagesFromFolder(
+                'reports/gallery/originals',
               );
-
-              // Get images from the images folder
-              const result =
-                await window.electronAPI.getImagesFromFolder('images');
 
               console.log('📷 [LOCAL IMAGES] API call result:', result);
               if (result.success && result.images) {
