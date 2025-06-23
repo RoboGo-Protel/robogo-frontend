@@ -1,12 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import clsx from "clsx";
-import ShortSummary from "@/components/cards/ShortSummaryCard";
 import Select, { StylesConfig } from "react-select";
-import IMUTable from "@/components/IMUTable";
-import { PulseLoader } from "react-spinners";
-import { Icon } from "@iconify/react/dist/iconify.js";
-import { useDarkMode } from "@/context/DarkModeContext";
+import ShortSummary from '@/components/cards/ShortSummaryCard';
+import PathsTable from '@/components/PathsTable';
+import TunnelPath from '@/components/cards/TunnelPathCard';
+import { Icon } from '@iconify/react/dist/iconify.js';
+import { PulseLoader } from 'react-spinners';
+import { useDarkMode } from '@/context/DarkModeContext';
 import { useUserConfig } from '@/hooks/useUserConfig';
 
 interface OptionType {
@@ -14,88 +15,49 @@ interface OptionType {
   label: string;
 }
 
-// IMU Data format for local files
-interface IMUData {
-  heading: number;
+interface Position {
+  x: number;
+  y: number;
+}
+
+// Path Data format for local files
+interface PathFileData {
   timestamp?: string;
-  accelerationMagnitude?: number;
-  direction?: string;
-  distanceTraveled?: number;
-  linearAcceleration?: number;
-  velocity?: number;
-  velocityX?: number;
-  velocityY?: number;
+  createdAt?: string;
   position?: {
     positionX?: number;
     positionY?: number;
   };
-  pitch?: number;
-  roll?: number;
-  yaw?: number;
-  rotationRate?: number;
-  ultrasonic?: number;
-  magnetometer?: {
-    magnetometerX: number;
-    magnetometerY: number;
-    magnetometerZ: number;
-  };
-  distances?: {
-    distTotal: number;
-    distX: number;
-    distY: number;
-  };
+  speed?: number;
+  velocity?: number;
+  heading?: number;
+  direction?: string;
   status?: string;
-  createdAt?: string;
-  imageFileName?: string; // For gallery integration
+  distanceTraveled?: number;
+  imageFileName?: string; // New field for gallery integration
 
   // Expected JSON format examples:
   // Array format:
   // [
-  //   {"heading":45.5, "pitch":2.1, "roll":-1.3, "yaw":0.8, "ultrasonic":12.5, "imageFileName": "robogo_capture_esp32_local_2025-06-22_16-13-25_original", "timestamp": "2025-06-23T03:16:44.973Z"},
-  //   {"heading":47.2, "pitch":2.3, "roll":-1.1, "yaw":1.2, "timestamp": "2025-06-23T03:16:45.329Z"}
+  //   {"position": {"positionX": 10.5, "positionY": 15.2}, "speed": 2.3, "heading": 45, "status": "Moving", "timestamp": "2025-06-23T03:16:44.973Z"},
+  //   {"position": {"positionX": 11.1, "positionY": 15.8}, "speed": 2.5, "heading": 47, "status": "Moving", "timestamp": "2025-06-23T03:16:45.329Z"}
   // ]
   //
   // Single object format:
-  // {"heading":45.5, "pitch":2.1, "roll":-1.3, "yaw":0.8, "ultrasonic":12.5, "imageFileName": "robogo_capture_esp32_local_2025-06-22_16-13-25_original", "timestamp": "2025-06-23T03:16:44.973Z"}
+  // {"position": {"positionX": 10.5, "positionY": 15.2}, "speed": 2.3, "heading": 45, "status": "Moving", "timestamp": "2025-06-23T03:16:44.973Z"}
   //
   // ESP32 log format (each line is a JSON object):
-  // [2025-06-23T03:16:44.973Z] [ESP32] {"heading":45.5, "pitch":2.1, "roll":-1.3, "yaw":0.8, "imageFileName": "robogo_capture_esp32_local_2025-06-22_16-13-25_original"}
-  // [2025-06-23T03:16:45.329Z] [ESP32] {"heading":47.2, "pitch":2.3, "roll":-1.1, "yaw":1.2}
+  // [2025-06-23T03:16:44.973Z] [ESP32] {"position": {"positionX": 10.5, "positionY": 15.2}, "speed": 2.3, "heading": 45, "status": "Moving"}
+  // [2025-06-23T03:16:45.329Z] [ESP32] {"position": {"positionX": 11.1, "positionY": 15.8}, "speed": 2.5, "heading": 47, "status": "Moving"}
 }
 
-interface IMULogs {
+interface PathData {
   id: string;
   timestamp: string;
   sessionId: number;
-  accelerationMagnitude?: number;
-  direction?: string;
-  distanceTraveled?: number;
+  position: Position;
+  speed: number;
   heading: number;
-  linearAcceleration?: number;
-  pitch?: number;
-  roll?: number;
-  rotationRate?: number;
-  ultrasonic: number;
-  yaw?: number;
-  distances: {
-    distTotal: number;
-    distX: number;
-    distY: number;
-  };
-  velocity: {
-    velocity?: number;
-    velocityX?: number;
-    velocityY?: number;
-  };
-  magnetometer?: {
-    magnetometerX: number;
-    magnetometerY: number;
-    magnetometerZ: number;
-  };
-  position: {
-    positionX?: number;
-    positionY?: number;
-  };
   status: string;
   createdAt: string;
   imageFileName?: string; // Store original imageFileName from JSON
@@ -103,20 +65,21 @@ interface IMULogs {
   imagePath?: string; // Full path to image file if exists
 }
 
-export default function IMU() {
+export default function Paths() {
   const { isDark } = useDarkMode();
   const { selectedDevice } = useUserConfig();
   const [isLocalMode, setIsLocalMode] = useState(false);
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
   const [reportsNavbarHeight, setReportsNavbarHeight] = useState(0);
-  const [reports, setReports] = useState<IMULogs[]>([]);
+  const [reports, setReports] = useState<PathData[]>([]);
   const [summaries, setSummaries] = useState({
-    average_heading: 0,
-    heading_range: [0, 0],
-    total_orientation_changes: 0,
-    max_turn_angle: 0,
+    totalPaths: 0,
+    averageSpeed: 0,
+    totalDistance: 0,
+    maxSpeed: 0,
   });
+
   const [dateWithSessions, setDateWithSessions] = useState<
     { value: string; label: string; sessions: OptionType[] }[]
   >([]);
@@ -138,20 +101,20 @@ export default function IMU() {
     }
 
     try {
-      console.log(`📊 [IMU DEBUG] Checking image in gallery: ${imageFileName}`);
+      console.log(`🛤️ [PATHS DEBUG] Checking image in gallery: ${imageFileName}`);
 
       // Check in both originals and main gallery folder
       const galleryFolders = ['reports/gallery/originals', 'reports/gallery'];
 
       for (const folder of galleryFolders) {
         try {
-          console.log(`📊 [IMU DEBUG] Checking folder: ${folder}`);
+          console.log(`🛤️ [PATHS DEBUG] Checking folder: ${folder}`);
 
           const galleryResult =
             await window.electronAPI.getImagesFromFolder(folder);
 
           console.log(
-            `📊 [IMU DEBUG] Gallery result for ${folder}:`,
+            `🛤️ [PATHS DEBUG] Gallery result for ${folder}:`,
             galleryResult,
           );
 
@@ -168,7 +131,7 @@ export default function IMU() {
                 targetBaseName.includes(imageBaseName)
               ) {
                 console.log(
-                  `📊 [IMU DEBUG] Image found! ${imageFileName} -> ${image.filePath}`,
+                  `🛤️ [PATHS DEBUG] Image found! ${imageFileName} -> ${image.filePath}`,
                 );
                 return {
                   exists: true,
@@ -179,36 +142,36 @@ export default function IMU() {
           }
         } catch (folderError) {
           console.warn(
-            `📊 [IMU DEBUG] Error checking folder ${folder}:`,
+            `🛤️ [PATHS DEBUG] Error checking folder ${folder}:`,
             folderError,
           );
         }
       }
 
       console.log(
-        `📊 [IMU DEBUG] Image not found in gallery: ${imageFileName}`,
+        `🛤️ [PATHS DEBUG] Image not found in gallery: ${imageFileName}`,
       );
       return { exists: false };
     } catch (error) {
-      console.error(`📊 [IMU DEBUG] Error checking image existence:`, error);
+      console.error(`🛤️ [PATHS DEBUG] Error checking image existence:`, error);
       return { exists: false };
     }
   };
 
-  // Function to parse IMU file content (JSON or ESP32 log format)
-  const parseIMUFile = async (
+  // Function to parse Path file content (JSON or ESP32 log format)
+  const parsePathFile = async (
     content: string,
     date: string,
     sessionId: number,
-  ): Promise<IMULogs[]> => {
+  ): Promise<PathData[]> => {
     try {
       console.log(
-        '📊 [IMU DEBUG] Parsing IMU file content, length:',
+        '🛤️ [PATHS DEBUG] Parsing Path file content, length:',
         content.length,
       );
 
-      const reports: IMULogs[] = [];
-      let data: IMUData[] = [];
+      const reports: PathData[] = [];
+      let data: PathFileData[] = [];
 
       // Try to parse as JSON array first
       try {
@@ -216,17 +179,17 @@ export default function IMU() {
         if (Array.isArray(parsed)) {
           data = parsed;
           console.log(
-            '📊 [IMU DEBUG] Parsed as JSON array, length:',
+            '🛤️ [PATHS DEBUG] Parsed as JSON array, length:',
             data.length,
           );
         } else {
           data = [parsed];
-          console.log('📊 [IMU DEBUG] Parsed as single JSON object');
+          console.log('🛤️ [PATHS DEBUG] Parsed as single JSON object');
         }
       } catch {
         // If JSON parsing fails, try ESP32 log format (line by line)
         console.log(
-          '📊 [IMU DEBUG] JSON parsing failed, trying ESP32 log format',
+          '🛤️ [PATHS DEBUG] JSON parsing failed, trying ESP32 log format',
         );
         const lines = content.split('\n').filter((line) => line.trim());
 
@@ -238,17 +201,17 @@ export default function IMU() {
               const lineData = JSON.parse(jsonMatch[0]);
               data.push(lineData);
             } catch {
-              console.warn('📊 [IMU DEBUG] Failed to parse line:', line);
+              console.warn('🛤️ [PATHS DEBUG] Failed to parse line:', line);
             }
           }
         }
         console.log(
-          '📊 [IMU DEBUG] Parsed ESP32 log format, entries:',
+          '🛤️ [PATHS DEBUG] Parsed ESP32 log format, entries:',
           data.length,
         );
       }
 
-      // Convert data to IMULogs format
+      // Convert data to PathData format
       for (let i = 0; i < data.length; i++) {
         const item = data[i];
 
@@ -266,50 +229,36 @@ export default function IMU() {
           hasImage = imageCheck.exists;
           imagePath = imageCheck.imagePath || '';
           console.log(
-            '📊 [IMU DEBUG] Image check for',
+            '🛤️ [PATHS DEBUG] Image check for',
             item.imageFileName,
             ':',
             imageCheck,
           );
         }
 
-        // Calculate alert level/status based on data (example logic)
-        let status = 'Normal';
-        if (item.rotationRate && Math.abs(item.rotationRate) > 50) {
-          status = 'Turn Detected';
-        } else if (
-          item.accelerationMagnitude &&
-          item.accelerationMagnitude > 15
-        ) {
-          status = 'IMU Calibrated';
+        // Determine status based on speed or explicit status
+        let status = item.status || 'Unknown';
+        if (!item.status) {
+          const speed = item.speed || item.velocity || 0;
+          if (speed === 0) {
+            status = 'Stop';
+          } else if (speed > 0 && speed < 1) {
+            status = 'Slow';
+          } else {
+            status = 'Moving';
+          }
         }
 
-        const report: IMULogs = {
+        const report: PathData = {
           id: `${date}-${sessionId}-${i}`,
           timestamp,
           sessionId,
+          position: {
+            x: item.position?.positionX || 0,
+            y: item.position?.positionY || 0,
+          },
+          speed: item.speed || item.velocity || 0,
           heading: item.heading || 0,
-          accelerationMagnitude: item.accelerationMagnitude,
-          direction: item.direction,
-          distanceTraveled: item.distanceTraveled,
-          linearAcceleration: item.linearAcceleration,
-          pitch: item.pitch,
-          roll: item.roll,
-          rotationRate: item.rotationRate,
-          ultrasonic: item.ultrasonic || 0,
-          yaw: item.yaw,
-          distances: item.distances || {
-            distTotal: item.distanceTraveled || 0,
-            distX: item.position?.positionX || 0,
-            distY: item.position?.positionY || 0,
-          },
-          velocity: {
-            velocity: item.velocity,
-            velocityX: item.velocityX,
-            velocityY: item.velocityY,
-          },
-          magnetometer: item.magnetometer,
-          position: item.position || { positionX: 0, positionY: 0 },
           status,
           createdAt: timestamp,
           imageFileName: item.imageFileName,
@@ -320,10 +269,10 @@ export default function IMU() {
         reports.push(report);
       }
 
-      console.log('📊 [IMU DEBUG] Final reports generated:', reports.length);
+      console.log('🛤️ [PATHS DEBUG] Final reports generated:', reports.length);
       return reports;
     } catch (error) {
-      console.error('📊 [IMU DEBUG] Error parsing IMU file:', error);
+      console.error('🛤️ [PATHS DEBUG] Error parsing Path file:', error);
       return [];
     }
   };
@@ -332,17 +281,17 @@ export default function IMU() {
   useEffect(() => {
     const checkLocalMode = async () => {
       try {
-        console.log('📊 [IMU DEBUG] Checking local mode...');
+        console.log('🛤️ [PATHS DEBUG] Checking local mode...');
         console.log(
-          '📊 [IMU DEBUG] window available:',
+          '🛤️ [PATHS DEBUG] window available:',
           typeof window !== 'undefined',
         );
         console.log(
-          '📊 [IMU DEBUG] electronAPI available:',
+          '🛤️ [PATHS DEBUG] electronAPI available:',
           typeof window !== 'undefined' && !!window.electronAPI,
         );
         console.log(
-          '📊 [IMU DEBUG] getConfig available:',
+          '🛤️ [PATHS DEBUG] getConfig available:',
           typeof window !== 'undefined' &&
             window.electronAPI &&
             !!window.electronAPI.getConfig,
@@ -352,14 +301,14 @@ export default function IMU() {
         if (typeof window !== 'undefined' && window.electronAPI?.getConfig) {
           const localModeConfig =
             await window.electronAPI.getConfig('localMode');
-          console.log('📊 [IMU DEBUG] localModeConfig:', localModeConfig);
+          console.log('🛤️ [PATHS DEBUG] localModeConfig:', localModeConfig);
           setIsLocalMode(!!localModeConfig);
         } else {
           // Fallback: check from API if not in Electron
-          console.log('📊 [IMU DEBUG] Falling back to API check...');
+          console.log('🛤️ [PATHS DEBUG] Falling back to API check...');
         }
       } catch (error) {
-        console.error('📊 [IMU DEBUG] Error checking local mode:', error);
+        console.error('🛤️ [PATHS DEBUG] Error checking local mode:', error);
         setIsLocalMode(false);
       }
     };
@@ -430,14 +379,14 @@ export default function IMU() {
     const fetchAllData = async () => {
       setIsLoading(true);
       try {
-        console.log('📊 [IMU DEBUG] fetchAllData started');
-        console.log('📊 [IMU DEBUG] isLocalMode:', isLocalMode);
-        console.log('📊 [IMU DEBUG] selectedDevice:', selectedDevice);
+        console.log('🛤️ [PATHS DEBUG] fetchAllData started');
+        console.log('🛤️ [PATHS DEBUG] isLocalMode:', isLocalMode);
+        console.log('🛤️ [PATHS DEBUG] selectedDevice:', selectedDevice);
 
         if (isLocalMode) {
-          // LOCAL MODE: Read from reports/imu/{date}/{sessionId}.json
+          // LOCAL MODE: Read from reports/paths/{date}/{sessionId}.json
           console.log(
-            '📊 [IMU DEBUG] Local mode - fetching IMU data from files',
+            '🛤️ [PATHS DEBUG] Local mode - fetching Path data from files',
           );
 
           try {
@@ -445,14 +394,14 @@ export default function IMU() {
               throw new Error('electronAPI.getUltrasonicFiles not available');
             }
 
-            // Read IMU folder structure
+            // Read Path folder structure
             const folderResult =
-              await window.electronAPI.getUltrasonicFiles('reports/imu');
-            console.log('📊 [IMU DEBUG] IMU folder result:', folderResult);
+              await window.electronAPI.getUltrasonicFiles('reports/paths');
+            console.log('🛤️ [PATHS DEBUG] Path folder result:', folderResult);
 
             if (!folderResult.success) {
               throw new Error(
-                folderResult.error || 'Failed to read IMU folder',
+                folderResult.error || 'Failed to read Path folder',
               );
             }
 
@@ -461,14 +410,14 @@ export default function IMU() {
               label: string;
               sessions: OptionType[];
             }[] = [];
-            const allReports: IMULogs[] = [];
+            const allReports: PathData[] = [];
 
             // Process each date folder
             for (const item of folderResult.images || []) {
               if (item.isDirectory) {
                 const dateFolder = item.fileName;
                 console.log(
-                  '📊 [IMU DEBUG] Processing date folder:',
+                  '🛤️ [PATHS DEBUG] Processing date folder:',
                   dateFolder,
                 );
 
@@ -477,10 +426,10 @@ export default function IMU() {
                 // Get session files for this date
                 const sessionResult =
                   await window.electronAPI.getUltrasonicFiles(
-                    `reports/imu/${dateFolder}`,
+                    `reports/paths/${dateFolder}`,
                   );
                 console.log(
-                  '📊 [IMU DEBUG] Session result for',
+                  '🛤️ [PATHS DEBUG] Session result for',
                   dateFolder,
                   ':',
                   sessionResult,
@@ -505,39 +454,39 @@ export default function IMU() {
                       try {
                         if (!window.electronAPI?.readFileContent) {
                           console.error(
-                            '📊 [IMU DEBUG] readFileContent API not available',
+                            '🛤️ [PATHS DEBUG] readFileContent API not available',
                           );
                           continue;
                         }
 
                         const fileResult =
                           await window.electronAPI.readFileContent(
-                            `reports/imu/${dateFolder}/${sessionItem.fileName}`,
+                            `reports/paths/${dateFolder}/${sessionItem.fileName}`,
                           );
                         console.log(
-                          '📊 [IMU DEBUG] File result for',
+                          '🛤️ [PATHS DEBUG] File result for',
                           sessionItem.fileName,
                           ':',
                           fileResult,
                         );
 
                         if (fileResult.success && fileResult.content) {
-                          const sessionReports = await parseIMUFile(
+                          const sessionReports = await parsePathFile(
                             fileResult.content,
                             dateFolder,
                             parseInt(sessionId),
                           );
                           allReports.push(...sessionReports);
                           console.log(
-                            '📊 [IMU DEBUG] Parsed',
+                            '🛤️ [PATHS DEBUG] Parsed',
                             sessionReports.length,
-                            'IMU reports from',
+                            'Path reports from',
                             sessionItem.fileName,
                           );
                         }
                       } catch (parseError) {
                         console.error(
-                          '📊 [IMU DEBUG] Error parsing IMU file:',
+                          '🛤️ [PATHS DEBUG] Error parsing Path file:',
                           sessionItem.fileName,
                           parseError,
                         );
@@ -564,10 +513,10 @@ export default function IMU() {
             }
 
             console.log(
-              '📊 [IMU DEBUG] Total dates with sessions:',
+              '🛤️ [PATHS DEBUG] Total dates with sessions:',
               allDateSessions.length,
             );
-            console.log('📊 [IMU DEBUG] Total IMU reports:', allReports.length);
+            console.log('🛤️ [PATHS DEBUG] Total Path reports:', allReports.length);
 
             setDateWithSessions(allDateSessions);
             setReports(allReports);
@@ -581,7 +530,7 @@ export default function IMU() {
               }
             }
           } catch (localError) {
-            console.error('📊 [IMU DEBUG] Error in local mode:', localError);
+            console.error('🛤️ [PATHS DEBUG] Error in local mode:', localError);
             setReports([]);
             setDateWithSessions([]);
           }
@@ -595,7 +544,7 @@ export default function IMU() {
           }
 
           const datesRes = await fetch(
-            `/api/reports/imu/dates-with-sessions?deviceName=${encodeURIComponent(deviceName)}`,
+            `/api/reports/paths/dates-with-sessions?deviceName=${encodeURIComponent(deviceName)}`,
           );
           const datesData = await datesRes.json();
           const data = datesData.data;
@@ -626,29 +575,16 @@ export default function IMU() {
               : null);
 
           if (useDate && useSession) {
-            const summariesRes = await fetch(
-              `/api/reports/imu/summaries/date/${useDate.value}/session/${useSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
-            );
-            const summariesData = await summariesRes.json();
-            const s = summariesData.data || {};
-            setSummaries({
-              average_heading: s.average_heading ?? 0,
-              heading_range: [
-                s.heading_range?.[0] ?? 0,
-                s.heading_range?.[1] ?? 0,
-              ],
-              total_orientation_changes: s.total_orientation_changes ?? 0,
-              max_turn_angle: s.max_turn_angle ?? 0,
-            });
-
+            // Fetch reports
             const reportsRes = await fetch(
-              `/api/reports/imu/date/${useDate.value}/session/${useSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
+              `/api/reports/paths/date/${useDate.value}/session/${useSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
             );
             const reportsResult = await reportsRes.json();
-            const sortedReports = (reportsResult.data || []).sort(
-              (a: IMULogs, b: IMULogs) =>
-                new Date(b.timestamp).getTime() -
-                new Date(a.timestamp).getTime(),
+            const pathData = reportsResult.data || [];
+
+            const sortedReports = pathData.sort(
+              (a: PathData, b: PathData) =>
+                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
             );
             setReports(sortedReports);
           } else {
@@ -667,30 +603,6 @@ export default function IMU() {
     fetchAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, selectedSession, selectedDevice?.deviceName, isLocalMode]);
-
-  function getDirectionFromHeading(heading: number): string {
-    const directions = [
-      'North (N)',
-      'North-Northeast (NNE)',
-      'Northeast (NE)',
-      'East-Northeast (ENE)',
-      'East (E)',
-      'East-Southeast (ESE)',
-      'Southeast (SE)',
-      'South-Southeast (SSE)',
-      'South (S)',
-      'South-Southwest (SSW)',
-      'Southwest (SW)',
-      'West-Southwest (WSW)',
-      'West (W)',
-      'West-Northwest (WNW)',
-      'Northwest (NW)',
-      'North-Northwest (NNW)',
-      'North (N)',
-    ];
-    const index = Math.round(heading / 22.5) % 16;
-    return directions[index];
-  }
 
   // Calculate filtered reports for display (computed during render, not in useEffect)
   const filteredReports = React.useMemo(() => {
@@ -715,77 +627,49 @@ export default function IMU() {
 
     if (reportsToUse.length === 0) {
       return {
-        average_heading: 0,
-        heading_range: [0, 0] as [number, number],
-        total_orientation_changes: 0,
-        max_turn_angle: 0,
+        totalPaths: 0,
+        averageSpeed: 0,
+        totalDistance: 0,
+        maxSpeed: 0,
       };
     }
 
-    const headings = reportsToUse.map((r) => r.heading);
-    const average_heading =
-      headings.reduce((a, b) => a + b, 0) / headings.length;
-    const heading_range: [number, number] = [
-      Math.min(...headings),
-      Math.max(...headings),
-    ];
+    // Calculate summaries from the data
+    const totalPaths = reportsToUse.length;
+    const speeds = reportsToUse
+      .map((p: PathData) => p.speed)
+      .filter((s: number) => s > 0);
+    const averageSpeed =
+      speeds.length > 0
+        ? speeds.reduce((a: number, b: number) => a + b, 0) / speeds.length
+        : 0;
+    const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
 
-    // Count significant orientation changes (> 10 degrees difference)
-    let total_orientation_changes = 0;
-    let max_turn_angle = 0;
-
+    // Calculate total distance (rough estimate from position changes)
+    let totalDistance = 0;
     for (let i = 1; i < reportsToUse.length; i++) {
-      const angleDiff = Math.abs(
-        reportsToUse[i].heading - reportsToUse[i - 1].heading,
-      );
-      if (angleDiff > 10) {
-        total_orientation_changes++;
-        max_turn_angle = Math.max(max_turn_angle, angleDiff);
-      }
+      const prev = reportsToUse[i - 1];
+      const curr = reportsToUse[i];
+      const dx = curr.position.x - prev.position.x;
+      const dy = curr.position.y - prev.position.y;
+      totalDistance += Math.sqrt(dx * dx + dy * dy);
     }
 
-    console.log('📊 [IMU DEBUG] Summary calculation:', {
+    console.log('🛤️ [PATHS DEBUG] Summary calculation:', {
       totalReports: reportsToUse.length,
-      average_heading,
-      heading_range,
-      total_orientation_changes,
-      max_turn_angle,
+      totalPaths,
+      averageSpeed,
+      maxSpeed,
+      totalDistance,
     });
 
     return {
-      average_heading,
-      heading_range,
-      total_orientation_changes,
-      max_turn_angle,
+      totalPaths,
+      averageSpeed,
+      totalDistance,
+      maxSpeed,
     };
   }, [filteredReports, reports, isLocalMode]);
-
-  // Summary items that use current filtered data
-  const summaryItems = React.useMemo(() => {
-    const reportsToUse = isLocalMode ? filteredReports : reports;
-    return [
-      {
-        icon: 'lets-icons:compass-north',
-        title: 'Average Heading',
-        summary: `${(summaries.average_heading ?? 0).toFixed(2)}° - ${getDirectionFromHeading(summaries.average_heading ?? 0)}`,
-      },
-      {
-        icon: 'mdi:gauge',
-        title: 'Total IMU Records',
-        summary: `${reportsToUse.length} Records`,
-      },
-      {
-        icon: 'mdi:camera-image',
-        title: 'Images Captured',
-        summary: `${reportsToUse.filter((r) => r.hasImage).length} Images`,
-      },
-      {
-        icon: 'ph:compass-rose-fill',
-        title: 'Heading Range',
-        summary: `${(summaries.heading_range?.[0] ?? 0).toFixed(2)}° - ${(summaries.heading_range?.[1] ?? 0).toFixed(2)}°`,
-      },
-    ] as const;
-  }, [summaries, filteredReports, reports, isLocalMode]);
 
   // Update summaries state when computed summaries change (only in local mode)
   React.useEffect(() => {
@@ -794,13 +678,40 @@ export default function IMU() {
     }
   }, [computedSummaries, isLocalMode]);
 
+  // Summary items that use current filtered data
+  const summaryItems = React.useMemo(() => {
+    const currentSummaries = isLocalMode ? computedSummaries : summaries;
+    return [
+      {
+        icon: 'mdi:map-marker-path',
+        title: 'Total Path Points',
+        summary: `${currentSummaries.totalPaths} Points`,
+      },
+      {
+        icon: 'mdi:speedometer',
+        title: 'Average Speed',
+        summary: `${currentSummaries.averageSpeed.toFixed(2)} m/s`,
+      },
+      {
+        icon: 'mdi:map-marker-distance',
+        title: 'Total Distance',
+        summary: `${currentSummaries.totalDistance.toFixed(2)} m`,
+      },
+      {
+        icon: 'mdi:speedometer-medium',
+        title: 'Max Speed',
+        summary: `${currentSummaries.maxSpeed.toFixed(2)} m/s`,
+      },
+    ];
+  }, [summaries, computedSummaries, isLocalMode]);
+
   // Don't render content until we have a selected device (only required in online mode)
   if (!isLocalMode && !selectedDevice?.deviceName) {
     return (
       <div
         className={clsx(
-          'flex flex-col justify-center items-center p-4 md:p-5',
-          isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
+          'flex flex-col justify-center items-center w-full p-4',
+          isDark ? 'text-white bg-[#112133]' : 'text-black',
         )}
         style={{
           paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -810,7 +721,12 @@ export default function IMU() {
           }px)`,
         }}
       >
-        <PulseLoader color='#60a5fa' loading={true} size={15} margin={5} />
+        <PulseLoader
+          color='#60a5fa'
+          loading={true}
+          size={15}
+          margin={5}
+        />
         <p
           className={clsx(
             'mt-4 text-lg text-center',
@@ -826,8 +742,8 @@ export default function IMU() {
   return (
     <div
       className={clsx(
-        'flex flex-col gap-4 p-5 transition-colors duration-300',
-        isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
+        'flex flex-col md:flex-row gap-4 p-4 md:p-5 transition-colors duration-300 w-full',
+        isDark ? 'text-white bg-[#112133]' : 'text-black',
       )}
       style={{
         paddingTop: topNavbarHeight + reportsNavbarHeight,
@@ -836,7 +752,7 @@ export default function IMU() {
     >
       {isLoading ? (
         <div
-          className='flex flex-col justify-center items-center'
+          className='flex flex-col justify-center items-center w-full'
           style={{
             height: `calc(100vh - ${
               topNavbarHeight + bottomNavbarHeight + reportsNavbarHeight + 20
@@ -844,18 +760,18 @@ export default function IMU() {
           }}
         >
           <PulseLoader
-            color={isDark ? '#3b82f6' : '#60a5fa'}
+            color='#60a5fa'
             loading={isLoading}
             size={15}
             margin={5}
           />
           <p
             className={clsx(
-              'mt-4 text-lg',
+              'mt-4 text-lg text-center',
               isDark ? 'text-gray-300' : 'text-gray-500',
             )}
           >
-            Loading IMU reports, please wait...
+            Loading path reports, please wait...
           </p>
         </div>
       ) : reports.length === 0 ? (
@@ -871,70 +787,148 @@ export default function IMU() {
           }}
         >
           <Icon
-            icon='mingcute:file-unknown-fill'
+            icon='tabler:photo-off'
             width={48}
             height={48}
-            className={isDark ? 'text-gray-600' : 'text-gray-400'}
+            className={clsx(isDark ? 'text-gray-600' : 'text-gray-400')}
           />
           <p
             className={clsx(
-              'mt-4 text-lg',
-              isDark ? 'text-gray-400' : 'text-gray-500',
+              'mt-4 text-lg text-center',
+              isDark ? 'text-gray-300' : 'text-gray-500',
             )}
           >
-            No IMU reports available. Please check back later.
+            No path reports available. Please check back later.
           </p>
         </div>
       ) : (
-        <>
-          <div className='flex flex-col md:flex-row w-full gap-4'>
-            <div className='flex-1 flex flex-col'>
-              <ShortSummary
-                summaryItems={summaryItems}
-                layout='grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-4 items-stretch'
-              />
-            </div>
+        <div className='flex flex-col gap-4 w-full'>
+          {/* Summary Cards */}
+          <div className='w-full'>
+            <ShortSummary
+              summaryItems={summaryItems}
+              layout='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
+            />
+          </div>
 
-            <div className='flex flex-row gap-4 items-stretch md:items-center'>
-              <Select
-                options={dateWithSessions.map((d) => ({
-                  value: d.value,
-                  label: d.label,
-                }))}
-                styles={customStyles}
-                value={selectedDate}
-                onChange={(option) => {
-                  setSelectedDate(option);
-                  const selected = dateWithSessions.find(
-                    (d) => d.value === option?.value,
-                  );
-                  if (selected?.sessions.length) {
-                    setSelectedSession(selected.sessions[0]);
-                  } else {
-                    setSelectedSession(null);
-                  }
-                }}
-                isSearchable={false}
-                className='flex-1'
-              />
-              <Select
-                options={
-                  selectedDate
-                    ? dateWithSessions.find(
-                        (d) => d.value === selectedDate.value,
-                      )?.sessions || []
-                    : []
+          {/* Dropdown Section */}
+          <div className='flex flex-col md:flex-row gap-4 w-full'>
+            <Select
+              options={dateWithSessions.map((d) => ({
+                value: d.value,
+                label: d.label,
+              }))}
+              styles={customStyles}
+              value={selectedDate}
+              onChange={(option) => {
+                setSelectedDate(option);
+                const selected = dateWithSessions.find(
+                  (d) => d.value === option?.value,
+                );
+                if (selected?.sessions.length) {
+                  setSelectedSession(selected.sessions[0]);
+                } else {
+                  setSelectedSession(null);
                 }
-                styles={customStyles}
-                value={selectedSession}
-                onChange={setSelectedSession}
-                isSearchable={false}
-                isDisabled={!selectedDate}
-                className='flex-1'
-              />
+              }}
+              isSearchable={false}
+              className='flex-1'
+              theme={(theme) => ({
+                ...theme,
+                colors: {
+                  ...theme.colors,
+                  primary25: isDark ? '#23272f' : '#e3f2fd',
+                  primary: isDark ? '#3b82f6' : '#60a5fa',
+                  neutral0: isDark ? '#23272f' : '#fff',
+                  neutral80: isDark ? '#fff' : '#333',
+                },
+              })}
+            />
+            <Select
+              options={
+                selectedDate
+                  ? dateWithSessions.find(
+                      (d) => d.value === selectedDate.value,
+                    )?.sessions || []
+                  : []
+              }
+              styles={customStyles}
+              value={selectedSession}
+              onChange={setSelectedSession}
+              isSearchable={false}
+              isDisabled={!selectedDate}
+              className='flex-1'
+              theme={(theme) => ({
+                ...theme,
+                colors: {
+                  ...theme.colors,
+                  primary25: isDark ? '#23272f' : '#e3f2fd',
+                  primary: isDark ? '#3b82f6' : '#60a5fa',
+                  neutral0: isDark ? '#23272f' : '#fff',
+                  neutral80: isDark ? '#fff' : '#333',
+                },
+              })}
+            />
+          </div>
+
+          {/* Path Visualization */}
+          <TunnelPath showStartpoint showEndpoint pathData={reports} />
+
+          {/* Legends Section */}
+          <div className='flex flex-col md:flex-row gap-4 w-full'>
+            <div className='flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-500 to-blue-400 rounded-xl text-white justify-center md:justify-start'>
+              <Icon icon='mdi:map-legend' width={24} height={24} />
+              <p>Legends</p>
+            </div>
+            <div
+              className={clsx(
+                'flex flex-wrap justify-between w-full gap-4 px-4 py-2 rounded-xl border-2',
+                isDark ? 'border-[#223355]' : 'border-[#DCDCDC]',
+              )}
+            >
+              {/* Each legend item */}
+              <div className='flex items-center gap-2 min-w-[130px]'>
+                <div className='flex items-center justify-center bg-gradient-to-br from-[#FF623B] to-[#CD2323] rounded-full p-1.5 shadow'>
+                  <Icon
+                    icon='mynaui:danger-triangle-solid'
+                    className='text-white'
+                    width={18}
+                    height={18}
+                  />
+                </div>
+                <p className='bg-gradient-to-br from-[#FF623B] to-[#CD2323] text-transparent bg-clip-text font-medium'>
+                  Obstacle
+                </p>
+              </div>
+              <div className='flex items-center gap-2 min-w-[130px]'>
+                <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center'>
+                  <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]' />
+                </div>
+                <p className='bg-gradient-to-br from-[#FFC107] to-[#FF9800] text-transparent bg-clip-text font-medium'>
+                  Startpoint
+                </p>
+              </div>
+              <div className='flex items-center gap-2 min-w-[130px]'>
+                <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FF9799]/30 to-[#EB0C0F]/30 flex items-center justify-center'>
+                  <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FF9799] to-[#EB0C0F]' />
+                </div>
+                <p className='bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-transparent bg-clip-text font-medium'>
+                  Endpoint
+                </p>
+              </div>
+              <div className='flex items-center gap-2 min-w-[130px]'>
+                <div className='w-8 h-1 bg-gradient-to-br from-blue-500 to-blue-400 rounded-full' />
+                <p className='bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text font-medium'>
+                  RoboGo Path
+                </p>
+              </div>
             </div>
           </div>
-          <IMUTable reports={isLocalMode ? filteredReports : reports} />
+
+          {/* Paths Table */}
+          <div className='overflow-x-auto'>
+            <PathsTable reports={isLocalMode ? filteredReports : reports} />
+          </div>
         </>
       )}
     </div>

@@ -100,12 +100,6 @@ export default function Ultrasonic() {
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
   const [reportsNavbarHeight, setReportsNavbarHeight] = useState(0);
   const [reports, setReports] = useState<Ultrasonic[]>([]);
-  const [summaries, setSummaries] = useState({
-    totalImages: 0,
-    totalObstacles: 0,
-    closestDistance: 0,
-    averageDistance: 0,
-  });
   const [dateWithSessions, setDateWithSessions] = useState<
     { value: string; label: string; sessions: OptionType[] }[]
   >([]);
@@ -136,10 +130,22 @@ export default function Ultrasonic() {
 
       for (const folder of galleryFolders) {
         try {
+          console.log(`🔊 [ULTRASONIC DEBUG] Checking folder: ${folder}`);
+
           const galleryResult =
             await window.electronAPI.getImagesFromFolder(folder);
 
+          console.log(
+            `🔊 [ULTRASONIC DEBUG] Gallery result for ${folder}:`,
+            galleryResult,
+          );
+
           if (galleryResult.success && galleryResult.images) {
+            console.log(
+              `🔊 [ULTRASONIC DEBUG] Images in ${folder}:`,
+              galleryResult.images.map((img) => img.fileName),
+            );
+
             // Look for exact match or with common image extensions
             const imageExtensions = [
               '.jpg',
@@ -154,6 +160,10 @@ export default function Ultrasonic() {
               const targetFilename = imageFileName.endsWith(extension)
                 ? imageFileName
                 : `${imageFileName}${extension}`;
+
+              console.log(
+                `🔊 [ULTRASONIC DEBUG] Looking for: ${targetFilename}`,
+              );
 
               const foundImage = galleryResult.images.find(
                 (img) => img.fileName === targetFilename,
@@ -823,42 +833,20 @@ export default function Ultrasonic() {
                       new Date(b.timestamp).getTime() -
                       new Date(a.timestamp).getTime(),
                   );
-
                   setReports(sortedReports);
-
-                  // Calculate summaries based on filtered reports
-                  const totalImages = filteredReports.length;
-                  const totalObstacles = filteredReports.filter(
-                    (r) => r.alertLevel === 'High',
-                  ).length;
-                  const distances = filteredReports.map((r) => r.distance);
-                  const closestDistance =
-                    distances.length > 0 ? Math.min(...distances) : 0;
-                  const averageDistance =
-                    distances.length > 0
-                      ? Math.round(
-                          distances.reduce((a, b) => a + b, 0) /
-                            distances.length,
-                        )
-                      : 0;
 
                   // Count items with gallery images
                   const totalWithImages = filteredReports.filter(
                     (r) => r.hasImage,
                   ).length;
 
-                  setSummaries({
-                    totalImages,
-                    totalObstacles,
-                    closestDistance,
-                    averageDistance,
-                  });
-
                   console.log(
                     '🔊 [ULTRASONIC LOCAL] Successfully processed ultrasonic data:',
                     {
-                      totalImages,
-                      totalObstacles,
+                      totalImages: filteredReports.length,
+                      totalObstacles: filteredReports.filter(
+                        (r) => r.alertLevel === 'High',
+                      ).length,
                       reports: sortedReports.length,
                       totalWithImages, // New stat showing items with gallery images
                     },
@@ -869,12 +857,6 @@ export default function Ultrasonic() {
                   );
                   setDateWithSessions([]);
                   setReports([]);
-                  setSummaries({
-                    totalImages: 0,
-                    totalObstacles: 0,
-                    closestDistance: 0,
-                    averageDistance: 0,
-                  });
                 }
               } else {
                 console.log(
@@ -882,12 +864,6 @@ export default function Ultrasonic() {
                 );
                 setDateWithSessions([]);
                 setReports([]);
-                setSummaries({
-                  totalImages: 0,
-                  totalObstacles: 0,
-                  closestDistance: 0,
-                  averageDistance: 0,
-                });
               }
             } catch (folderError) {
               console.error(
@@ -896,12 +872,6 @@ export default function Ultrasonic() {
               );
               setDateWithSessions([]);
               setReports([]);
-              setSummaries({
-                totalImages: 0,
-                totalObstacles: 0,
-                closestDistance: 0,
-                averageDistance: 0,
-              });
             }
           } else {
             console.log('🔊 [ULTRASONIC LOCAL] Electron API not available');
@@ -947,18 +917,10 @@ export default function Ultrasonic() {
             (data.length > 0 && data[0].sessions.length > 0
               ? data[0].sessions[0]
               : null);
-
           if (useDate && useSession) {
-            const summariesRes = await fetch(
-              `/api/reports/ultrasonic/summaries/date/${useDate.value}/session/${useSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
-            );
-            const summariesData = await summariesRes.json();
-            setSummaries({
-              totalImages: summariesData.data.totalImages,
-              totalObstacles: summariesData.data.totalObstacles,
-              closestDistance: summariesData.data.closestDistance,
-              averageDistance: summariesData.data.averageDistance,
-            });
+            // In online mode, we'll rely on computed summaries instead of API
+            // const summariesRes = await fetch(...)
+            // We can remove this since summaries are now computed
           }
 
           if (
@@ -984,31 +946,19 @@ export default function Ultrasonic() {
         console.error('Error fetching data:', error);
         setReports([]);
         setDateWithSessions([]);
-        setSummaries({
-          totalImages: 0,
-          totalObstacles: 0,
-          closestDistance: 0,
-          averageDistance: 0,
-        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAllData();
-  }, [selectedDate, selectedSession, selectedDevice, isLocalMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDevice, isLocalMode]);
 
-  // Additional useEffect to handle filtering when date/session changes in local mode
-  useEffect(() => {
-    if (isLocalMode && reports.length > 0 && selectedDate && selectedSession) {
-      console.log(
-        '🔊 [ULTRASONIC DEBUG] Filtering reports for:',
-        selectedDate,
-        selectedSession,
-      );
-
-      // Filter reports based on selected date and session
-      const filteredReports = reports.filter((report) => {
+  // Calculate filtered reports for display (computed during render, not in useEffect)
+  const filteredReports = React.useMemo(() => {
+    if (isLocalMode && selectedDate && selectedSession) {
+      return reports.filter((report) => {
         const reportDate = report.timestamp.split('T')[0];
         const reportSessionId = report.sessionId.toString();
         const selectedSessionId = selectedSession.value.replace(/\D/g, '');
@@ -1018,56 +968,70 @@ export default function Ultrasonic() {
           reportSessionId === selectedSessionId
         );
       });
-
-      console.log(
-        '🔊 [ULTRASONIC DEBUG] Filtered reports:',
-        filteredReports.length,
-      );
-
-      // Update summaries for filtered reports
-      const totalImages = filteredReports.length;
-      const totalObstacles = filteredReports.filter(
-        (r) => r.alertLevel === 'High',
-      ).length;
-      const distances = filteredReports.map((r) => r.distance);
-      const closestDistance = distances.length > 0 ? Math.min(...distances) : 0;
-      const averageDistance =
-        distances.length > 0
-          ? Math.round(distances.reduce((a, b) => a + b, 0) / distances.length)
-          : 0;
-
-      setSummaries({
-        totalImages,
-        totalObstacles,
-        closestDistance,
-        averageDistance,
-      });
-
-      // Note: We don't update reports state here to avoid infinite loop
-      // The table will use the filtered reports directly
     }
-  }, [selectedDate, selectedSession, isLocalMode, reports]);
+    return reports;
+  }, [reports, selectedDate, selectedSession, isLocalMode]);
+  // Calculate summaries based on filtered reports (computed during render)
+  const computedSummaries = React.useMemo(() => {
+    const reportsToUse = isLocalMode ? filteredReports : reports;
 
+    // Total Images should count only reports with actual images
+    const totalImages = reportsToUse.filter((r) => r.hasImage).length;
+    const totalObstacles = reportsToUse.filter(
+      (r) => r.alertLevel === 'High',
+    ).length;
+    const distances = reportsToUse.map((r) => r.distance);
+    const closestDistance = distances.length > 0 ? Math.min(...distances) : 0;
+
+    // Fix average distance calculation - don't round, use proper decimal
+    const averageDistance =
+      distances.length > 0
+        ? parseFloat(
+            (distances.reduce((a, b) => a + b, 0) / distances.length).toFixed(
+              1,
+            ),
+          )
+        : 0;
+
+    console.log('🔊 [ULTRASONIC DEBUG] Summary calculation:', {
+      totalReports: reportsToUse.length,
+      reportsWithImages: reportsToUse.filter((r) => r.hasImage).length,
+      distances: distances,
+      totalDistanceSum: distances.reduce((a, b) => a + b, 0),
+      averageCalculation:
+        distances.length > 0
+          ? distances.reduce((a, b) => a + b, 0) / distances.length
+          : 0,
+      finalAverage: averageDistance,
+    });
+
+    return {
+      totalImages,
+      totalObstacles,
+      closestDistance,
+      averageDistance,
+    };
+  }, [filteredReports, reports, isLocalMode]);
   const summaryItems = [
     {
       icon: 'fluent:image-sparkle-24-filled',
       title: 'Total Images Collected',
-      summary: `${summaries.totalImages} Images`,
+      summary: `${computedSummaries.totalImages} Images`,
     },
     {
       icon: 'fluent:scan-object-20-filled',
       title: 'Total Obstacles Detected',
-      summary: `${summaries.totalObstacles} Obstacles`,
+      summary: `${computedSummaries.totalObstacles} Obstacles`,
     },
     {
       icon: 'subway:close-corner-arrow-2',
       title: 'Closest Distance',
-      summary: `${summaries.closestDistance} cm`,
+      summary: `${computedSummaries.closestDistance} cm`,
     },
     {
       icon: 'ri:pin-distance-fill',
       title: 'Average Distance',
-      summary: `${summaries.averageDistance} cm`,
+      summary: `${computedSummaries.averageDistance} cm`,
     },
   ];
 
@@ -1175,7 +1139,6 @@ export default function Ultrasonic() {
                 layout='grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-4 items-stretch'
               />
             </div>
-
             {/* Show date/session selectors for both local and online mode */}
             {dateWithSessions.length > 0 && (
               <div className='flex flex-row gap-4 items-stretch md:items-center'>
@@ -1236,28 +1199,24 @@ export default function Ultrasonic() {
                   })}
                 />
               </div>
-            )}
+            )}{' '}
           </div>
 
           <div className='overflow-x-auto'>
             <UltrasonicSensorTable
-              reports={
-                isLocalMode && selectedDate && selectedSession
-                  ? reports.filter((report) => {
-                      const reportDate = report.timestamp.split('T')[0];
-                      const reportSessionId = report.sessionId.toString();
-                      const selectedSessionId = selectedSession.value.replace(
-                        /\D/g,
-                        '',
-                      );
-
-                      return (
-                        reportDate === selectedDate.value &&
-                        reportSessionId === selectedSessionId
-                      );
-                    })
-                  : reports
-              }
+              reports={(() => {
+                console.log(
+                  '🔊 [ULTRASONIC DEBUG] Sending to table:',
+                  filteredReports.map((r) => ({
+                    id: r.id,
+                    hasImage: r.hasImage,
+                    imagePath: r.imagePath,
+                    imageFileName: r.imageFileName,
+                    distance: r.distance,
+                  })),
+                );
+                return filteredReports;
+              })()}
             />
           </div>
         </>

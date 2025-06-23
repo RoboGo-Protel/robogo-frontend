@@ -7,22 +7,33 @@ import clsx from 'clsx';
 
 const iconOffset = 0;
 
+// Ultrasonic sensor threshold for danger detection (in cm)
+const ULTRASONIC_DANGER_THRESHOLD = 10; // If distance < 10cm, consider as danger/obstacle
+
 interface Position {
   x: number;
   y: number;
 }
 
 interface PathData {
-  id: string;
+  id?: string;
   timestamp: string;
-  sessionId: number;
+  sessionId?: number;
   position: Position;
   speed: number;
+  velocity?: number;
   heading: number;
-  status: string;
-  createdAt: string;
-  imageUrl?: string;
+  direction?: string;
+  status?: string;
+  createdAt?: string;
+  distanceTraveled?: number;
+  imageFileName?: string;
+  imageUrl?: string; // Keep this for backward compatibility
   isEndpoint?: boolean;
+  hasImage?: boolean; // Add this to match Paths.tsx
+  imagePath?: string; // Add this to match Paths.tsx
+  ultrasonic?: number; // Add ultrasonic sensor data for obstacle detection
+  isDanger?: boolean; // Add computed field for danger indication
 }
 
 interface TunnelPathProps {
@@ -44,7 +55,6 @@ export default function TunnelPath({
     if (pathData.length === 0) {
       return { maxX: 10, maxY: 10, minX: 0, minY: 0 }; // Default fallback values
     }
-
     const xValues = pathData.map((point) => point.position.x);
     const yValues = pathData.map((point) => point.position.y);
 
@@ -95,7 +105,6 @@ export default function TunnelPath({
       minY: dynamicMinY,
     };
   }, [pathData]);
-
   // Debug pathData
   useEffect(() => {
     console.log('🗺️ [TUNNEL PATH DEBUG] pathData received:', pathData);
@@ -113,6 +122,23 @@ export default function TunnelPath({
         '🗺️ [TUNNEL PATH DEBUG] first point y:',
         pathData[0].position.y,
       );
+      console.log(
+        '🗺️ [TUNNEL PATH DEBUG] first point imageUrl:',
+        pathData[0].imageUrl,
+      );
+      console.log(
+        '🗺️ [TUNNEL PATH DEBUG] first point imageFileName:',
+        pathData[0].imageFileName,
+      );
+
+      // Check each point for image data
+      pathData.forEach((point, idx) => {
+        console.log(`🗺️ [TUNNEL PATH DEBUG] Point ${idx}:`, {
+          imageUrl: point.imageUrl,
+          imageFileName: point.imageFileName,
+          hasImage: point.imageUrl ? 'YES' : 'NO',
+        });
+      });
     }
   }, [pathData]);
 
@@ -283,76 +309,231 @@ export default function TunnelPath({
                   const pos = getMarkerPosition(
                     point.position.x,
                     point.position.y,
-                  );
-                  const cardHeight = 120;
+                  );                  const cardHeight = 120;
                   const shouldPlaceAbove =
                     dimensions.height > 0
                       ? pos.top + cardHeight > dimensions.height
                       : false;
 
+                  // Debug positioning logic
+                  console.log(`🗺️ [TUNNEL PATH DEBUG] Point ${idx} positioning:`, {
+                    position: point.position,
+                    pixelPos: pos,
+                    cardHeight,
+                    dimensionHeight: dimensions.height,
+                    shouldPlaceAbove,
+                    hasImage: !!point.imageUrl,
+                  });
+
                   const cardClass = `rounded-xl border p-1 shadow-md hover:shadow-lg transition ${
                     isDark
                       ? 'bg-[#1E334A] border-[#2A435C] text-white'
                       : 'bg-white border-gray-300 text-black'
-                  }`;
-                  if (idx === 0 && showStartpoint) {
-                    return (
-                      <div
-                        key={idx}
-                        className='absolute flex flex-col items-center z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer'
-                        style={{ left: pos.left, top: pos.top }}
-                        onClick={() => handleClick(point.position)}
-                      >
-                        {' '}
-                        {/* Tooltip always visible */}
-                        <div
-                          className={clsx(
-                            'mb-2 px-3 py-1.5 rounded-md text-xs font-semibold shadow-lg backdrop-blur-sm',
-                            'transform transition-all duration-200 ease-in-out',
-                            isDark
-                              ? 'bg-gray-900/90 text-yellow-300 border border-yellow-500/30'
-                              : 'bg-white/90 text-amber-700 border border-amber-300',
-                          )}
-                        >
-                          <span className='text-xs'>🟡</span> (
-                          {point.position.x.toFixed(2)},{' '}
-                          {point.position.y.toFixed(2)})
-                        </div>
-                        <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center'>
-                          <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]' />
-                        </div>
-                      </div>
-                    );
-                  } else if (
+                  }`; // Check if this is start point
+                  const isStartPoint = idx === 0 && showStartpoint;
+                  // Check if this is end point
+                  const isEndPoint =
                     idx === pathData.length - 1 &&
                     point.isEndpoint &&
-                    showEndpoint
-                  ) {
+                    showEndpoint;
+                  if (isStartPoint) {
                     return (
                       <div
                         key={idx}
-                        className='absolute flex flex-col items-center z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer'
-                        style={{ left: pos.left, top: pos.top }}
-                        onClick={() => handleClick(point.position)}
+                        className='absolute z-20'
+                        style={{
+                          left: `${pos.left}px`,
+                          top: `${pos.top}px`,
+                          transform: 'translate(-50%, -50%)',
+                        }}
                       >
-                        {' '}
-                        {/* Tooltip always visible */}
-                        <div
-                          className={clsx(
-                            'mb-2 px-3 py-1.5 rounded-md text-xs font-semibold shadow-lg backdrop-blur-sm',
-                            'transform transition-all duration-200 ease-in-out',
-                            isDark
-                              ? 'bg-gray-900/90 text-red-300 border border-red-500/30'
-                              : 'bg-white/90 text-red-700 border border-red-300',
-                          )}
-                        >
-                          <span className='text-xs'>🔴</span> (
-                          {point.position.x.toFixed(2)},{' '}
-                          {point.position.y.toFixed(2)})
-                        </div>
-                        <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FF623B]/30 to-[#CD2323]/30 flex items-center justify-center'>
-                          <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323]' />
-                        </div>
+                        {/* If no image, show only marker with tooltip */}
+                        {!point.imageUrl ? (
+                          <div className='relative flex flex-col items-center'>
+                            {' '}
+                            {/* Tooltip positioned absolutely above marker */}{' '}
+                            <div
+                              className={clsx(
+                                'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
+                                'min-w-max whitespace-nowrap z-30',
+                                isDark
+                                  ? 'bg-gray-900/95 text-yellow-300 border border-yellow-500/40'
+                                  : 'bg-white/95 text-amber-700 border border-amber-300',
+                              )}
+                            >
+                              <span className='text-sm'>🟡</span> START (
+                              {point.position.x.toFixed(2)},{' '}
+                              {point.position.y.toFixed(2)})
+                            </div>
+                            {/* Start point marker */}
+                            <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center'>
+                              <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]' />
+                            </div>
+                          </div>                        ) : (                          /* If has image, show image cards with marker */
+                          <div className='flex flex-col items-center'>                            {/* Tooltip for start point with image - position based on card placement */}
+                            <div
+                              className={clsx(
+                                'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
+                                'min-w-max whitespace-nowrap z-30',
+                                shouldPlaceAbove 
+                                  ? 'bottom-full mb-2' // If card is above, tooltip goes above the top card
+                                  : 'top-full mt-2', // If card is below, tooltip goes below the bottom card
+                                isDark
+                                  ? 'bg-gray-900/95 text-yellow-300 border border-yellow-500/40'
+                                  : 'bg-white/95 text-amber-700 border border-amber-300',
+                              )}
+                            >
+                              🟡 START - 📍 ({point.position.x.toFixed(2)}, {point.position.y.toFixed(2)})
+                            </div>
+                            
+                            {/* Top card */}
+                            <div
+                              onClick={
+                                shouldPlaceAbove
+                                  ? () => handleClick(point.position)
+                                  : undefined
+                              }
+                              className={`${
+                                shouldPlaceAbove
+                                  ? 'cursor-pointer'
+                                  : 'invisible cursor-default'
+                              } ${cardClass}`}
+                            >
+                              <img
+                                src={point.imageUrl}
+                                className='w-40 h-24 object-cover rounded-md'
+                                alt={`Start point at ${point.position.x}, ${point.position.y}`}
+                              />
+                            </div>
+
+                            {/* Start point marker */}
+                            <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center my-1'>
+                              <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]' />
+                            </div>
+
+                            {/* Bottom card */}
+                            <div
+                              onClick={
+                                shouldPlaceAbove
+                                  ? undefined
+                                  : () => handleClick(point.position)
+                              }
+                              className={`${
+                                shouldPlaceAbove
+                                  ? 'invisible cursor-default'
+                                  : 'cursor-pointer'
+                              } ${cardClass}`}
+                            >
+                              <img
+                                src={point.imageUrl}
+                                className='w-40 h-24 object-cover rounded-md'
+                                alt={`Start point at ${point.position.x}, ${point.position.y}`}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } else if (isEndPoint) {
+                    return (
+                      <div
+                        key={idx}
+                        className='absolute z-20'
+                        style={{
+                          left: `${pos.left}px`,
+                          top: `${pos.top}px`,
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        {/* If no image, show only marker with tooltip */}
+                        {!point.imageUrl ? (
+                          <div className='relative flex flex-col items-center'>
+                            {' '}
+                            {/* Tooltip positioned absolutely above marker */}{' '}
+                            <div
+                              className={clsx(
+                                'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
+                                'min-w-max whitespace-nowrap z-30',
+                                isDark
+                                  ? 'bg-gray-900/95 text-red-300 border border-red-500/40'
+                                  : 'bg-white/95 text-red-700 border border-red-300',
+                              )}
+                            >
+                              <span className='text-sm'>🔴</span> END (
+                              {point.position.x.toFixed(2)},{' '}
+                              {point.position.y.toFixed(2)})
+                            </div>
+                            {/* End point marker */}
+                            <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FF623B]/30 to-[#CD2323]/30 flex items-center justify-center'>
+                              <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323]' />
+                            </div>
+                          </div>                        ) : (                          /* If has image, show image cards with marker */
+                          <div className='flex flex-col items-center'>                            {/* Tooltip for end point with image - position based on card placement */}
+                            <div
+                              className={clsx(
+                                'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
+                                'min-w-max whitespace-nowrap z-30',
+                                shouldPlaceAbove 
+                                  ? 'bottom-full mb-2' // If card is above, tooltip goes above the top card
+                                  : 'top-full mt-2', // If card is below, tooltip goes below the bottom card
+                                isDark
+                                  ? 'bg-gray-900/95 text-red-300 border border-red-500/40'
+                                  : 'bg-white/95 text-red-700 border border-red-300',
+                              )}
+                            >
+                              🔴 END - 🔊 ({point.position.x.toFixed(2)}, {point.position.y.toFixed(2)})
+                            </div>
+                            
+                            {/* Top card */}
+                            <div
+                              onClick={
+                                shouldPlaceAbove
+                                  ? () => handleClick(point.position)
+                                  : undefined
+                              }
+                              className={`${
+                                shouldPlaceAbove
+                                  ? 'cursor-pointer'
+                                  : 'invisible cursor-default'
+                              } ${cardClass}`}
+                            >
+                              <img
+                                src={point.imageUrl}
+                                className='w-40 h-24 object-cover rounded-md'
+                                alt={`End point at ${point.position.x}, ${point.position.y}`}
+                              />
+                            </div>
+
+                            {/* End point marker */}
+                            <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FF623B]/30 to-[#CD2323]/30 flex items-center justify-center my-1'>
+                              <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323]' />
+                            </div>
+
+                            {/* Bottom card */}
+                            <div
+                              onClick={
+                                shouldPlaceAbove
+                                  ? undefined
+                                  : () => handleClick(point.position)
+                              }
+                              className={`${
+                                shouldPlaceAbove
+                                  ? 'invisible cursor-default'
+                                  : 'cursor-pointer'
+                              } ${cardClass}`}
+                            >
+                              <img
+                                src={point.imageUrl}
+                                className='w-40 h-24 object-cover rounded-md'
+                                alt={`End point at ${point.position.x}, ${point.position.y}`}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   } else {
@@ -367,74 +548,144 @@ export default function TunnelPath({
                         }}
                       >
                         <>
-                          {' '}
-                          {/* Tooltip always visible above marker */}
-                          <div
-                            className={clsx(
-                              'mb-2 px-3 py-1.5 rounded-md text-xs font-semibold shadow-lg backdrop-blur-sm',
-                              'transform transition-all duration-200 ease-in-out',
-                              isDark
-                                ? 'bg-gray-900/90 text-blue-300 border border-blue-500/30'
-                                : 'bg-white/90 text-blue-700 border border-blue-300',
-                            )}
-                          >
-                            <span className='text-xs'>📍</span> (
-                            {point.position.x.toFixed(2)},{' '}
-                            {point.position.y.toFixed(2)})
-                          </div>
-                          {/* Top card */}
-                          <div
-                            onClick={
-                              shouldPlaceAbove
-                                ? () => handleClick(point.position)
-                                : undefined
-                            }
-                            className={`${
-                              shouldPlaceAbove
-                                ? 'cursor-pointer'
-                                : 'invisible cursor-default'
-                            } ${cardClass}`}
-                          >
-                            <img
-                              src={point.imageUrl || '/images/no_image.png'}
-                              className='w-40 h-24 object-cover rounded-md'
-                              alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
-                            />
-                            <p className='text-xs text-center pt-1 font-medium'>
-                              x: {point.position.x} – y: {point.position.y}
-                            </p>
-                          </div>
-                          {/* Middle icon */}
-                          <div className='flex items-center justify-center bg-gradient-to-br from-[#FF623B] to-[#CD2323] rounded-full p-1.5 my-1 shadow'>
-                            <Icon
-                              icon='mynaui:danger-triangle-solid'
-                              className='text-white'
-                              width={24}
-                              height={24}
-                            />
-                          </div>
-                          {/* Bottom card */}
-                          <div
-                            onClick={
-                              shouldPlaceAbove
-                                ? undefined
-                                : () => handleClick(point.position)
-                            }
-                            className={`${
-                              shouldPlaceAbove
-                                ? 'invisible cursor-default'
-                                : 'cursor-pointer'
-                            } ${cardClass}`}
-                          >
-                            <img
-                              src={point.imageUrl || '/images/no_image.png'}
-                              className='w-40 h-24 object-cover rounded-md'
-                              alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
-                            />
-                            <p className='text-xs text-center pt-1 font-medium'>
-                              x: {point.position.x} – y: {point.position.y}
-                            </p>
-                          </div>
+                          {/* Show image cards only if image exists */}                          {point.imageUrl ? (
+                            <>                              {/* Tooltip for image points - position based on card placement */}
+                              <div
+                                className={clsx(
+                                  'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                  'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
+                                  'min-w-max whitespace-nowrap z-30',
+                                  shouldPlaceAbove 
+                                    ? 'bottom-full mb-2' // If card is above, tooltip goes above the top card
+                                    : 'top-full mt-2', // If card is below, tooltip goes below the bottom card
+                                  isDark
+                                    ? 'bg-gray-900/95 text-blue-300 border border-blue-500/40'
+                                    : 'bg-white/95 text-blue-700 border border-blue-300',
+                                )}
+                              >
+                                ({point.position.x.toFixed(2)}, {point.position.y.toFixed(2)})
+                                {point.ultrasonic !== undefined && (
+                                  <span className={`ml-2 ${point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD ? 'text-red-500' : 'text-green-500'}`}>
+                                    {point.ultrasonic.toFixed(2)}cm
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Top card */}
+                              <div
+                                onClick={
+                                  shouldPlaceAbove
+                                    ? () => handleClick(point.position)
+                                    : undefined
+                                }
+                                className={`${
+                                  shouldPlaceAbove
+                                    ? 'cursor-pointer'
+                                    : 'invisible cursor-default'
+                                } ${cardClass}`}
+                              >
+                                <img
+                                  src={point.imageUrl}
+                                  className='w-40 h-24 object-cover rounded-md'
+                                  alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
+                                />
+                              </div>                              {/* Middle icon - show danger warning if obstacle detected */}
+                              <div className={`flex items-center justify-center rounded-full p-1.5 my-1 shadow ${
+                                point.ultrasonic !== undefined && point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD
+                                  ? 'bg-gradient-to-br from-red-600 to-red-500 animate-pulse'
+                                  : 'bg-gradient-to-br from-[#FF623B] to-[#CD2323]'
+                              }`}>
+                                <Icon
+                                  icon={
+                                    point.ultrasonic !== undefined && point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD
+                                      ? 'material-symbols:warning'
+                                      : 'mynaui:danger-triangle-solid'
+                                  }
+                                  className='text-white'
+                                  width={24}
+                                  height={24}
+                                />
+                              </div>
+                              {/* Bottom card */}
+                              <div
+                                onClick={
+                                  shouldPlaceAbove
+                                    ? undefined
+                                    : () => handleClick(point.position)
+                                }
+                                className={`${
+                                  shouldPlaceAbove
+                                    ? 'invisible cursor-default'
+                                    : 'cursor-pointer'
+                                } ${cardClass}`}
+                              >
+                                <img
+                                  src={point.imageUrl}
+                                  className='w-40 h-24 object-cover rounded-md'
+                                  alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* Simple marker for points without images */}
+                              {/* Show danger marker if ultrasonic detects obstacle */}
+                              {point.ultrasonic !== undefined && point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD ? (
+                                <div className='relative flex flex-col items-center'>
+                                  {/* Danger tooltip */}
+                                  <div
+                                    className={clsx(
+                                      'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                      'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
+                                      'min-w-max whitespace-nowrap z-30',
+                                      isDark
+                                        ? 'bg-red-900/95 text-red-300 border border-red-500/40'
+                                        : 'bg-red-50/95 text-red-700 border border-red-300',
+                                    )}
+                                  >
+                                    ⚠️ OBSTACLE ({point.ultrasonic.toFixed(1)}cm)
+                                  </div>
+                                  {/* Danger marker */}
+                                  <div
+                                    className='rounded-full w-8 h-8 bg-gradient-to-br from-red-600 to-red-500 cursor-pointer shadow-lg animate-pulse flex items-center justify-center'
+                                    onClick={() => handleClick(point.position)}
+                                    title={`Obstacle detected: ${point.ultrasonic.toFixed(1)}cm at (${point.position.x}, ${point.position.y})`}
+                                  >
+                                    <Icon
+                                      icon='material-symbols:warning'
+                                      className='text-white'
+                                      width={16}
+                                      height={16}
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className='relative flex flex-col items-center'>
+                                  {/* Regular tooltip for points with ultrasonic but no danger */}
+                                  {point.ultrasonic !== undefined && (
+                                    <div
+                                      className={clsx(
+                                        'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                        'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
+                                        'min-w-max whitespace-nowrap z-30',
+                                        isDark
+                                          ? 'bg-gray-900/95 text-blue-300 border border-blue-500/40'
+                                          : 'bg-white/95 text-blue-700 border border-blue-300',
+                                      )}
+                                    >
+                                      🔊 {point.ultrasonic.toFixed(1)}cm - ({point.position.x.toFixed(2)}, {point.position.y.toFixed(2)})
+                                    </div>
+                                  )}
+                                  {/* Regular marker */}
+                                  <div
+                                    className='rounded-full w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-400 cursor-pointer shadow-lg'
+                                    onClick={() => handleClick(point.position)}
+                                    title={`Position: (${point.position.x}, ${point.position.y})${point.ultrasonic !== undefined ? ` - Distance: ${point.ultrasonic.toFixed(1)}cm` : ''}`}
+                                  />
+                                </div>
+                              )}
+                            </>
+                          )}
                         </>
                       </div>
                     );

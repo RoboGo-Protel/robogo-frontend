@@ -87,6 +87,13 @@ interface ElectronAPI {
     }>;
     error?: string;
   }>;
+
+  // Read file content API
+  readFileContent?: (filePath: string) => Promise<{
+    success: boolean;
+    content?: string;
+    error?: string;
+  }>;
 }
 
 interface SerialPortInfo {

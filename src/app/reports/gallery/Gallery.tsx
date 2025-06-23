@@ -207,14 +207,14 @@ export default function Gallery() {
             console.log(
               '📷 [GALLERY DEBUG] Metadata folder result:',
               metadataResult,
-            );
-
-            // Combine results from both locations
+            ); // Combine results from both locations
             interface ElectronImage {
               fileName: string;
               filePath: string;
               dateCreated: string;
               size: number;
+              isDirectory?: boolean;
+              isJson?: boolean;
               stats?: {
                 mtime: Date;
                 ctime: Date;
@@ -223,32 +223,64 @@ export default function Gallery() {
             }
 
             let allImages: ElectronImage[] = [];
-
             if (viewMode === 'original') {
               // Original view: Show original images only
               // Add images from originals subfolder
               if (result.success && result.images) {
+                // Filter out folders and keep only image files
+                const imageFiles = (result.images as ElectronImage[]).filter(
+                  (img) => {
+                    const isDirectory = img.isDirectory || false;
+                    const isImageFile = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                      img.fileName,
+                    );
+                    const isNotFolder = ![
+                      'originals',
+                      'metadata',
+                      'json',
+                    ].includes(img.fileName);
+                    return !isDirectory && isImageFile && isNotFolder;
+                  },
+                );
+
                 console.log(
                   '📷 [GALLERY LOCAL] Found',
                   result.images.length,
-                  'images in originals folder',
+                  'items in originals folder,',
+                  imageFiles.length,
+                  'are image files',
                 );
-                allImages = [...result.images];
+                allImages = [...imageFiles];
               }
 
               // Add legacy images from main gallery folder (exclude subfolders and metadata files)
               if (legacyResult.success && legacyResult.images) {
-                // Filter for original images only (no metadata or from subfolders)
-                const legacyOriginalImages = legacyResult.images.filter(
-                  (img) => {
-                    const isInRoot =
-                      !img.filePath.includes('\\originals\\') &&
-                      !img.filePath.includes('\\metadata\\') &&
-                      !img.filePath.includes('\\json\\');
-                    const isNotMetadata = !img.fileName.includes('_metadata');
-                    return isInRoot && isNotMetadata;
-                  },
-                );
+                // Filter for original images only (no metadata or from subfolders, exclude directories)
+                const legacyOriginalImages = (
+                  legacyResult.images as ElectronImage[]
+                ).filter((img) => {
+                  const isDirectory = img.isDirectory || false;
+                  const isInRoot =
+                    !img.filePath.includes('\\originals\\') &&
+                    !img.filePath.includes('\\metadata\\') &&
+                    !img.filePath.includes('\\json\\');
+                  const isNotMetadata = !img.fileName.includes('_metadata');
+                  const isImageFile = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                    img.fileName,
+                  );
+                  const isNotFolder = ![
+                    'originals',
+                    'metadata',
+                    'json',
+                  ].includes(img.fileName);
+                  return (
+                    !isDirectory &&
+                    isInRoot &&
+                    isNotMetadata &&
+                    isImageFile &&
+                    isNotFolder
+                  );
+                });
 
                 console.log(
                   '📷 [GALLERY LOCAL] Found',
@@ -261,27 +293,60 @@ export default function Gallery() {
               // Metadata view: Show metadata images only
               // Add images from metadata subfolder
               if (metadataResult.success && metadataResult.images) {
+                // Filter out folders and keep only image files
+                const imageFiles = (
+                  metadataResult.images as ElectronImage[]
+                ).filter((img) => {
+                  const isDirectory = img.isDirectory || false;
+                  const isImageFile = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                    img.fileName,
+                  );
+                  const isNotFolder = ![
+                    'originals',
+                    'metadata',
+                    'json',
+                  ].includes(img.fileName);
+                  return !isDirectory && isImageFile && isNotFolder;
+                });
+
                 console.log(
                   '📷 [GALLERY LOCAL] Found',
                   metadataResult.images.length,
-                  'images in metadata folder',
+                  'items in metadata folder,',
+                  imageFiles.length,
+                  'are image files',
                 );
-                allImages = [...metadataResult.images];
+                allImages = [...imageFiles];
               }
 
               // Add legacy metadata images from main gallery folder
               if (legacyResult.success && legacyResult.images) {
-                // Filter for metadata images only
-                const legacyMetadataImages = legacyResult.images.filter(
-                  (img) => {
-                    const isInRoot =
-                      !img.filePath.includes('\\originals\\') &&
-                      !img.filePath.includes('\\metadata\\') &&
-                      !img.filePath.includes('\\json\\');
-                    const isMetadata = img.fileName.includes('_metadata');
-                    return isInRoot && isMetadata;
-                  },
-                );
+                // Filter for metadata images only (exclude directories and folder names)
+                const legacyMetadataImages = (
+                  legacyResult.images as ElectronImage[]
+                ).filter((img) => {
+                  const isDirectory = img.isDirectory || false;
+                  const isInRoot =
+                    !img.filePath.includes('\\originals\\') &&
+                    !img.filePath.includes('\\metadata\\') &&
+                    !img.filePath.includes('\\json\\');
+                  const isMetadata = img.fileName.includes('_metadata');
+                  const isImageFile = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                    img.fileName,
+                  );
+                  const isNotFolder = ![
+                    'originals',
+                    'metadata',
+                    'json',
+                  ].includes(img.fileName);
+                  return (
+                    !isDirectory &&
+                    isInRoot &&
+                    isMetadata &&
+                    isImageFile &&
+                    isNotFolder
+                  );
+                });
 
                 console.log(
                   '📷 [GALLERY LOCAL] Found',

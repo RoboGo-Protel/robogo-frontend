@@ -1,6 +1,9 @@
-"use client";
-import { Icon } from "@iconify/react";
-import { useDarkMode } from "@/context/DarkModeContext";
+/* eslint-disable @next/next/no-img-element */
+'use client';
+import { useState } from 'react';
+import { Icon } from '@iconify/react';
+import PhotoDetailsWithPaths from '@/components/PhotoDetailsWithPaths';
+import { useDarkMode } from '@/context/DarkModeContext';
 
 interface Position {
   x: number;
@@ -16,6 +19,9 @@ interface ReportData {
   heading: number;
   status: string;
   createdAt: string;
+  imageFileName?: string; // Store original imageFileName from JSON
+  hasImage?: boolean; // Flag to indicate if image exists in gallery
+  imagePath?: string; // Full path to image file if exists
 }
 
 interface PathsTableProps {
@@ -23,6 +29,27 @@ interface PathsTableProps {
 }
 
 export default function PathsTable({ reports }: PathsTableProps) {
+  const [selectedPhoto, setSelectedPhoto] = useState<null | {
+    id: string;
+    src: string;
+    alt: string;
+    obstacle: boolean;
+    date: string;
+    fileName: string;
+    createdAt: string;
+    metadata: {
+      ultrasonic: number; // Required field for PhotoDetailsWithPaths
+      heading?: number;
+      position?: {
+        positionX?: number;
+        positionY?: number;
+      };
+      velocity?: number; // Map speed to velocity
+      distanceTraveled?: number;
+      direction?: string; // Map status to direction
+    };
+  }>(null);
+
   const { isDark } = useDarkMode();
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -90,7 +117,9 @@ export default function PathsTable({ reports }: PathsTableProps) {
         className={`overflow-x-auto rounded-xl shadow-sm ${
           isDark ? 'bg-[#112133]' : 'bg-white'
         }`}
-      >        <table
+      >
+        {' '}
+        <table
           className={`min-w-[700px] w-full text-sm text-left ${
             isDark ? 'text-gray-100' : 'text-gray-900'
           }`}
@@ -100,6 +129,7 @@ export default function PathsTable({ reports }: PathsTableProps) {
               isDark ? 'bg-blue-400/10' : 'bg-blue-400/10'
             }`}
           >
+            {' '}
             <tr>
               <th className='py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap'>
                 No
@@ -118,6 +148,9 @@ export default function PathsTable({ reports }: PathsTableProps) {
               </th>
               <th className='py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap'>
                 Direction
+              </th>
+              <th className='py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap'>
+                Image
               </th>
               <th className='py-3 px-4 text-xs md:text-sm font-semibold uppercase tracking-wider whitespace-nowrap'>
                 Status
@@ -146,9 +179,8 @@ export default function PathsTable({ reports }: PathsTableProps) {
                 <td className='py-3 px-4 whitespace-nowrap'>{report.speed}</td>
                 <td className='py-3 px-4 whitespace-nowrap'>
                   {report.heading}
-                </td>
+                </td>{' '}
                 <td className='py-3 px-4 whitespace-nowrap'>
-                  {' '}
                   <div className='flex items-center gap-2'>
                     <Icon
                       icon='material-symbols:north-rounded'
@@ -163,13 +195,66 @@ export default function PathsTable({ reports }: PathsTableProps) {
                   </div>
                 </td>
                 <td className='py-3 px-4 whitespace-nowrap'>
+                  {report.hasImage && report.imagePath ? (
+                    <div
+                      className={`h-10 w-16 rounded cursor-pointer ${isDark ? 'bg-[#23262F]' : 'bg-gray-200'}`}
+                      onClick={() =>
+                        setSelectedPhoto({
+                          id: report.id.toString(),
+                          src: `file://${report.imagePath}`,
+                          alt: report.imageFileName || 'Path Image',
+                          obstacle: false,
+                          date: report.timestamp || report.createdAt || '',
+                          fileName: report.imageFileName || `path-${report.id}`,
+                          createdAt: report.createdAt || '',
+                          metadata: {
+                            ultrasonic: 0, // Default value since this is for Paths data
+                            heading: report.heading,
+                            position: {
+                              positionX: report.position.x,
+                              positionY: report.position.y,
+                            },
+                            velocity: report.speed,
+                            direction: report.status,
+                          },
+                        })
+                      }
+                    >
+                      <img
+                        src={`file://${report.imagePath}`}
+                        alt='Path Report'
+                        className='h-10 w-16 rounded object-cover'
+                        onError={(e) => {
+                          console.warn(
+                            '🛤️ [TABLE] Failed to load image:',
+                            report.imagePath,
+                          );
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className={`h-10 w-16 rounded flex items-center justify-center ${isDark ? 'bg-[#23262F] text-gray-500' : 'bg-gray-200 text-gray-400'}`}
+                    >
+                      <Icon icon='mdi:image-off' className='w-4 h-4' />
+                    </div>
+                  )}
+                </td>
+                <td className='py-3 px-4 whitespace-nowrap'>
                   {getStatusBadge(report.status)}
                 </td>
               </tr>
             ))}
-          </tbody>
+          </tbody>{' '}
         </table>
       </div>
+      {selectedPhoto && (
+        <PhotoDetailsWithPaths
+          details={selectedPhoto}
+          onClose={() => setSelectedPhoto(null)}
+        />
+      )}
     </>
   );
 }

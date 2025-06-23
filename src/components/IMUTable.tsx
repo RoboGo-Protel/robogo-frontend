@@ -1,6 +1,34 @@
-"use client";
+/* eslint-disable @next/next/no-img-element */
+'use client';
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import PhotoDetailsWithPaths from '@/components/PhotoDetailsWithPaths';
 import { useDarkMode } from '@/context/DarkModeContext';
+
+interface Metadata {
+  heading: number;
+  ultrasonic: number;
+  accelerationMagnitude?: number;
+  direction?: string;
+  distanceTraveled?: number;
+  linearAcceleration?: number;
+  velocity?: number;
+  velocityX?: number;
+  velocityY?: number;
+  magnetometer?: {
+    magnetometerX: number;
+    magnetometerY: number;
+    magnetometerZ: number;
+  };
+  position: {
+    positionX?: number;
+    positionY?: number;
+  };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
+  rotationRate?: number;
+}
 
 interface IMULogs {
   id: string;
@@ -37,6 +65,9 @@ interface IMULogs {
   };
   status: string;
   createdAt: string;
+  imageFileName?: string; // Store original imageFileName from JSON
+  hasImage?: boolean; // Flag to indicate if image exists in gallery
+  imagePath?: string; // Full path to image file if exists
 }
 
 interface IMUTableProps {
@@ -44,6 +75,17 @@ interface IMUTableProps {
 }
 
 export default function IMUTable({ reports }: IMUTableProps) {
+  const [selectedPhoto, setSelectedPhoto] = useState<null | {
+    id: string;
+    src: string;
+    alt: string;
+    obstacle: boolean;
+    date: string;
+    fileName: string;
+    createdAt: string;
+    metadata: Metadata;
+  }>(null);
+
   const { isDark } = useDarkMode();
 
   const convertDegreesToDirection = (degrees: number) => {
@@ -71,48 +113,6 @@ export default function IMUTable({ reports }: IMUTableProps) {
     return directions[index];
   };
 
-  const getNotesBadge = (level: string) => {
-    const baseStyle =
-      'text-white text-sm py-2 px-3 rounded-full inline-flex items-center gap-x-1';
-
-    const iconStyle = 'w-4 h-4 shrink-0';
-
-    switch (level) {
-      case 'IMU Calibrated':
-        return (
-          <span
-            className={`bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] ${baseStyle}`}
-          >
-            <Icon icon='tabler:rotate-2' className={iconStyle} />
-            {level}
-          </span>
-        );
-      case 'Turn Detected':
-        return (
-          <span
-            className={`bg-gradient-to-br from-[#FFC107] to-[#FF9800] ${baseStyle}`}
-          >
-            <Icon
-              icon='f7:arrow-uturn-right-circle-fill'
-              className={iconStyle}
-            />
-            {level}
-          </span>
-        );
-      case 'Normal':
-        return (
-          <span
-            className={`bg-gradient-to-br from-blue-500 to-blue-400 ${baseStyle}`}
-          >
-            <Icon icon='material-symbols:check-circle' className={iconStyle} />
-            {level}
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
-
   const getTimeOnlyWithoutDate = (dateString: string) => {
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = {
@@ -133,6 +133,7 @@ export default function IMUTable({ reports }: IMUTableProps) {
         <table
           className={`w-full border-collapse text-sm md:text-sm md:table-fixed min-w-[1000px] ${isDark ? 'text-white' : 'text-black'}`}
         >
+          {' '}
           <colgroup>
             <col className='w-10' />
             <col className='w-24' />
@@ -146,10 +147,13 @@ export default function IMUTable({ reports }: IMUTableProps) {
             <col className='w-16' />
             <col className='w-16' />
             <col className='w-16' />
+            <col className='w-16' />
+            <col className='w-16' />
             <col className='w-24' />
             <col className='w-24' />
-            <col className='w-28' />
-          </colgroup>{' '}
+            <col className='w-24' />
+            <col className='w-32' />
+          </colgroup>
           <thead>
             <tr
               className={`${isDark ? 'bg-[#1a3350] border-[#223c5c]' : 'bg-blue-400/10 border-gray-200'} border-b`}
@@ -177,12 +181,18 @@ export default function IMUTable({ reports }: IMUTableProps) {
                 className={`py-3 px-2 text-center font-medium uppercase tracking-wider ${isDark ? 'text-white' : 'text-black'}`}
               >
                 Orientation (rad/s²)
-              </th>
+              </th>{' '}
               <th
                 colSpan={3}
                 className={`py-3 px-2 text-center font-medium uppercase tracking-wider ${isDark ? 'text-white' : 'text-black'}`}
               >
                 Magnetometer (µT)
+              </th>
+              <th
+                colSpan={3}
+                className={`py-3 px-2 text-center font-medium uppercase tracking-wider ${isDark ? 'text-white' : 'text-black'}`}
+              >
+                Motion Data
               </th>
               <th
                 rowSpan={2}
@@ -200,7 +210,7 @@ export default function IMUTable({ reports }: IMUTableProps) {
                 rowSpan={2}
                 className={`py-3 px-2 text-left font-medium uppercase align-top ${isDark ? 'text-white' : 'text-black'}`}
               >
-                Notes
+                Image
               </th>
               <th
                 rowSpan={2}
@@ -208,7 +218,7 @@ export default function IMUTable({ reports }: IMUTableProps) {
               >
                 Action
               </th>
-            </tr>{' '}
+            </tr>
             <tr
               className={`${isDark ? 'bg-[#1a3350] border-[#223c5c]' : 'bg-blue-400/10 border-gray-200'} border-b`}
             >
@@ -251,11 +261,26 @@ export default function IMUTable({ reports }: IMUTableProps) {
                 className={`py-2 px-2 text-center font-medium uppercase ${isDark ? 'text-white' : 'text-black'}`}
               >
                 Y
-              </th>
+              </th>{' '}
               <th
                 className={`py-2 px-2 text-center font-medium uppercase ${isDark ? 'text-white' : 'text-black'}`}
               >
                 Z
+              </th>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? 'text-white' : 'text-black'}`}
+              >
+                Accel Mag
+              </th>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? 'text-white' : 'text-black'}`}
+              >
+                Rotation Rate
+              </th>
+              <th
+                className={`py-2 px-2 text-center font-medium uppercase ${isDark ? 'text-white' : 'text-black'}`}
+              >
+                Linear Accel
               </th>
             </tr>
           </thead>
@@ -269,7 +294,6 @@ export default function IMUTable({ reports }: IMUTableProps) {
                 <td className='py-3 px-2'>
                   {getTimeOnlyWithoutDate(report.createdAt)}
                 </td>
-
                 <td className='py-3 px-2 text-center'>
                   {report.velocity?.velocity?.toFixed(2) ?? '0.00'}
                 </td>
@@ -279,7 +303,6 @@ export default function IMUTable({ reports }: IMUTableProps) {
                 <td className='py-3 px-2 text-center'>
                   {report.velocity?.velocityY?.toFixed(2) ?? '0.00'}
                 </td>
-
                 <td className='py-3 px-2 text-center'>
                   {report.pitch?.toFixed(2) ?? '0.00'}
                 </td>
@@ -289,22 +312,28 @@ export default function IMUTable({ reports }: IMUTableProps) {
                 <td className='py-3 px-2 text-center'>
                   {report.yaw?.toFixed(2) ?? '0.00'}
                 </td>
-
                 <td className='py-3 px-2 text-center'>
                   {report.magnetometer?.magnetometerX?.toFixed(2) ?? '0.00'}
                 </td>
                 <td className='py-3 px-2 text-center'>
                   {report.magnetometer?.magnetometerY?.toFixed(2) ?? '0.00'}
-                </td>
+                </td>{' '}
                 <td className='py-3 px-2 text-center'>
                   {report.magnetometer?.magnetometerZ?.toFixed(2) ?? '0.00'}
                 </td>
-
+                <td className='py-3 px-2 text-center'>
+                  {report.accelerationMagnitude?.toFixed(2) ?? '0.00'}
+                </td>
+                <td className='py-3 px-2 text-center'>
+                  {report.rotationRate?.toFixed(2) ?? '0.00'}
+                </td>
+                <td className='py-3 px-2 text-center'>
+                  {report.linearAcceleration?.toFixed(2) ?? '0.00'}
+                </td>
                 <td className='py-3 px-2 text-center'>
                   {report.heading.toFixed(2)}
                 </td>
                 <td className='py-3 px-2'>
-                  {' '}
                   <div className='flex items-center gap-x-2 min-w-0'>
                     <Icon
                       icon='material-symbols:north-rounded'
@@ -320,9 +349,60 @@ export default function IMUTable({ reports }: IMUTableProps) {
                     </span>
                   </div>
                 </td>
-
-                <td className='py-3 px-2'>{getNotesBadge(report.status)}</td>
-
+                <td className='py-3 px-2'>
+                  {report.hasImage && report.imagePath ? (
+                    <div
+                      className={`h-10 w-16 rounded cursor-pointer ${isDark ? 'bg-[#23262F]' : 'bg-gray-200'}`}
+                      onClick={() =>
+                        setSelectedPhoto({
+                          id: report.id.toString(),
+                          src: `file://${report.imagePath}`,
+                          alt: report.imageFileName || 'IMU Image',
+                          obstacle: false,
+                          date: report.createdAt || '',
+                          fileName: report.imageFileName || `imu-${report.id}`,
+                          createdAt: report.createdAt || '',
+                          metadata: {
+                            heading: report.heading,
+                            ultrasonic: report.ultrasonic,
+                            accelerationMagnitude: report.accelerationMagnitude,
+                            direction: report.direction,
+                            distanceTraveled: report.distanceTraveled,
+                            linearAcceleration: report.linearAcceleration,
+                            velocity: report.velocity?.velocity,
+                            velocityX: report.velocity?.velocityX,
+                            velocityY: report.velocity?.velocityY,
+                            magnetometer: report.magnetometer,
+                            position: report.position,
+                            pitch: report.pitch,
+                            roll: report.roll,
+                            yaw: report.yaw,
+                            rotationRate: report.rotationRate,
+                          },
+                        })
+                      }
+                    >
+                      <img
+                        src={`file://${report.imagePath}`}
+                        alt='IMU Report'
+                        className='h-10 w-16 rounded object-cover'
+                        onError={(e) => {
+                          console.warn(
+                            '📊 [IMU TABLE] Failed to load image:',
+                            report.imagePath,
+                          );
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className={`h-10 w-16 rounded flex items-center justify-center ${isDark ? 'bg-[#23262F] text-gray-500' : 'bg-gray-200 text-gray-400'}`}
+                    >
+                      <Icon icon='mdi:image-off' className='w-4 h-4' />
+                    </div>
+                  )}
+                </td>
                 <td className='py-3 px-2'>
                   <div className='flex flex-row flex-nowrap items-center space-x-2'>
                     <button
@@ -363,13 +443,12 @@ export default function IMUTable({ reports }: IMUTableProps) {
           </tbody>
         </table>
       </div>
-
-      {/* {selectedPhoto && (
+      {selectedPhoto && (
         <PhotoDetailsWithPaths
           details={selectedPhoto}
           onClose={() => setSelectedPhoto(null)}
         />
-      )} */}
+      )}
     </>
   );
 }

@@ -11,7 +11,7 @@ interface ReportData {
   sessionId?: number;
   distance: number;
   imageId?: string;
-  alertLevel: "High" | "Medium" | "Safe" | "Unknown";
+  alertLevel: 'High' | 'Medium' | 'Safe' | 'Unknown';
   image?: string;
   alt?: string;
   obstacles?: boolean;
@@ -19,6 +19,9 @@ interface ReportData {
   dateTime?: string;
   createdAt: string;
   metadata: Metadata;
+  imageFileName?: string; // Store original imageFileName from JSON
+  hasImage?: boolean; // Flag to indicate if image exists in gallery
+  imagePath?: string; // Full path to image file if exists
 }
 
 interface UltrasonicSensorTableProps {
@@ -53,7 +56,6 @@ interface Metadata {
 export default function UltrasonicSensorTable({
   reports,
 }: UltrasonicSensorTableProps) {
-  
   const [selectedPhoto, setSelectedPhoto] = useState<null | {
     id: string;
     src: string;
@@ -64,18 +66,6 @@ export default function UltrasonicSensorTable({
     createdAt: string;
     metadata: Metadata;
   }>(null);
-
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
 
   const getAlertBadge = (level: string) => {
     switch (level) {
@@ -129,11 +119,11 @@ export default function UltrasonicSensorTable({
           isDark ? 'bg-[#112133]' : 'bg-white'
         }`}
       >
+        {' '}
         <table
           className={`min-w-[800px] w-full border-collapse ${isDark ? 'text-white' : 'text-black'}`}
         >
           <thead>
-            {' '}
             <tr
               className={`${isDark ? 'bg-[#1a3350] border-[#223c5c]' : 'bg-blue-400/10 border-gray-200'} border-b`}
             >
@@ -189,7 +179,7 @@ export default function UltrasonicSensorTable({
                   className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
                 >
                   {report.distance}
-                </td>
+                </td>{' '}
                 <td
                   className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
                 >
@@ -198,27 +188,41 @@ export default function UltrasonicSensorTable({
                 <td
                   className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
                 >
-                  {report.imageId && (
+                  {report.hasImage && report.imagePath ? (
                     <div
                       className={`h-10 w-16 rounded cursor-pointer ${isDark ? 'bg-[#23262F]' : 'bg-gray-200'}`}
                       onClick={() =>
                         setSelectedPhoto({
                           id: report.id.toString(),
-                          src: report.imageId || '',
-                          alt: report.alt || 'Image',
+                          src: `file://${report.imagePath}`,
+                          alt: report.imageFileName || 'Ultrasonic Image',
                           obstacle: report.obstacles || false,
-                          date: report.dateTime || '',
-                          fileName: report.fileName || '',
+                          date: report.dateTime || report.createdAt || '',
+                          fileName:
+                            report.imageFileName || `ultrasonic-${report.id}`,
                           createdAt: report.createdAt || '',
                           metadata: report.metadata,
                         })
                       }
                     >
                       <img
-                        src={report.imageId ?? ''}
-                        alt='Report'
+                        src={`file://${report.imagePath}`}
+                        alt='Ultrasonic Report'
                         className='h-10 w-16 rounded object-cover'
+                        onError={(e) => {
+                          console.warn(
+                            '🔊 [TABLE] Failed to load image:',
+                            report.imagePath,
+                          );
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
+                    </div>
+                  ) : (
+                    <div
+                      className={`h-10 w-16 rounded flex items-center justify-center ${isDark ? 'bg-[#23262F] text-gray-500' : 'bg-gray-200 text-gray-400'}`}
+                    >
+                      <Icon icon='mdi:image-off' className='w-4 h-4' />
                     </div>
                   )}
                 </td>
