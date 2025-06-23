@@ -15,6 +15,22 @@ export function useUser() {
   const fetchUser = async () => {
     try {
       setLoading(true);
+      // Cek mode dari Electron config
+      let localMode: boolean | undefined = undefined;
+      if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.getConfig) {
+        try {
+          localMode = await window.electronAPI.getConfig('localMode');
+        } catch {
+          // fallback: anggap online jika gagal
+          localMode = undefined;
+        }
+      }
+      if (localMode === true) {
+        // Local/Offline mode: return Guest user
+        setUser({ id: 'guest', email: '', name: 'Guest' });
+        setError(null);
+        return { id: 'guest', email: '', name: 'Guest' };
+      }
       const response = await fetch('/api/auth/user');
       if (response.ok) {
         const data = await response.json();
@@ -26,6 +42,7 @@ export function useUser() {
     } catch (err) {
       console.error('Error fetching user data:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
+      setUser(null);
       return null;
     } finally {
       setLoading(false);

@@ -89,7 +89,7 @@ export default function ProfileClient() {
       }}
     >
       {' '}
-      <div className='max-w-4xl mx-auto px-4 py-8'>
+      <div className='w-full p-8'>
         {/* Header */}
         <div className='mb-8'>
           <div className='flex items-center space-x-3 mb-4'>

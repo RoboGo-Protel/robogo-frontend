@@ -14,6 +14,8 @@ import { database } from '../firebase/firebase';
 import { ref, onValue } from 'firebase/database';
 import { useUserConfig } from '@/hooks/useUserConfig';
 import { truncateProfileName } from '@/utils/nameUtils';
+import { useLocalMode } from '@/context/LocalModeContext';
+import { ClipLoader } from 'react-spinners';
 
 export default function TopNavbar() {
   const { isDark, toggleDark } = useDarkMode();
@@ -21,9 +23,7 @@ export default function TopNavbar() {
   const { showToast } = useToast();
   const { data: user } = useMeQuery();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Device selector state
   const [deviceSelectorOpen, setDeviceSelectorOpen] = useState(false);
@@ -34,10 +34,53 @@ export default function TopNavbar() {
     updateSelectedDevice,
     loading: deviceLoading,
   } = useUserConfig();
-
-  const [signalStatus, setSignalStatus] = useState<string>('-');
   const [rssiValue, setRssiValue] = useState<number | null>(null);
-  const [currentSession, setCurrentSession] = useState<number | null>(null);
+  const [currentSession, setCurrentSession] = useState<number | null>(null); // ESP32 Connection State
+  const {
+    isConnected,
+    connectToSerial,
+    disconnectSerial,
+    connectedPort,
+    injectTestData,
+    localData,
+  } = useLocalMode();
+  // Test data injection function - now uses LocalModeContext
+  const handleInjectTestData = () => {
+    if (!isElectron) {
+      showToast(
+        'Test data feature is only available in Electron app.',
+        'error',
+      );
+      return;
+    }
+
+    try {
+      injectTestData();
+      showToast('Test data injected!', 'success');
+    } catch (error) {
+      console.error('Error injecting test data:', error);
+      showToast('Failed to inject test data', 'error');
+    }
+  };
+
+  // Debug: Log connection state changes
+  useEffect(() => {
+    console.log(
+      `[TopNavbar] Connection state changed - isConnected: ${isConnected}, connectedPort: ${connectedPort}`,
+    );
+  }, [isConnected, connectedPort]);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [availablePorts, setAvailablePorts] = useState<
+    {
+      path: string;
+      manufacturer: string;
+      vendorId?: string;
+      productId?: string;
+      serialNumber?: string;
+    }[]
+  >([]);
+  const [selectedPort, setSelectedPort] = useState<string>('');
+  const [isConnecting, setIsConnecting] = useState(false);
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -45,12 +88,6 @@ export default function TopNavbar() {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setDropdownOpen(false);
-      }
-      if (
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(event.target as Node)
-      ) {
-        setMobileMenuOpen(false);
       }
       if (
         deviceSelectorRef.current &&
@@ -68,7 +105,10 @@ export default function TopNavbar() {
       return;
     }
 
-    const sessionRef = ref(database, `users/${user.id}/${selectedDevice.id}/current_session`);
+    const sessionRef = ref(
+      database,
+      `users/${user.id}/${selectedDevice.id}/current_session`,
+    );
     const unsubscribe = onValue(sessionRef, (snapshot) => {
       const session = snapshot.val();
       const sessionNumber =
@@ -77,13 +117,146 @@ export default function TopNavbar() {
     });
     return () => unsubscribe();
   }, [user?.id, selectedDevice?.id]);
+
+  const handleLogout = async () => {
+    const res = await fetch('/api/auth/logout', { method: 'POST' });
+    if (res.ok) {
+      window.location.href = '/login';
+    } else {
+      alert('Logout failed');
+    }
+  };
+  const handleConfirmLogout = () => {
+    handleLogout();
+  };
+
+  // ESP32 Connection Functions
+  const getAvailablePorts = async () => {
+    if (!isElectron) {
+      showToast('This feature is only available in Electron app.', 'error');
+      return;
+    }
+
+    try {
+      const ports = await window.electronAPI!.getSerialPorts();
+      setAvailablePorts(ports);
+      if (ports.length === 0) {
+        // If no filtered ports found, try to get all ports
+        const allPorts = await window.electronAPI!.getAllSerialPorts();
+        if (allPorts.length > 0) {
+          setAvailablePorts(allPorts);
+          setShowConnectModal(true);
+          showToast(
+            `Auto-filter found no ESP32. Showing all ports (${allPorts.length} ports).`,
+            'error',
+          );
+        } else {
+          showToast(
+            'No serial ports detected. Make sure ESP32 is connected.',
+            'error',
+          );
+        }
+      } else {
+        setShowConnectModal(true);
+      }
+    } catch (error) {
+      console.error('Error getting serial ports:', error);
+      showToast('Failed to get serial ports list.', 'error');
+    }
+  };
+  const connectToSerialPort = async () => {
+    if (!selectedPort) {
+      showToast('Please select a port first.', 'error');
+      return;
+    }
+
+    try {
+      console.log(`[TopNavbar] Starting connection to ${selectedPort}`);
+      setIsConnecting(true);
+      const success = await connectToSerial(selectedPort);
+      console.log(`[TopNavbar] Connection result: ${success}`);
+
+      if (success) {
+        setShowConnectModal(false);
+        showToast(`Connected to ESP32 on ${selectedPort}`, 'success');
+        // Keep the selected port info for display, don't clear it
+        // setSelectedPort(''); // Remove this line
+
+        // Small delay to ensure state updates properly
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        console.log(
+          `[TopNavbar] After delay - isConnected: ${isConnected}, connectedPort: ${connectedPort}`,
+        );
+      } else {
+        showToast('Failed to connect to ESP32.', 'error');
+      }
+    } catch (error) {
+      console.error('Error connecting to serial port:', error);
+      showToast('Failed to connect to serial port.', 'error');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const disconnectFromSerialPort = async () => {
+    try {
+      await disconnectSerial();
+      setSelectedPort('');
+      showToast('Disconnected from ESP32', 'success');
+    } catch (error) {
+      console.error('Error disconnecting from serial port:', error);
+      showToast('Error disconnecting from serial port.', 'error');
+    }
+  };
+
+  const handleConnectClick = () => {
+    if (isConnected) {
+      disconnectFromSerialPort();
+    } else {
+      getAvailablePorts();
+    }
+  };
+
+  // Local Mode/Offline Mode detection
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+  const [localMode, setLocalMode] = useState<null | boolean>(null);
+
   useEffect(() => {
+    const checkLocalMode = async () => {
+      if (isElectron && window.electronAPI?.getConfig) {
+        const mode = await window.electronAPI.getConfig('localMode');
+        setLocalMode(typeof mode === 'boolean' ? mode : null);
+      } else {
+        setLocalMode(false);
+      }
+    };
+    checkLocalMode();
+  }, [isElectron]);
+  // Guest user object for Local/Offline Mode
+  const userGuest = localMode ? { name: 'Guest', id: 'guest' } : null;
+  const effectiveUser = user || userGuest; // Handle RSSI from local serial data in local mode
+  useEffect(() => {
+    if (localMode && localData?.rssi !== undefined) {
+      setRssiValue(localData.rssi);
+    } else if (localMode && (!localData || localData.rssi === undefined)) {
+      // In local mode but no RSSI data available
+      setRssiValue(null);
+    }
+  }, [localMode, localData]);
+  // Handle RSSI from Firebase in online mode
+  useEffect(() => {
+    // Skip Firebase RSSI in local mode
+    if (localMode) return;
+
     if (currentSession === null || !user?.id || !selectedDevice?.id) {
-      setSignalStatus('-');
       setRssiValue(null);
       return;
     }
-    const dbRef = ref(database, `users/${user.id}/${selectedDevice.id}/realtime_monitoring/${currentSession}`);
+
+    const dbRef = ref(
+      database,
+      `users/${user.id}/${selectedDevice.id}/realtime_monitoring/${currentSession}`,
+    );
     const unsubscribe = onValue(dbRef, (snapshot) => {
       const value = snapshot.val();
       let latestRssi: number | null = null;
@@ -105,34 +278,23 @@ export default function TopNavbar() {
         }
       }
       setRssiValue(latestRssi);
-      let status = '-';
-      if (typeof latestRssi === 'number') {
-        if (latestRssi >= -60) {
-          status = '🟢 Excellent';
-        } else if (latestRssi >= -70) {
-          status = '🟡 Good';
-        } else if (latestRssi >= -80) {
-          status = '🟠 Weak';
-        } else {
-          status = '🔴 Poor — High risk of disconnection';
-        }
+    });
+    return () => unsubscribe();
+  }, [currentSession, user?.id, selectedDevice?.id, localMode]);
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Synchronize selectedPort with connectedPort from context
+  useEffect(() => {
+    // Only sync when connection status changes, not when user manually selects
+    if (isConnected && connectedPort) {
+      // When connected, sync with the actual connected port
+      setSelectedPort(connectedPort);
+    } else if (!isConnected) {
+      // When disconnected, clear selection only if we're not in the middle of connecting
+      if (!isConnecting) {
+        setSelectedPort('');
       }
-      setSignalStatus(status);
-    });    return () => unsubscribe();
-  }, [currentSession, user?.id, selectedDevice?.id]);
-
-  const handleLogout = async () => {
-    const res = await fetch('/api/auth/logout', { method: 'POST' });
-    if (res.ok) {
-      window.location.href = '/login';
-    } else {
-      alert('Logout failed');
     }
-  };
-
-  const handleConfirmLogout = () => {
-    handleLogout();
-  };
+  }, [connectedPort, isConnected, isConnecting]);
 
   return (
     <>
@@ -189,80 +351,51 @@ export default function TopNavbar() {
           )}
           <p
             className={`font-bold text-2xl ${
-              isDark ? 'text-white' : 'text-black'
+              isDark
+                ? 'text-white'
+                : 'text-transparent bg-gradient-to-r from-blue-500 to-blue-400 bg-clip-text'
             }`}
           >
             RoboGo
           </p>
         </Link>{' '}
-        {/* Only show navigation menu if user is authenticated */}
-        {user && (
+        {/* Only show navigation menu if user is authenticated or in local mode */}
+        {effectiveUser && (
           <div className='absolute left-1/2 transform -translate-x-1/2'>
             <NavMenuDesktop />
           </div>
         )}{' '}
         <div className='flex items-center justify-end gap-3 relative'>
-          {/* Signal indicator - only show when user is authenticated */}
-          {user && (
+          {' '}
+          {/* Signal indicator - only show when user is authenticated or in local mode */}
+          {effectiveUser && (
             <div
-              className={`flex items-center gap-2.5 select-none px-3 py-2 min-h-12 min-w-12 rounded-xl border transition duration-200 ease-in-out ${
-                typeof rssiValue === 'number'
-                  ? rssiValue >= -60
-                    ? 'bg-green-100 border-green-400'
-                    : rssiValue >= -70
-                      ? 'bg-yellow-100 border-yellow-400'
-                      : rssiValue >= -80
-                        ? 'bg-orange-100 border-orange-400'
-                        : 'bg-red-100 border-red-400'
-                  : isDark
-                    ? 'bg-[#0F1B2D] border-blue-400/30'
-                    : 'bg-white border-blue-400'
-              } ${
-                isDark && typeof rssiValue !== 'number'
-                  ? 'text-white'
-                  : 'text-black'
+              className={`flex items-center gap-2 select-none px-3 py-2 min-h-12 min-w-12 rounded-xl border transition duration-200 ease-in-out ${
+                isDark
+                  ? 'bg-[#0F1B2D] border-blue-400/30 text-white'
+                  : 'bg-white border-gray-300 text-black'
               }`}
               title={rssiValue !== null ? `RSSI: ${rssiValue} dBm` : undefined}
             >
+              {' '}
               {typeof rssiValue === 'number' ? (
-                rssiValue >= -60 ? (
-                  <Icon
-                    icon='streamline:wifi-signal-full-remix'
-                    className='text-xl text-green-500'
-                  />
-                ) : rssiValue >= -70 ? (
-                  <Icon
-                    icon='streamline:wifi-signal-full-remix'
-                    className='text-xl text-yellow-400'
-                  />
-                ) : rssiValue >= -80 ? (
-                  <Icon
-                    icon='streamline:wifi-signal-full-remix'
-                    className='text-xl text-orange-400'
-                  />
-                ) : (
-                  <Icon
-                    icon='streamline-ultimate:wifi-alert-attention-bold'
-                    className='text-xl text-red-500'
-                  />
-                )
+                <Icon
+                  icon='streamline:wifi-signal-full-remix'
+                  className={`text-xl ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+                />
               ) : (
                 <Icon
                   icon='streamline:wifi-signal-full-remix'
                   className={`text-xl ${isDark ? 'text-gray-500' : 'text-gray-400'}`}
                 />
               )}
-              <span className='hidden sm:block'>
-                {signalStatus.replace(/^[^ ]+ /, '')}
-              </span>{' '}
               {rssiValue !== null && (
-                <span className='text-xs'>({rssiValue} dBm)</span>
+                <span className='text-xs hidden sm:block'>{rssiValue} dBm</span>
               )}
             </div>
           )}
-
           {/* Device Selector - only show when user is authenticated and has devices */}
-          {user && userDevices.length > 0 && (
+          {effectiveUser && userDevices.length > 0 && (
             <div ref={deviceSelectorRef} className='relative'>
               <div
                 onClick={() => setDeviceSelectorOpen(!deviceSelectorOpen)}
@@ -303,15 +436,15 @@ export default function TopNavbar() {
                 >
                   {userDevices.map((device) => (
                     <div
-                      key={device.id}                      onClick={async () => {
+                      key={device.id}
+                      onClick={async () => {
                         // Close dropdown immediately for better UX
                         setDeviceSelectorOpen(false);
-                        
+
                         // Reset signal status while switching
-                        setSignalStatus('-');
                         setRssiValue(null);
                         setCurrentSession(null);
-                        
+
                         try {
                           const success = await updateSelectedDevice(device.id);
                           if (success) {
@@ -319,12 +452,16 @@ export default function TopNavbar() {
                               `Device switched to ${device.deviceName}`,
                               'success',
                             );
-                            
+
                             // Force a small delay to ensure all state updates propagate
-                            await new Promise(resolve => setTimeout(resolve, 200));
-                            
+                            await new Promise((resolve) =>
+                              setTimeout(resolve, 200),
+                            );
+
                             // Manually trigger a re-render by updating a state that forces components to remount
-                            console.log(`Device switch completed for: ${device.deviceName}`);
+                            console.log(
+                              `Device switch completed for: ${device.deviceName}`,
+                            );
                           } else {
                             showToast('Failed to switch device', 'error');
                           }
@@ -377,9 +514,72 @@ export default function TopNavbar() {
                 </div>
               )}
             </div>
+          )}{' '}
+          {/* Connect Button - only show when user is authenticated or in local mode */}
+          {effectiveUser && isElectron && (
+            <>
+              {/* Test Data Button */}
+              <button
+                onClick={handleInjectTestData}
+                className={`flex items-center gap-2 px-4 py-2 min-h-12 rounded-xl border transition duration-200 ease-in-out ${
+                  isDark
+                    ? 'bg-[#0F1B2D] border-orange-400/30 text-orange-400 hover:bg-orange-400/10'
+                    : 'bg-white border-orange-400 text-orange-600 hover:bg-orange-50'
+                }`}
+                title='Inject test data for development'
+              >
+                <Icon icon='mdi:test-tube' className='text-lg' />
+                <span className='hidden md:block text-sm font-medium'>
+                  Test Data
+                </span>
+              </button>
+
+              {/* Connect Button */}
+              <button
+                onClick={handleConnectClick}
+                disabled={isConnecting}
+                className={`flex items-center gap-2 px-4 py-2 min-h-12 rounded-xl border transition duration-200 ease-in-out ${
+                  isConnected
+                    ? isDark
+                      ? 'bg-red-900/20 border-red-400/30 text-red-400 hover:bg-red-400/10'
+                      : 'bg-red-50 border-red-400 text-red-600 hover:bg-red-100'
+                    : isDark
+                      ? 'bg-[#0F1B2D] border-green-400/30 text-green-400 hover:bg-green-400/10'
+                      : 'bg-white border-green-400 text-green-600 hover:bg-green-50'
+                } ${isConnecting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={
+                  isConnected
+                    ? `Disconnect ESP32 from ${connectedPort || 'port'}`
+                    : 'Connect to ESP32'
+                }
+              >
+                {isConnecting ? (
+                  <ClipLoader size={16} color='currentColor' />
+                ) : (
+                  <Icon
+                    icon={
+                      isConnected
+                        ? 'material-symbols:cast-connected'
+                        : 'material-symbols:cast'
+                    }
+                    className='text-lg'
+                  />
+                )}{' '}
+                <span className='hidden md:block text-sm font-medium'>
+                  {isConnecting
+                    ? 'Connecting...'
+                    : isConnected
+                      ? `Disconnect ${connectedPort || 'ESP32'}`
+                      : 'Connect'}
+                </span>
+                {isConnected && (
+                  <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+                )}
+              </button>
+            </>
           )}
           {/* Profile/account dropdown hanya tampil di desktop (sm+) */}
-          {user ? (
+          {effectiveUser ? (
             <div
               ref={dropdownRef}
               className='w-fit sm:flex flex-col items-end relative hidden'
@@ -393,7 +593,7 @@ export default function TopNavbar() {
                 }`}
               >
                 <p className='md:block hidden'>
-                  {truncateProfileName(user?.name)}
+                  {truncateProfileName(effectiveUser?.name)}
                 </p>
                 <Icon icon='mage:user-square-fill' fontSize={24} />
               </div>
@@ -405,18 +605,19 @@ export default function TopNavbar() {
                       : 'border-gray-300 bg-white text-black'
                   } flex flex-col z-50`}
                 >
-                  {' '}
-                  <Link
-                    href='/profile'
-                    className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors duration-200 hover:${
-                      isDark ? 'bg-blue-400/30' : 'bg-blue-400/20'
-                    }`}
-                    onClick={() => setDropdownOpen(false)}
-                  >
-                    <Icon icon='mdi:account-circle-outline' width={20} />
-                    <span>Profile</span>
-                  </Link>{' '}
-                  {/* Profile Settings Link */}
+                  {/* Profile & Settings: hide Profile for Guest */}
+                  {user && !localMode && (
+                    <Link
+                      href='/profile'
+                      className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors duration-200 hover:${
+                        isDark ? 'bg-blue-400/30' : 'bg-blue-400/20'
+                      }`}
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      <Icon icon='mdi:account-circle-outline' width={20} />
+                      <span>Profile</span>
+                    </Link>
+                  )}
                   <Link
                     href='/settings'
                     className={`flex items-center gap-2 px-4 py-2 transition-colors duration-200 hover:${
@@ -427,7 +628,7 @@ export default function TopNavbar() {
                     <Icon icon='mdi:cog-outline' width={20} />
                     <span>Settings</span>
                   </Link>
-                  {/* Tombol darkmode dipindahkan ke dalam menu profile */}
+                  {/* Tombol darkmode tetap tampil */}
                   <button
                     onClick={() => {
                       toggleDark();
@@ -448,134 +649,348 @@ export default function TopNavbar() {
                     />
                     <span>{isDark ? 'Light' : 'Dark'}</span>
                   </button>
-                  <button
-                    onClick={() => {
-                      setIsPopUpLogout(true);
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-b-lg transition-colors duration-200 w-full text-left ${
-                      isDark
-                        ? 'hover:bg-[#fb2c36]/30 text-red-400'
-                        : 'hover:bg-[#fb2c36]/20 text-red-600'
-                    }`}
-                  >
-                    <Icon icon='mdi:logout' width={20} />
-                    <span>Logout</span>
-                  </button>
+                  {/* Logout hanya jika user login */}
+                  {user && !localMode && (
+                    <button
+                      onClick={() => {
+                        setIsPopUpLogout(true);
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-b-lg transition-colors duration-200 w-full text-left ${
+                        isDark
+                          ? 'hover:bg-[#fb2c36]/30 text-red-400'
+                          : 'hover:bg-[#fb2c36]/20 text-red-600'
+                      }`}
+                    >
+                      <Icon icon='mdi:logout' width={20} />
+                      <span>Logout</span>
+                    </button>
+                  )}
                 </div>
               )}{' '}
             </div>
-          ) : (
-            <div className='flex items-center gap-2'>
-              {/* Mobile: Menu button with dropdown */}
-              <div className='relative sm:hidden' ref={mobileMenuRef}>
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className={`flex items-center justify-center w-12 h-12 rounded-xl transition duration-200 ease-in-out ${
-                    isDark
-                      ? 'bg-white/10 hover:bg-white/20 text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                  aria-label='Menu'
-                >
-                  <Icon
-                    icon={
-                      mobileMenuOpen
-                        ? 'solar:close-circle-bold'
-                        : 'solar:hamburger-menu-bold'
-                    }
-                    fontSize={20}
-                  />
-                </button>
+          ) : null}
+        </div>
+        {/* Mobile: Menu button with dropdown */}
+        <div className='relative sm:hidden'>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className={`flex items-center justify-center w-12 h-12 rounded-xl transition duration-200 ease-in-out ${
+              isDark
+                ? 'bg-white/10 hover:bg-white/20 text-white'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            }`}
+            aria-label='Menu'
+          >
+            <Icon
+              icon={
+                mobileMenuOpen
+                  ? 'solar:close-circle-bold'
+                  : 'solar:hamburger-menu-bold'
+              }
+              fontSize={20}
+            />
+          </button>
 
-                {mobileMenuOpen && (
-                  <div
-                    className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-lg border ${
-                      isDark
-                        ? 'border-gray-700 bg-[#112133] text-white'
-                        : 'border-gray-300 bg-white text-black'
-                    } flex flex-col z-50 overflow-hidden`}
+          {mobileMenuOpen && (
+            <div
+              className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-lg border ${
+                isDark
+                  ? 'border-gray-700 bg-[#112133] text-white'
+                  : 'border-gray-300 bg-white text-black'
+              } flex flex-col z-50 overflow-hidden`}
+            >
+              {user && !localMode ? (
+                <>
+                  <Link
+                    href='/login'
+                    className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
+                      isDark ? 'bg-blue-500/20' : 'bg-blue-500/10'
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Link
-                      href='/login'
-                      className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
-                        isDark ? 'bg-blue-500/20' : 'bg-blue-500/10'
+                    <Icon
+                      icon='solar:login-3-bold'
+                      width={20}
+                      className='text-blue-500'
+                    />
+                    <span>Login</span>
+                  </Link>
+                  <Link
+                    href='/register'
+                    className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
+                      isDark ? 'bg-blue-400/20' : 'bg-blue-400/10'
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Icon
+                      icon='solar:user-plus-bold'
+                      width={20}
+                      className='text-blue-400'
+                    />
+                    <span>Register</span>
+                  </Link>
+                  <div
+                    className={`h-px ${isDark ? 'bg-gray-700' : 'bg-gray-200'} mx-2`}
+                  ></div>
+                  <button
+                    onClick={() => {
+                      toggleDark();
+                      setMobileMenuOpen(false);
+                      showToast(
+                        `Theme changed to ${isDark ? 'light' : 'dark'}!`,
+                        'success',
+                      );
+                    }}
+                    className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
+                      isDark ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}
+                    type='button'
+                  >
+                    <Icon
+                      icon={isDark ? 'solar:sun-bold' : 'solar:moon-bold'}
+                      width={20}
+                      className={isDark ? 'text-yellow-500' : 'text-blue-600'}
+                    />
+                    <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                  </button>
+                </>
+              ) : effectiveUser ? (
+                <>
+                  <div className='flex items-center gap-3 px-4 py-3 font-semibold'>
+                    <Icon icon='mage:user-square-fill' width={20} />
+                    <span>Guest</span>
+                  </div>
+                  <Link
+                    href='/settings'
+                    className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
+                      isDark ? 'bg-blue-400/20' : 'bg-blue-400/10'
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Icon icon='mdi:cog-outline' width={20} />
+                    <span>Settings</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      toggleDark();
+                      setMobileMenuOpen(false);
+                      showToast(
+                        `Theme changed to ${isDark ? 'light' : 'dark'}!`,
+                        'success',
+                      );
+                    }}
+                    className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
+                      isDark ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}
+                    type='button'
+                  >
+                    <Icon
+                      icon={isDark ? 'solar:sun-bold' : 'solar:moon-bold'}
+                      width={20}
+                      className={isDark ? 'text-yellow-500' : 'text-blue-600'}
+                    />
+                    <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                  </button>
+                </>
+              ) : null}
+            </div>
+          )}
+        </div>{' '}
+      </nav>
+
+      {/* ESP32 Connection Modal */}
+      <AnimatePresence>
+        {showConnectModal && (
+          <motion.div
+            className='fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4'
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <motion.div
+              className={`w-full max-w-md rounded-2xl p-6 ${
+                isDark ? 'bg-gray-800' : 'bg-white'
+              } shadow-2xl max-h-[80vh] overflow-hidden flex flex-col`}
+              initial={{ opacity: 0, scale: 0.95, y: 40 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 40 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            >
+              {/* Modal Header */}
+              <div className='flex items-center justify-between mb-6'>
+                <div className='flex items-center space-x-3'>
+                  <Icon icon='mdi:usb-port' className='w-6 h-6 text-blue-500' />
+                  <h3
+                    className={`text-xl font-semibold ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}
+                  >
+                    Connect ESP32
+                  </h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowConnectModal(false);
+                    setSelectedPort('');
+                  }}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDark
+                      ? 'hover:bg-gray-700 text-gray-400'
+                      : 'hover:bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  <Icon icon='solar:close-bold' className='w-5 h-5' />
+                </button>
+              </div>
+
+              <div className='flex items-center justify-between mb-4'>
+                <p
+                  className={`text-sm ${
+                    isDark ? 'text-gray-300' : 'text-gray-600'
+                  }`}
+                >
+                  Select ESP32 Serial Port
+                </p>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    isDark
+                      ? 'bg-gray-700 text-gray-300'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
+                  {availablePorts.length} available
+                </span>
+              </div>
+
+              {/* Port List */}
+              <div className='flex-1 overflow-y-auto mb-6'>
+                {availablePorts.length > 0 ? (
+                  <div className='space-y-2'>
+                    {availablePorts.map((port, index) => (
+                      <div
+                        key={index}
+                        onClick={() => setSelectedPort(port.path)}
+                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
+                          selectedPort === port.path
+                            ? isDark
+                              ? 'bg-blue-900/40 border-blue-500/50 shadow-sm'
+                              : 'bg-blue-50 border-blue-300/50 shadow-sm'
+                            : isDark
+                              ? 'hover:bg-gray-700/50 border-gray-600'
+                              : 'hover:bg-gray-100/50 border-gray-200'
+                        }`}
+                      >
+                        {/* Custom Radio Button */}
+                        <div
+                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                            selectedPort === port.path
+                              ? 'border-blue-500 bg-blue-500'
+                              : isDark
+                                ? 'border-gray-500'
+                                : 'border-gray-300'
+                          }`}
+                        >
+                          {selectedPort === port.path && (
+                            <div className='w-2 h-2 rounded-full bg-white'></div>
+                          )}
+                        </div>
+                        <div className='flex-1 min-w-0'>
+                          <div className='flex items-center gap-2'>
+                            <span
+                              className={`text-sm font-medium ${
+                                isDark ? 'text-white' : 'text-gray-900'
+                              }`}
+                            >
+                              {port.path}
+                            </span>
+                            {port.path.toLowerCase().includes('com8') && (
+                              <span className='text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded-full'>
+                                Recommended
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            className={`text-xs truncate ${
+                              isDark ? 'text-gray-400' : 'text-gray-500'
+                            }`}
+                          >
+                            {port.manufacturer || 'Unknown Manufacturer'}
+                            {port.vendorId && ` • VID: ${port.vendorId}`}
+                            {port.productId && ` • PID: ${port.productId}`}
+                          </div>{' '}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className='text-center py-8'>
+                    <Icon
+                      icon='mdi:usb-port'
+                      className={`w-12 h-12 mx-auto mb-3 ${
+                        isDark ? 'text-gray-600' : 'text-gray-400'
                       }`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Icon
-                        icon='solar:login-3-bold'
-                        width={20}
-                        className='text-blue-500'
-                      />
-                      <span>Login</span>
-                    </Link>{' '}
-                    <Link
-                      href='/register'
-                      className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
-                        isDark ? 'bg-blue-400/20' : 'bg-blue-400/10'
+                    />
+                    <p
+                      className={`text-sm ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
                       }`}
-                      onClick={() => setMobileMenuOpen(false)}
                     >
-                      <Icon
-                        icon='solar:user-plus-bold'
-                        width={20}
-                        className='text-blue-400'
-                      />
-                      <span>Register</span>
-                    </Link>
-                    <div
-                      className={`h-px ${isDark ? 'bg-gray-700' : 'bg-gray-200'} mx-2`}
-                    ></div>
-                    <button
-                      onClick={() => {
-                        toggleDark();
-                        setMobileMenuOpen(false);
-                        showToast(
-                          `Theme changed to ${isDark ? 'light' : 'dark'}!`,
-                          'success',
-                        );
-                      }}
-                      className={`flex items-center gap-3 px-4 py-3 transition-colors duration-200 hover:${
-                        isDark ? 'bg-gray-700' : 'bg-gray-100'
-                      }`}
-                      type='button'
-                    >
-                      <Icon
-                        icon={isDark ? 'solar:sun-bold' : 'solar:moon-bold'}
-                        width={20}
-                        className={isDark ? 'text-yellow-500' : 'text-blue-600'}
-                      />
-                      <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-                    </button>
+                      No ESP32 ports found
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Desktop: Login and Register buttons with text */}
-              <div className='hidden sm:flex items-center gap-2'>
-                <Link
-                  href='/register'
-                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition duration-200 ease-in-out min-h-12 cursor-pointer border-2 ${
-                    isDark
-                      ? 'border-blue-500 text-blue-500 hover:bg-blue-500/10'
-                      : 'border-blue-400 text-blue-400 hover:bg-blue-400/10'
+              {/* Modal Footer */}
+              <div className='flex items-center gap-3'>
+                <button
+                  onClick={connectToSerialPort}
+                  disabled={!selectedPort || isConnecting}
+                  className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ${
+                    !selectedPort || isConnecting
+                      ? 'bg-gray-400 cursor-not-allowed text-white'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white'
                   }`}
                 >
-                  <Icon icon='solar:user-plus-bold' fontSize={20} />
-                  <span>Register</span>
-                </Link>
-                <Link
-                  href='/login'
-                  className='flex items-center justify-center gap-2 px-4 py-2.5 text-white bg-gradient-to-br from-blue-500 to-blue-400 hover:from-blue-500/90 hover:to-blue-400/90 rounded-xl transition duration-200 ease-in-out min-h-12 cursor-pointer'
+                  {isConnecting ? (
+                    <div className='flex items-center justify-center gap-2'>
+                      <ClipLoader size={16} color='#ffffff' />
+                      <span>Connecting...</span>
+                    </div>
+                  ) : (
+                    'Connect'
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowConnectModal(false);
+                    setSelectedPort('');
+                  }}
+                  className={`px-4 py-3 rounded-xl border transition-colors ${
+                    isDark
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
-                  <Icon icon='solar:login-3-bold' fontSize={20} />
-                  <span>Login</span>
-                </Link>
+                  Cancel
+                </button>
+                <button
+                  onClick={getAvailablePorts}
+                  className={`px-4 py-3 rounded-xl border transition-colors ${
+                    isDark
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                  title='Refresh ports'
+                >
+                  <Icon icon='mdi:refresh' className='w-5 h-5' />
+                </button>
               </div>
-            </div>
-          )}
-        </div>
-      </nav>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

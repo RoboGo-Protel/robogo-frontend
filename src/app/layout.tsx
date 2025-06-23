@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { DarkModeProvider } from "@/context/DarkModeContext";
+import { LocalModeProvider } from '@/context/LocalModeContext';
 import AppWrapper from "@/components/AppWrapper";
 import OnboardingGuard from '@/components/OnboardingGuard';
 import AuthCookieSetter from '@/components/AuthCookieSetter';
@@ -30,12 +31,14 @@ export default function RootLayout({
       <body className={`${poppins.className} antialiased`}>
         <Providers>
           <DarkModeProvider>
-            <ToastProvider position='bottom-center'>
-              <AuthCookieSetter />
-              <OnboardingGuard>
-                <AppWrapper>{children}</AppWrapper>
-              </OnboardingGuard>
-            </ToastProvider>
+            <LocalModeProvider>
+              <ToastProvider position='bottom-center'>
+                <AuthCookieSetter />
+                <OnboardingGuard>
+                  <AppWrapper>{children}</AppWrapper>
+                </OnboardingGuard>
+              </ToastProvider>
+            </LocalModeProvider>
           </DarkModeProvider>
         </Providers>
       </body>

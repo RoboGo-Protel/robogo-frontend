@@ -10,6 +10,7 @@ import { SyncLoader } from "react-spinners";
 import { StopMonitoringResultProvider } from "@/components/ui/monitoring/StopMonitoringResultContext";
 import { useUserConfig } from '@/hooks/useUserConfig';
 import { useUser } from '@/hooks/useUser';
+import { useLocalMode } from '@/context/LocalModeContext';
 
 interface Data {
   id: string;
@@ -31,29 +32,16 @@ interface Metadata {
   rotationRate?: number;
   distanceTraveled?: number;
   linearAcceleration?: number;
-  distances: {
-    distTotal: number;
-    distX: number;
-    distY: number;
-  };
-  velocity: {
-    velocity?: number;
-    velocityX?: number;
-    velocityY?: number;
-    velTotal?: number;
-    velX?: number;
-    velY?: number;
-  };
+  velocity?: number;
+  velocityX?: number;
+  velocityY?: number;
   magnetometer?: {
     magnetometerX: number;
     magnetometerY: number;
     magnetometerZ: number;
-  };
-  position: {
+  };  position: {
     positionX?: number;
     positionY?: number;
-    posX?: number;
-    posY?: number;
   };
   pitch?: number;
   roll?: number;
@@ -66,76 +54,87 @@ export default function Monitoring() {
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
   const [data, setData] = useState<Data[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentSession, setCurrentSession] = useState<number | null>(null);  // Get user and device context
+  const [currentSession, setCurrentSession] = useState<number | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+  const [modeChecked, setModeChecked] = useState(false);
+  // Get user and device context
   const { user, loading: userLoading } = useUser();
-  const { selectedDevice, deviceChangeVersion } = useUserConfig();
-  // Only proceed if we have both user ID and selected device
-  const canFetch = user?.id && selectedDevice?.id;
-  // Reset data and session when device changes
+  const { selectedDevice, deviceChangeVersion } = useUserConfig(); // Get local mode context for serial data
+  const { isLocalMode, serialBuffer, localData, isConnected } = useLocalMode();
+  // Debug: Log local data
   useEffect(() => {
-    if (!canFetch) {
+    console.log('🔍 [MONITORING DEBUG] isLocalMode:', isLocalMode);
+    console.log('🔍 [MONITORING DEBUG] isConnected:', isConnected);
+    if (localData) {
+      console.log(
+        '🔍 [MONITORING DEBUG] localData from useLocalMode:',
+        localData,
+      );
+      console.log(
+        '🔍 [MONITORING DEBUG] distanceTraveled:',
+        localData.distanceTraveled,
+      );
+      console.log('🔍 [MONITORING DEBUG] ultrasonic:', localData.ultrasonic);
+      console.log('🔍 [MONITORING DEBUG] velocity:', localData.velocity);
+    } else {
+      console.log('🔍 [MONITORING DEBUG] localData is null/undefined');
+    }
+  }, [localData, isLocalMode, isConnected]);
+
+  // Only proceed if we have both user ID and selected device (online)
+  const canFetch = !isOffline && user?.id && selectedDevice?.id;
+  // Reset data and session when device changes (only for online mode)
+  useEffect(() => {
+    // Skip all Firebase operations in offline mode
+    if (isOffline) {
       setData([]);
       setCurrentSession(null);
       setLoading(false);
       return;
     }
 
-    // Reset state when device changes
+    if (!canFetch) {
+      setData([]);
+      setCurrentSession(null);
+      setLoading(false);
+      return;
+    }
     setData([]);
     setCurrentSession(null);
     setLoading(true);
-  }, [canFetch, user?.id, selectedDevice?.id, deviceChangeVersion]);
+  }, [canFetch, user?.id, selectedDevice?.id, isOffline]); // Remove deviceChangeVersion
 
   useEffect(() => {
-    if (!canFetch) {
-      return;
-    }
-
-    const userId = user.id;
-    const deviceId = selectedDevice.id;
-
-    // Listen to user-scoped current session
-    const sessionRef = ref(
-      database,
-      `users/${userId}/${deviceId}/current_session`,
-    );
-    const unsubscribe = onValue(sessionRef, (snapshot) => {
-      const session = snapshot.val();
-      const sessionNumber =
-        typeof session === 'number' ? session : Number(session);
-      console.log('Fetched current_session for user/device:', sessionNumber, {
-        userId,
-        deviceId,
-      });
-      setCurrentSession(isNaN(sessionNumber) ? null : sessionNumber);
-    });    return () => unsubscribe();
-  }, [canFetch, user?.id, selectedDevice?.id, deviceChangeVersion]);
-  useEffect(() => {
-    if (!canFetch || currentSession === null) {
+    // Skip all Firebase operations in offline mode
+    if (isOffline) {
       setData([]);
       setLoading(false);
       return;
     }
 
+    if (!canFetch || currentSession === null) {
+      setData([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-
-    const userId = user.id;
+    // Hanya gunakan user.id jika online
+    let userId: string | undefined = undefined;
+    if (!isOffline && user) userId = user.id;
     const deviceId = selectedDevice.id;
-
-    // Listen to user-scoped realtime monitoring data
+    if (!userId && !isOffline) return;
+    // Listen to user-scoped realtime monitoring data (online only)
     const dbRef = ref(
       database,
       `users/${userId}/${deviceId}/realtime_monitoring/${currentSession}`,
     );
     const unsubscribe = onValue(dbRef, (snapshot) => {
       const value = snapshot.val();
-
       if (!value) {
         setData([]);
         setLoading(false);
         return;
       }
-
       const array = Object.entries(value)
         .map(([id, item]) => ({
           id,
@@ -149,7 +148,6 @@ export default function Monitoring() {
           (a, b) =>
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
-
       setData(array);
       setLoading(false);
       console.log(
@@ -158,8 +156,15 @@ export default function Monitoring() {
         array,
         { userId, deviceId },
       );
-    });    return () => unsubscribe();
-  }, [canFetch, user?.id, selectedDevice?.id, currentSession, deviceChangeVersion]);
+    });
+    return () => unsubscribe();
+  }, [
+    canFetch,
+    user,
+    selectedDevice,
+    currentSession,
+    isOffline, // Add isOffline to dependencies and remove deviceChangeVersion
+  ]);
 
   useEffect(() => {
     const top = document.querySelector('#top-navbar');
@@ -176,8 +181,156 @@ export default function Monitoring() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Cek localMode saat mount
+  useEffect(() => {
+    (async () => {
+      if (
+        typeof window !== 'undefined' &&
+        window.electronAPI &&
+        window.electronAPI.getConfig
+      ) {
+        try {
+          const localMode = await window.electronAPI.getConfig('localMode');
+          setIsOffline(localMode === true);
+        } catch {
+          setIsOffline(false);
+        }
+      }
+      setModeChecked(true);
+    })();
+  }, []);
+
   const renderContent = () => {
-    // Show loading if user data is being fetched
+    // Tunggu pengecekan mode offline/online
+    if (!modeChecked) {
+      return (
+        <div className='w-full flex justify-center items-center min-h-[200px]'>
+          <SyncLoader color={isDark ? '#fff' : '#112133'} size={12} />
+          <span className='ml-3'>Checking mode...</span>
+        </div>
+      );
+    } // Di offline mode, port selector dan area monitoring selalu tampil
+    if (isOffline) {
+      return (
+        <>
+          {/* Area monitoring tetap tampil di offline mode tanpa tombol connect/disconnect ESP32 */}
+          <LeftArea_Monitoring
+            key={`left-offline`}
+            dataMonitoring={data}
+            isLocalMode={true}
+            isConnected={isConnected}
+            serialBuffer={serialBuffer}
+            liveSerialData={
+              localData
+                ? {
+                    ultrasonic: localData.ultrasonic,
+                    heading: localData.heading,
+                    direction: localData.direction,
+                    accelerationMagnitude: localData.accelerationMagnitude,
+                    rotationRate: localData.rotationRate,
+                    distanceTraveled: localData.distanceTraveled,
+                    linearAcceleration: localData.linearAcceleration,
+                    velocity: localData.velocity,                    velocityX: localData.velocityX,
+                    velocityY: localData.velocityY,
+                    position: {
+                      positionX: localData.positionX,
+                      positionY: localData.positionY,
+                    },
+                    pitch: localData.pitch,
+                    roll: localData.roll,
+                    yaw: localData.yaw,
+                  }
+                : null
+            }
+          />{' '}
+          <MidArea_Monitoring
+            key={`mid-offline`}
+            dataMonitoring={data}
+            currentSession={currentSession}
+            isLocalMode={true}
+            isConnected={isConnected}
+            serialBuffer={serialBuffer}
+            liveSerialData={
+              localData
+                ? {
+                    ultrasonic: localData.ultrasonic,
+                    heading: localData.heading,
+                    direction: localData.direction,
+                    accelerationMagnitude: localData.accelerationMagnitude,
+                    rotationRate: localData.rotationRate,
+                    distanceTraveled: localData.distanceTraveled,
+                    linearAcceleration: localData.linearAcceleration,
+                    velocity: localData.velocity,                    velocityX: localData.velocityX,
+                    velocityY: localData.velocityY,
+                    position: {
+                      positionX: localData.positionX,
+                      positionY: localData.positionY,
+                    },
+                    pitch: localData.pitch,
+                    roll: localData.roll,
+                    yaw: localData.yaw,
+                  }
+                : null
+            }
+          />{' '}          <RightArea_Monitoring
+            key={`right-offline`}
+            serialBuffer={serialBuffer}
+            liveSerialData={
+              localData
+                ? {
+                    // Basic sensor data
+                    ultrasonic: localData.ultrasonic,
+                    heading: localData.heading,
+                    direction: localData.direction,
+                    accelerationMagnitude: localData.accelerationMagnitude,
+                    rotationRate: localData.rotationRate,
+                    distanceTraveled: localData.distanceTraveled,
+                    linearAcceleration: localData.linearAcceleration,
+                    velocity: localData.velocity,
+                    velocityX: localData.velocityX,
+                    velocityY: localData.velocityY,                    position: {
+                      positionX: localData.positionX,
+                      positionY: localData.positionY,
+                    },
+                    pitch: localData.pitch,
+                    roll: localData.roll,
+                    yaw: localData.yaw,
+                    // Additional fields for LogsCard
+                    senderMac: localData.senderMac,
+                    obstacle: localData.obstacle,
+                    timestamp: localData.timestamp,
+                    receivedAt: localData.receivedAt,
+                    rssi: localData.rssi,
+                    rssiDistance: localData.rssiDistance,
+                    // Accelerometer details
+                    accelX: localData.accelX,
+                    accelY: localData.accelY,
+                    accelZ: localData.accelZ,
+                    // Gyroscope details  
+                    gyroX: localData.gyroX,
+                    gyroY: localData.gyroY,
+                    gyroZ: localData.gyroZ,                    // Magnetometer details (use direct field names to match LogsCard)
+                    magX: localData.magX,
+                    magY: localData.magY,
+                    magZ: localData.magZ,
+                    magnetometer: {
+                      magnetometerX: localData.magX,
+                      magnetometerY: localData.magY,
+                      magnetometerZ: localData.magZ,
+                    },
+                    // Device status
+                    mainDeviceStatus: localData.mainDeviceStatus,
+                    ultrasonicSensorStatus: localData.ultrasonicSensorStatus,
+                    imuSensorStatus: localData.imuSensorStatus,
+                  }
+                : null
+            }
+          />
+        </>
+      );
+    }
+    // Online mode: cek selectedDevice seperti biasa
     if (userLoading) {
       return (
         <div className='w-full flex justify-center items-center min-h-[200px]'>
@@ -186,8 +339,6 @@ export default function Monitoring() {
         </div>
       );
     }
-
-    // Show message if user is not authenticated
     if (!user) {
       return (
         <div className='w-full flex justify-center items-center min-h-[200px]'>
@@ -200,8 +351,6 @@ export default function Monitoring() {
         </div>
       );
     }
-
-    // Show message if no device is selected
     if (!selectedDevice) {
       return (
         <div className='w-full flex justify-center items-center min-h-[200px]'>
@@ -214,8 +363,6 @@ export default function Monitoring() {
         </div>
       );
     }
-
-    // Show loading if data is being fetched
     if (loading) {
       return (
         <div className='w-full flex justify-center items-center min-h-[200px]'>
@@ -223,15 +370,28 @@ export default function Monitoring() {
           <span className='ml-3'>Loading monitoring data...</span>
         </div>
       );
-    }    return (
+    }
+    return (
       <>
-        <LeftArea_Monitoring key={`left-${selectedDevice?.id || 'no-device'}-${deviceChangeVersion}`} dataMonitoring={data} />
+        {' '}
+        <LeftArea_Monitoring
+          key={`left-${selectedDevice?.id || 'no-device'}-${deviceChangeVersion}`}
+          dataMonitoring={data}
+          serialBuffer={serialBuffer}
+        />{' '}
         <MidArea_Monitoring
           key={`mid-${selectedDevice?.id || 'no-device'}-${deviceChangeVersion}`}
           dataMonitoring={data}
           currentSession={currentSession}
+          isLocalMode={false}
+          isConnected={true}
+          serialBuffer={serialBuffer}
+        />{' '}
+        <RightArea_Monitoring
+          key={`right-${selectedDevice?.id || 'no-device'}-${deviceChangeVersion}`}
+          serialBuffer={serialBuffer}
+          liveSerialData={null}
         />
-        <RightArea_Monitoring key={`right-${selectedDevice?.id || 'no-device'}-${deviceChangeVersion}`} dataMonitoring={data} />
       </>
     );
   };

@@ -9,7 +9,7 @@ type MeResponse = {
 
 export const useMeQuery = () => {
   const query = useQuery<MeResponse, Error>({
-    queryKey: ["me"],
+    queryKey: ['me'],
     queryFn: async () => {
       console.log('useMeQuery: Fetching user data...');
 
@@ -33,9 +33,14 @@ export const useMeQuery = () => {
       console.log('useMeQuery: User data fetched successfully:', json.data);
       return json.data;
     },
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 15, // 15 minutes - data tetap fresh lebih lama
+    gcTime: 1000 * 60 * 60, // 1 hour - cache lebih lama
     retry: false,
+    refetchOnWindowFocus: false, // Eksplisit disable untuk query ini
+    refetchOnMount: false, // Tidak refetch setiap mount
+    refetchOnReconnect: false, // Tidak refetch saat reconnect
+    // Jangan refetch otomatis
+    refetchInterval: false,
   });
 
   const unauthorized = query.error?.message === "Unauthorized";

@@ -43,12 +43,11 @@ function MonitoringInfo<K extends string = string>({
   const [dragBounds, setDragBounds] = useState({ left: 0, right: 0 });
   const x = useMotionValue(0);
   const { isDark } = useDarkMode();
-
-  const updateDragBounds = () => {
+  const updateDragBounds = React.useCallback(() => {
     const wrapper = wrapperRef.current;
     if (wrapper) {
       const containerWidth = wrapper.offsetWidth;
-      const content = wrapper.querySelector("div");
+      const content = wrapper.querySelector('div');
 
       if (content) {
         const contentWidth = content.scrollWidth;
@@ -61,15 +60,11 @@ function MonitoringInfo<K extends string = string>({
         });
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
-
-    const updateAllBounds = () => {
-      updateDragBounds();
-    };
 
     updateDragBounds();
 
@@ -78,13 +73,23 @@ function MonitoringInfo<K extends string = string>({
     });
 
     resizeObserver.observe(wrapper);
-    window.addEventListener("resize", updateAllBounds);
+    window.addEventListener('resize', updateDragBounds);
 
     return () => {
       resizeObserver.disconnect();
-      window.removeEventListener("resize", updateAllBounds);
+      window.removeEventListener('resize', updateDragBounds);
     };
-  }, [infoItems]);
+  }, [updateDragBounds]);
+
+  // Separate useEffect for infoItems changes to avoid infinite loop
+  useEffect(() => {
+    // Update drag bounds when infoItems change (affects content width)
+    const timer = setTimeout(() => {
+      updateDragBounds();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [infoItems.length, updateDragBounds]);
 
   return (
     <div ref={wrapperRef} className="relative w-full overflow-hidden">

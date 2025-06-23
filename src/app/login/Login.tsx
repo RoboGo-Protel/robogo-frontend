@@ -374,6 +374,31 @@ export default function Login() {
           </p>
         </div>
 
+        {/* Switch to Local/Offline Mode */}
+        <div className='my-4 flex justify-center'>
+          <button
+            type='button'
+            className={clsx(
+              'px-4 py-2 rounded-lg font-medium transition-all duration-200',
+              typeof window !== 'undefined' && window.electronAPI
+                ? 'bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white border-2 border-blue-400'
+                : 'bg-gray-300 text-gray-400 cursor-not-allowed',
+            )}
+            disabled={typeof window === 'undefined' || !window.electronAPI}
+            onClick={async () => {
+              if (
+                typeof window !== 'undefined' &&
+                window.electronAPI?.setConfig
+              ) {
+                await window.electronAPI.setConfig('localMode', true);
+                window.location.href = '/';
+              }
+            }}
+          >
+            Switch to Local/Offline Mode (Electron Only)
+          </button>
+        </div>
+
         {/* Footer */}
         <div className='mt-8 text-center'>
           <p

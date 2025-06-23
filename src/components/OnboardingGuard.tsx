@@ -23,7 +23,6 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
     [],
   );
   const onboardingRoute = '/onboarding';
-
   // Listen for custom events to refetch status
   useEffect(() => {
     const handleRefetchStatus = () => {
@@ -31,7 +30,10 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
       refetch();
     };
 
-    window.addEventListener('onboarding-status-changed', handleRefetchStatus);
+    // Use passive listener untuk performa yang lebih baik
+    window.addEventListener('onboarding-status-changed', handleRefetchStatus, {
+      passive: true,
+    });
     return () => {
       window.removeEventListener(
         'onboarding-status-changed',

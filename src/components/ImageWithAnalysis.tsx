@@ -12,19 +12,9 @@ interface Metadata {
   rotationRate?: number;
   distanceTraveled?: number;
   linearAcceleration?: number;
-  distances?: {
-    distTotal: number;
-    distX: number;
-    distY: number;
-  };
-  velocity?: {
-    velocity?: number;
-    velocityX?: number;
-    velocityY?: number;
-    velTotal?: number;
-    velX?: number;
-    velY?: number;
-  };
+  velocity?: number;
+  velocityX?: number;
+  velocityY?: number;
   magnetometer?: {
     magnetometerX: number;
     magnetometerY: number;
@@ -33,9 +23,10 @@ interface Metadata {
   position?: {
     positionX?: number;
     positionY?: number;
-    posX?: number;
-    posY?: number;
   };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
 interface PhotoDetailsProps {

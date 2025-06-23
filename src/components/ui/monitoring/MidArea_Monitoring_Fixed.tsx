@@ -60,8 +60,6 @@ interface Metadata {
   position: {
     positionX?: number;
     positionY?: number;
-    posX?: number;
-    posY?: number;
   };
   pitch?: number;
   roll?: number;

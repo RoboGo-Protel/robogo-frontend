@@ -77,6 +77,23 @@ export default function OnboardingClient() {
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
 
+  // Local Mode/Offline Mode support
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+  const [localMode, setLocalMode] = useState(false);
+
+  useEffect(() => {
+    if (isElectron && window.electronAPI?.getConfig) {
+      window.electronAPI
+        .getConfig('localMode')
+        .then((isLocal) => {
+          setLocalMode(!!isLocal);
+        })
+        .catch(() => setLocalMode(false));
+    } else {
+      setLocalMode(false);
+    }
+  }, [isElectron]);
+
   const fetchAvailableDevices = useCallback(async () => {
     try {
       const response = await fetch('/api/devices/unassigned');
@@ -244,6 +261,51 @@ export default function OnboardingClient() {
       </div>
     );
   }
+
+  // Jika Local Mode aktif, tampilkan UI khusus offline mode
+  if (localMode) {
+    return (
+      <div
+        className={`min-h-screen flex flex-col items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}
+        style={{
+          paddingTop: topNavbarHeight,
+          paddingBottom: bottomNavbarHeight,
+        }}
+      >
+        <div
+          className='w-full max-w-xl p-8 rounded-2xl border shadow-lg text-center'
+          style={{ background: isDark ? '#232b3b' : '#fff' }}
+        >
+          <div className='w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-400 rounded-xl flex items-center justify-center mx-auto mb-4'>
+            <Icon icon='solar:settings-bold' className='w-8 h-8 text-white' />
+          </div>
+          <h1
+            className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}
+          >
+            Offline Mode
+          </h1>
+          <p
+            className={`text-lg mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+          >
+            You are running RoboGo in Local/Offline Mode.
+            <br />
+            Device assignment and cloud features are disabled.
+            <br />
+            You can use serial monitoring and local features without logging in.
+          </p>
+          <div className='flex justify-center'>
+            <button
+              onClick={() => (window.location.href = '/')}
+              className='px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white rounded-xl font-semibold transition-all duration-300'
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}

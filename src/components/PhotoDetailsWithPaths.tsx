@@ -21,30 +21,22 @@ interface Metadata {
   rotationRate?: number;
   distanceTraveled?: number;
   linearAcceleration?: number;
-  distances?: {
-    distTotal: number;
-    distX: number;
-    distY: number;
-  };
-  velocity?: {
-    velocity?: number;
-    velocityX?: number;
-    velocityY?: number;
-    velTotal?: number;
-    velX?: number;
-    velY?: number;
-  };
+  velocity?: number;
+  velocityX?: number;
+  velocityY?: number;
   magnetometer?: {
     magnetometerX: number;
     magnetometerY: number;
     magnetometerZ: number;
-  };
-  position?: {
+  };  position?: {
     positionX?: number;
     positionY?: number;
     posX?: number;
     posY?: number;
   };
+  pitch?: number;
+  roll?: number;
+  yaw?: number;
 }
 
 interface PhotoDetailsProps {
@@ -195,7 +187,8 @@ export default function PhotoDetailsWithPaths({
   };
   const handleDownload = async () => {
     try {
-      const deviceName = selectedDevice?.deviceName;      if (!deviceName) {
+      const deviceName = selectedDevice?.deviceName;
+      if (!deviceName) {
         console.log('No device selected - cannot download image');
         return;
       }
@@ -465,22 +458,14 @@ export default function PhotoDetailsWithPaths({
                   </div>
 
                   <div className='flex flex-col md:flex-row gap-4 items-center w-full h-fit'>
-                    {details.metadata?.distances && (
+                    {' '}
+                    {details.metadata?.distanceTraveled && (
                       <StatCardList
                         variant='distance'
                         infoItems={[
                           {
-                            title: 'Distance',
-                            value:
-                              details.metadata.distances.distTotal.toString(),
-                          },
-                          {
-                            title: 'Distance X',
-                            value: details.metadata.distances.distX.toString(),
-                          },
-                          {
-                            title: 'Distance Y',
-                            value: details.metadata.distances.distY.toString(),
+                            title: 'Distance Traveled',
+                            value: details.metadata.distanceTraveled.toString(),
                           },
                         ]}
                       />
@@ -492,22 +477,22 @@ export default function PhotoDetailsWithPaths({
                           {
                             title: 'Velocity',
                             value:
-                              details.metadata.velocity.velocity !== undefined
-                                ? String(details.metadata.velocity.velocity)
+                              details.metadata.velocity !== undefined
+                                ? String(details.metadata.velocity)
                                 : '0',
                           },
                           {
                             title: 'Velocity X',
                             value:
-                              details.metadata.velocity.velocityX !== undefined
-                                ? String(details.metadata.velocity.velocityX)
+                              details.metadata.velocityX !== undefined
+                                ? String(details.metadata.velocityX)
                                 : '0',
                           },
                           {
                             title: 'Velocity Y',
                             value:
-                              details.metadata.velocity.velocityY !== undefined
-                                ? String(details.metadata.velocity.velocityY)
+                              details.metadata.velocityY !== undefined
+                                ? String(details.metadata.velocityY)
                                 : '0',
                           },
                         ]}
@@ -821,56 +806,47 @@ export default function PhotoDetailsWithPaths({
                       </p>
                     </div>
                   </div>
-                </div>
-
-                {details.metadata?.distances && details.metadata?.velocity && (
-                  <div className='flex flex-col md:flex-row gap-4 items-center w-full h-fit'>
-                    <StatCardList
-                      variant='distance'
-                      infoItems={[
-                        {
-                          title: 'Distance',
-                          value:
-                            details.metadata.distances.distTotal.toString(),
-                        },
-                        {
-                          title: 'Distance X',
-                          value: details.metadata.distances.distX.toString(),
-                        },
-                        {
-                          title: 'Distance Y',
-                          value: details.metadata.distances.distY.toString(),
-                        },
-                      ]}
-                    />
-                    <StatCardList
-                      variant='velocity'
-                      infoItems={[
-                        {
-                          title: 'Velocity',
-                          value:
-                            details.metadata.velocity.velocity !== undefined
-                              ? String(details.metadata.velocity.velocity)
-                              : '0',
-                        },
-                        {
-                          title: 'Velocity X',
-                          value:
-                            details.metadata.velocity.velocityX !== undefined
-                              ? String(details.metadata.velocity.velocityX)
-                              : '0',
-                        },
-                        {
-                          title: 'Velocity Y',
-                          value:
-                            details.metadata.velocity.velocityY !== undefined
-                              ? String(details.metadata.velocity.velocityY)
-                              : '0',
-                        },
-                      ]}
-                    />
-                  </div>
-                )}
+                </div>{' '}
+                {details.metadata?.distanceTraveled &&
+                  details.metadata?.velocity && (
+                    <div className='flex flex-col md:flex-row gap-4 items-center w-full h-fit'>
+                      <StatCardList
+                        variant='distance'
+                        infoItems={[
+                          {
+                            title: 'Distance Traveled',
+                            value: details.metadata.distanceTraveled.toString(),
+                          },
+                        ]}
+                      />{' '}
+                      <StatCardList
+                        variant='velocity'
+                        infoItems={[
+                          {
+                            title: 'Velocity',
+                            value:
+                              details.metadata.velocity !== undefined
+                                ? String(details.metadata.velocity)
+                                : '0',
+                          },
+                          {
+                            title: 'Velocity X',
+                            value:
+                              details.metadata.velocityX !== undefined
+                                ? String(details.metadata.velocityX)
+                                : '0',
+                          },
+                          {
+                            title: 'Velocity Y',
+                            value:
+                              details.metadata.velocityY !== undefined
+                                ? String(details.metadata.velocityY)
+                                : '0',
+                          },
+                        ]}
+                      />
+                    </div>
+                  )}
                 {details.metadata &&
                   Object.keys(details.metadata).length > 0 && (
                     <div className='flex flex-col md:flex-row gap-4 items-center w-full'>

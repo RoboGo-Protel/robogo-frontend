@@ -30,25 +30,15 @@ interface Metadata {
   rotationRate?: number;
   distanceTraveled?: number;
   linearAcceleration?: number;
-  distances: {
-    distTotal: number;
-    distX: number;
-    distY: number;
-  };
-  velocity: {
-    velocity?: number;
-    velocityX?: number;
-    velocityY?: number;
-    velTotal?: number;
-    velX?: number;
-    velY?: number;
-  };
+  velocity?: number;
+  velocityX?: number;
+  velocityY?: number;
   magnetometer?: {
     magnetometerX: number;
     magnetometerY: number;
     magnetometerZ: number;
   };
-  position: {
+  position?: {
     positionX?: number;
     positionY?: number;
     posX?: number;
