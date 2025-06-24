@@ -87,17 +87,392 @@ export default function MidArea_Monitoring({
   const { selectedDevice } = useUserConfig();
   const { stopResult, setStopResult } = useStopMonitoringResult();
   // Ref for camera stream
-  const cameraStreamRef = useRef<StableCameraStreamRef>(null);
-  // States for monitoring controls
+  const cameraStreamRef = useRef<StableCameraStreamRef>(null); // States for monitoring controls
   const [recordingState, setRecordingState] = useState<'idle' | 'recording'>(
     'idle',
   );
+
   // Local mode session management
   const [localCurrentSession, setLocalCurrentSession] = useState<number | null>(
     null,
   );
+  interface UltrasonicData {
+    ultrasonic: number;
+    timestamp: string;
+    imageFileName?: string;
+  }
 
-  // Latest monitoring data for StableCameraStream
+  interface IMUData {
+    heading?: number;
+    pitch?: number;
+    roll?: number;
+    yaw?: number;
+    ultrasonic?: number;
+    accelerationMagnitude?: number;
+    rotationRate?: number;
+    linearAcceleration?: number;
+    velocity?: number;
+    velocityX?: number;
+    velocityY?: number;
+    distanceTraveled?: number;
+    magnetometer?: {
+      magnetometerX: number;
+      magnetometerY: number;
+      magnetometerZ: number;
+    };
+    position?: {
+      positionX?: number;
+      positionY?: number;
+    };
+    distances?: {
+      distTotal?: number;
+      distX?: number;
+      distY?: number;
+    };
+    timestamp: string;
+    imageFileName?: string;
+  }
+
+  interface PathData {
+    timestamp: string;
+    position: {
+      positionX?: number;
+      positionY?: number;
+    };
+    velocity?: number;
+    heading?: number;
+    direction?: string;
+    distanceTraveled?: number;
+    ultrasonic?: number;
+    imageFileName?: string;
+  }
+
+  // Monitoring data collection states
+  const [monitoringData, setMonitoringData] = useState<{
+    ultrasonic: UltrasonicData[];
+    imu: IMUData[];
+    paths: PathData[];
+  }>({
+    ultrasonic: [],
+    imu: [],
+    paths: [],
+  });
+
+  // Function to get current session from config
+  const getCurrentSessionFromConfig = async (): Promise<number> => {
+    try {
+      if (window.electronAPI?.getConfig) {
+        const currentSession =
+          await window.electronAPI.getConfig('currentSession');
+        return typeof currentSession === 'number' ? currentSession : 1;
+      }
+    } catch (error) {
+      console.error('Error getting session from config:', error);
+    }
+    return 1;
+  };
+
+  // Function to increment and save session to config
+  const incrementSessionInConfig = async (): Promise<number> => {
+    try {
+      if (window.electronAPI?.setConfig) {
+        const currentSession = await getCurrentSessionFromConfig();
+        const newSession = currentSession + 1;
+        await window.electronAPI.setConfig('currentSession', newSession);
+        return newSession;
+      }
+    } catch (error) {
+      console.error('Error setting session in config:', error);
+    }
+    return Date.now(); // Fallback to timestamp
+  };
+
+  // Function to save monitoring data to JSON files
+  const saveMonitoringDataToFiles = async (sessionId: number) => {
+    if (!window.electronAPI?.saveImageToFolder) return;
+
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    try {
+      // Save ultrasonic data
+      if (monitoringData.ultrasonic.length > 0) {
+        const ultrasonicContent = JSON.stringify(
+          monitoringData.ultrasonic,
+          null,
+          2,
+        );
+        const ultrasonicBuffer = new Uint8Array(
+          Buffer.from(ultrasonicContent, 'utf-8'),
+        );
+
+        await window.electronAPI.saveImageToFolder(
+          ultrasonicBuffer,
+          `${sessionId}.json`,
+          `reports/ultrasonic/${today}`,
+        );
+        console.log(
+          '💾 [MONITORING] Saved ultrasonic data:',
+          monitoringData.ultrasonic.length,
+          'entries',
+        );
+      }
+
+      // Save IMU data
+      if (monitoringData.imu.length > 0) {
+        const imuContent = JSON.stringify(monitoringData.imu, null, 2);
+        const imuBuffer = new Uint8Array(Buffer.from(imuContent, 'utf-8'));
+
+        await window.electronAPI.saveImageToFolder(
+          imuBuffer,
+          `${sessionId}.json`,
+          `reports/imu/${today}`,
+        );
+        console.log(
+          '💾 [MONITORING] Saved IMU data:',
+          monitoringData.imu.length,
+          'entries',
+        );
+      }
+
+      // Save paths data
+      if (monitoringData.paths.length > 0) {
+        const pathsContent = JSON.stringify(monitoringData.paths, null, 2);
+        const pathsBuffer = new Uint8Array(Buffer.from(pathsContent, 'utf-8'));
+
+        await window.electronAPI.saveImageToFolder(
+          pathsBuffer,
+          `${sessionId}.json`,
+          `reports/paths/${today}`,
+        );
+        console.log(
+          '💾 [MONITORING] Saved paths data:',
+          monitoringData.paths.length,
+          'entries',
+        );
+      }
+
+      console.log('💾 [MONITORING] All monitoring data saved successfully!');
+    } catch (error) {
+      console.error('💾 [MONITORING] Error saving monitoring data:', error);
+    }
+  }; // Function to inject imageFileName into monitoring data
+  const injectImageFileName = (imageFileName: string) => {
+    // Add imageFileName to the latest entries of each type
+    setMonitoringData(
+      (prev: {
+        ultrasonic: UltrasonicData[];
+        imu: IMUData[];
+        paths: PathData[];
+      }) => {
+        const newData = { ...prev };
+
+        // Add to latest ultrasonic entry if exists
+        if (newData.ultrasonic.length > 0) {
+          const lastIndex = newData.ultrasonic.length - 1;
+          newData.ultrasonic[lastIndex] = {
+            ...newData.ultrasonic[lastIndex],
+            imageFileName,
+          };
+        }
+
+        // Add to latest IMU entry if exists
+        if (newData.imu.length > 0) {
+          const lastIndex = newData.imu.length - 1;
+          newData.imu[lastIndex] = {
+            ...newData.imu[lastIndex],
+            imageFileName,
+          };
+        }
+
+        // Add to latest paths entry if exists
+        if (newData.paths.length > 0) {
+          const lastIndex = newData.paths.length - 1;
+          newData.paths[lastIndex] = {
+            ...newData.paths[lastIndex],
+            imageFileName,
+          };
+        }
+
+        console.log(
+          '📸 [MONITORING] Injected imageFileName to monitoring data:',
+          imageFileName,
+        );
+        return newData;
+      },
+    );
+  };
+  // Effect to process serial buffer data
+  useEffect(() => {
+    // Function to parse serial data into reports format
+    const parseSerialDataToReports = (serialData: string) => {
+      try {
+        // Try to parse as JSON
+        const data = JSON.parse(serialData);
+        const timestamp = new Date().toISOString();
+
+        // Debug logging to see the actual data structure
+        console.log('📊 [DEBUG] Raw serial data structure:', data);
+
+        // Extract ultrasonic data
+        if (
+          data.ultrasonic !== undefined ||
+          data.ultrasonicDistance !== undefined
+        ) {
+          const ultrasonicEntry = {
+            ultrasonic: data.ultrasonic || data.ultrasonicDistance,
+            timestamp,
+            ...(data.imageFileName && { imageFileName: data.imageFileName }),
+          };
+
+          setMonitoringData((prev) => ({
+            ...prev,
+            ultrasonic: [...prev.ultrasonic, ultrasonicEntry],
+          }));
+        }
+
+        // Extract IMU data
+        if (
+          data.heading !== undefined ||
+          data.pitch !== undefined ||
+          data.roll !== undefined
+        ) {
+          const imuEntry = {
+            heading: data.heading,
+            pitch: data.pitch,
+            roll: data.roll,
+            yaw: data.yaw,
+            ultrasonic: data.ultrasonic,
+            accelerationMagnitude: data.accelerationMagnitude,
+            rotationRate: data.rotationRate,
+            linearAcceleration: data.linearAcceleration,
+            velocity: data.velocity,
+            velocityX: data.velocityX,
+            velocityY: data.velocityY,
+            distanceTraveled: data.distanceTraveled,
+            magnetometer: data.magnetometer,
+            position: data.position,
+            distances: data.distances,
+            timestamp,
+            ...(data.imageFileName && { imageFileName: data.imageFileName }),
+          };
+
+          setMonitoringData((prev) => ({
+            ...prev,
+            imu: [...prev.imu, imuEntry],
+          }));
+        }
+
+        // Extract paths data - support both nested and flat position formats
+        if (
+          // Check for nested position format
+          (data.position &&
+            (data.position.positionX !== undefined ||
+              data.position.positionY !== undefined)) ||
+          // Check for flat position format
+          data.positionX !== undefined ||
+          data.positionY !== undefined ||
+          // Check for other position indicators
+          data.position !== undefined ||
+          // Check if we have location/movement data
+          (data.heading !== undefined &&
+            (data.speed !== undefined || data.velocity !== undefined))
+        ) {
+          // Handle different position formats
+          let positionData = {
+            positionX: 0,
+            positionY: 0,
+          };
+
+          if (data.position && typeof data.position === 'object') {
+            // Nested position format
+            positionData = {
+              positionX: data.position.positionX || data.position.x || 0,
+              positionY: data.position.positionY || data.position.y || 0,
+            };
+          } else if (
+            data.positionX !== undefined ||
+            data.positionY !== undefined
+          ) {
+            // Flat position format
+            positionData = {
+              positionX: data.positionX || 0,
+              positionY: data.positionY || 0,
+            };
+          } else if (data.x !== undefined || data.y !== undefined) {
+            // Alternative flat format
+            positionData = {
+              positionX: data.x || 0,
+              positionY: data.y || 0,
+            };
+          }
+
+          const pathEntry = {
+            timestamp,
+            position: positionData,
+            speed: data.speed || data.velocity || 0,
+            velocity: data.velocity,
+            heading: data.heading,
+            direction: data.direction,
+            distanceTraveled: data.distanceTraveled,
+            ultrasonic: data.ultrasonic,
+            ...(data.imageFileName && { imageFileName: data.imageFileName }),
+          };
+
+          console.log('📊 [DEBUG] Adding path entry:', pathEntry);
+
+          setMonitoringData((prev) => ({
+            ...prev,
+            paths: [...prev.paths, pathEntry],
+          }));
+        }
+
+        console.log('📊 [MONITORING] Parsed serial data:', {
+          data,
+          timestamp,
+          hasUltrasonic:
+            data.ultrasonic !== undefined ||
+            data.ultrasonicDistance !== undefined,
+          hasIMU:
+            data.heading !== undefined ||
+            data.pitch !== undefined ||
+            data.roll !== undefined,
+          hasPathsNested:
+            data.position &&
+            (data.position.positionX !== undefined ||
+              data.position.positionY !== undefined),
+          hasPathsFlat:
+            data.positionX !== undefined || data.positionY !== undefined,
+          hasPathsAlt: data.x !== undefined || data.y !== undefined,
+          hasMovement:
+            data.heading !== undefined &&
+            (data.speed !== undefined || data.velocity !== undefined),
+        });
+      } catch (error) {
+        console.warn(
+          '📊 [MONITORING] Failed to parse serial data:',
+          serialData,
+          error,
+        );
+      }
+    };
+    if (serialBuffer && isLocalMode && localCurrentSession) {
+      // Split by lines and process each line
+      const lines = serialBuffer
+        .split('\n')
+        .filter((line: string) => line.trim());
+
+      lines.forEach((line: string) => {
+        // Extract JSON from ESP32 log format: [timestamp] [ESP32] {json}
+        const jsonMatch = line.match(/\{.*\}/);
+        if (jsonMatch) {
+          parseSerialDataToReports(jsonMatch[0]);
+        } else if (line.startsWith('{') && line.endsWith('}')) {
+          // Direct JSON format
+          parseSerialDataToReports(line);
+        }
+      });
+    }
+  }, [serialBuffer, isLocalMode, localCurrentSession]);
   const latestData = dataMonitoring[dataMonitoring.length - 1];
   // Create default data for local mode when connected but no data yet
   const defaultLocalData = React.useMemo(
@@ -150,16 +525,14 @@ export default function MidArea_Monitoring({
       displayData?.metadata,
     );
   }, [displayData, liveSerialData, latestData, isLocalMode, isConnected]);
-
   // Determine the effective current session (use localCurrentSession in local mode, currentSession in online mode)
   const effectiveCurrentSession = isLocalMode
-    ? localCurrentSession
-    : currentSession;
-
+    ? localCurrentSession || 0
+    : currentSession || 0;
   // Start monitoring handler
   const handleStartMonitoring = async () => {
     if (isLocalMode) {
-      // Local mode: Create monitoring session folder
+      // Local mode: Create monitoring session and initialize data collection
       try {
         await promise(
           new Promise<void>(async (resolve, reject) => {
@@ -170,15 +543,26 @@ export default function MidArea_Monitoring({
                 window.electronAPI &&
                 window.electronAPI.createFolder
               ) {
-                // Generate new session ID
-                const newSessionId = Date.now(); // Create monitoring session folder
+                // Get new session ID from config
+                const newSessionId = await incrementSessionInConfig();
+
+                // Clear previous monitoring data
+                setMonitoringData({
+                  ultrasonic: [],
+                  imu: [],
+                  paths: [],
+                });
+
+                // Create monitoring session folder
                 const sessionFolder = `monitoring/${newSessionId}`;
                 const result =
                   await window.electronAPI.createFolder(sessionFolder);
                 if (result.success) {
-                  // Store current session for photo capture
+                  // Store current session for photo capture and data collection
                   setLocalCurrentSession(newSessionId);
-                  console.log(`Monitoring session ${newSessionId} started`);
+                  console.log(
+                    `📊 [MONITORING] Session ${newSessionId} started - data collection initialized`,
+                  );
                   resolve();
                 } else {
                   throw new Error(
@@ -193,9 +577,9 @@ export default function MidArea_Monitoring({
             }
           }),
           {
-            loading: 'Starting local monitoring...',
-            success: 'Local monitoring started successfully!',
-            error: 'Failed to start local monitoring.',
+            loading: 'Starting monitoring session...',
+            success: 'Monitoring started! Real-time data collection is active.',
+            error: 'Failed to start monitoring session.',
           },
         );
       } catch (error) {
@@ -237,23 +621,44 @@ export default function MidArea_Monitoring({
     } catch (error) {
       console.error('Error starting monitoring:', error);
     }
-  };
-  // Stop monitoring handler
+  }; // Stop monitoring handler
   const handleStopMonitoring = async () => {
     if (isLocalMode) {
-      // Local mode: Clean up session
+      // Local mode: Save monitoring data and clean up session
       try {
         await promise(
-          new Promise<void>((resolve) => {
-            // Clear current session
-            setLocalCurrentSession(null);
-            console.log('Local monitoring session stopped');
-            resolve();
+          new Promise<void>(async (resolve, reject) => {
+            try {
+              if (localCurrentSession) {
+                // Save all collected monitoring data to reports
+                await saveMonitoringDataToFiles(localCurrentSession);
+
+                // Clear current session
+                setLocalCurrentSession(null);
+
+                // Clear monitoring data
+                setMonitoringData({
+                  ultrasonic: [],
+                  imu: [],
+                  paths: [],
+                });
+
+                console.log(
+                  '📊 [MONITORING] Session stopped and data saved to reports',
+                );
+                resolve();
+              } else {
+                console.log('📊 [MONITORING] No active session to stop');
+                resolve();
+              }
+            } catch (error) {
+              reject(error);
+            }
           }),
           {
-            loading: 'Stopping local monitoring...',
-            success: 'Local monitoring stopped successfully!',
-            error: 'Failed to stop local monitoring.',
+            loading: 'Stopping monitoring and saving data...',
+            success: 'Monitoring stopped! Data saved to reports folder.',
+            error: 'Failed to stop monitoring session.',
           },
         );
       } catch (error) {
@@ -629,10 +1034,15 @@ export default function MidArea_Monitoring({
                             : selectedDevice?.deviceName?.replace(
                                 /[^a-zA-Z0-9]/g,
                                 '_',
-                              ) || 'unknown';
+                              ) || 'unknown'; // Base filename without extension
+                          const baseFileName = `robogo_capture_${deviceNameClean}_${dateTime}`;
 
-                          // Base filename without extension
-                          const baseFileName = `robogo_capture_${deviceNameClean}_${dateTime}`; // Different filenames for each type
+                          // Inject imageFileName into monitoring data for reports
+                          if (localCurrentSession) {
+                            injectImageFileName(baseFileName);
+                          }
+
+                          // Different filenames for each type
                           const originalFileName = `${baseFileName}_original.jpg`;
                           const metadataFileName = `${baseFileName}_metadata.jpg`;
                           const jsonFileName = `${baseFileName}.json`;
@@ -1265,66 +1675,66 @@ export default function MidArea_Monitoring({
           ref={cameraStreamRef}
           metadata={displayData?.metadata}
         />
-      </div>
-      {/* Stats and monitoring data display */}{' '}
+      </div>{' '}
+      {/* Stats and monitoring data display */}
       {(() => {
         const shouldShowStats =
           // Show stats if we have monitoring session active OR if we have data
           (effectiveCurrentSession && effectiveCurrentSession > 0) ||
           (dataMonitoring && dataMonitoring.length > 0 && latestData);
 
-        return shouldShowStats;
-      })() ? (
-        <div className='flex flex-col gap-4 items-stretch w-full h-fit'>
-          <StatCardList
-            variant='velocity'
-            infoItems={
-              displayData?.metadata
-                ? [
-                    {
-                      title: 'Velocity Total',
-                      value:
-                        displayData.metadata.velocity != null
-                          ? `${displayData.metadata.velocity.toFixed(2)} m/s`
-                          : '-',
-                    },
-                    {
-                      title: 'Velocity X',
-                      value:
-                        displayData.metadata.velocityX != null
-                          ? `${displayData.metadata.velocityX.toFixed(2)} m/s`
-                          : '-',
-                    },
-                    {
-                      title: 'Velocity Y',
-                      value:
-                        displayData.metadata.velocityY != null
-                          ? `${displayData.metadata.velocityY.toFixed(2)} m/s`
-                          : '-',
-                    },
-                  ]
-                : []
-            }
-          />
-        </div>
-      ) : (
-        <div
-          className={`flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed ${
-            isDark
-              ? 'border-gray-600 text-gray-400'
-              : 'border-gray-300 text-gray-500'
-          }`}
-        >
-          <Icon
-            icon='mdi:chart-line-variant'
-            width={32}
-            height={32}
-            className='mb-2'
-          />{' '}
-          <p className='text-sm'>No monitoring data available</p>
-          <p className='text-xs'>Start monitoring to see real-time stats</p>
-        </div>
-      )}
+        return shouldShowStats ? (
+          <div className='flex flex-col gap-4 items-stretch w-full h-fit'>
+            <StatCardList
+              variant='velocity'
+              infoItems={
+                displayData?.metadata
+                  ? [
+                      {
+                        title: 'Velocity Total',
+                        value:
+                          (displayData.metadata?.velocity ?? 0) > 0
+                            ? `${displayData.metadata.velocity!.toFixed(2)} m/s`
+                            : '-',
+                      },
+                      {
+                        title: 'Velocity X',
+                        value:
+                          (displayData.metadata?.velocityX ?? 0) !== 0
+                            ? `${displayData.metadata.velocityX!.toFixed(2)} m/s`
+                            : '-',
+                      },
+                      {
+                        title: 'Velocity Y',
+                        value:
+                          (displayData.metadata?.velocityY ?? 0) !== 0
+                            ? `${displayData.metadata.velocityY!.toFixed(2)} m/s`
+                            : '-',
+                      },
+                    ]
+                  : []
+              }
+            />
+          </div>
+        ) : (
+          <div
+            className={`flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed ${
+              isDark
+                ? 'border-gray-600 text-gray-400'
+                : 'border-gray-300 text-gray-500'
+            }`}
+          >
+            <Icon
+              icon='mdi:chart-line-variant'
+              width={32}
+              height={32}
+              className='mb-2'
+            />
+            <p className='text-sm'>No monitoring data available</p>
+            <p className='text-xs'>Start monitoring to see real-time stats</p>
+          </div>
+        );
+      })()}
       {/* Control buttons - always visible */}
       <div className='flex flex-col w-full gap-4'>
         <div className='flex flex-col w-full gap-2.5'>
@@ -1405,7 +1815,7 @@ export default function MidArea_Monitoring({
             exit={{ opacity: 0, y: -20 }}
             className='w-full'
           >
-            <StopMonitoringResult result={stopResult} />
+            <StopMonitoringResult result={stopResult!} />
           </motion.div>
         )}
       </AnimatePresence>

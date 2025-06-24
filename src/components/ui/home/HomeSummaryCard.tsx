@@ -8,9 +8,9 @@ import clsx from 'clsx';
 
 interface SummaryData {
   totalImages: number;
-  totalUltrasonicData: number;
-  totalIMUData: number;
-  totalPathReports: number;
+  totalUltrasonicData: number; // JSON sessions in ultrasonic/{date}/ folders
+  totalIMUData: number; // JSON sessions in imu/{date}/ folders
+  totalPathReports: number; // JSON sessions in paths/{date}/ folders
 }
 
 const HomeSummaryCard: React.FC = () => {
@@ -49,8 +49,7 @@ const HomeSummaryCard: React.FC = () => {
     };
 
     checkLocalMode();
-  }, []);
-  // Function to fetch summary data from local folders (Electron only)
+  }, []); // Function to fetch summary data from local folders (Electron only)
   const fetchLocalSummaryData = useCallback(async (): Promise<SummaryData> => {
     const defaultData: SummaryData = {
       totalImages: 0,
@@ -66,6 +65,7 @@ const HomeSummaryCard: React.FC = () => {
       ) {
         return defaultData;
       }
+
       // Ambil path reportsFolder dari config
       let reportsFolder = await window.electronAPI.getConfig('reportsFolder');
       if (!reportsFolder || typeof reportsFolder !== 'string') {
@@ -75,10 +75,13 @@ const HomeSummaryCard: React.FC = () => {
           ? `${userHome}/Documents/RoboGo/reports`
           : 'reports';
       }
+
       // Helper join path (karena path.join tidak tersedia di browser)
       function pathJoin(...parts: string[]): string {
         return parts.join('/').replace(/\\/g, '/').replace(/\/+/g, '/');
       }
+
+      // Count images from gallery/originals folder
       const galleryOriginalsPath = pathJoin(
         String(reportsFolder),
         'gallery',
@@ -88,29 +91,89 @@ const HomeSummaryCard: React.FC = () => {
         await window.electronAPI.getImagesFromFolder(galleryOriginalsPath);
       if (imagesResult.success && imagesResult.images) {
         defaultData.totalImages = imagesResult.images.length;
-      }
-      // Ambil jumlah file di masing-masing folder
+      } // Helper function to count JSON files recursively in date subfolders
+      const countJSONFilesInDateFolders = async (
+        basePath: string,
+      ): Promise<number> => {
+        try {
+          if (!window.electronAPI?.getImagesFromFolder) {
+            return 0;
+          }
+
+          // Get all date folders (e.g., 2025-06-23)
+          const dateResult =
+            await window.electronAPI.getImagesFromFolder(basePath);
+          if (!dateResult.success || !dateResult.images) {
+            return 0;
+          }
+
+          let totalCount = 0;
+
+          // For each date folder, count JSON files
+          for (const dateItem of dateResult.images) {
+            // dateItem is an object with fileName, filePath, etc.
+            const folderName = dateItem.fileName;
+
+            // Check if this looks like a date folder (YYYY-MM-DD format)
+            if (folderName && /^\d{4}-\d{2}-\d{2}$/.test(folderName)) {
+              // This is a date folder, check inside for JSON files
+              const dateFolderPath = pathJoin(basePath, folderName);
+              const jsonResult =
+                await window.electronAPI.getImagesFromFolder(dateFolderPath);
+
+              if (jsonResult.success && jsonResult.images) {
+                // Count only .json files
+                const jsonFiles = jsonResult.images.filter(
+                  (fileItem) =>
+                    fileItem.fileName &&
+                    fileItem.fileName.toLowerCase().endsWith('.json'),
+                );
+                totalCount += jsonFiles.length;
+              }
+            }
+          }
+
+          return totalCount;
+        } catch (error) {
+          console.error(`Error counting files in ${basePath}:`, error);
+          return 0;
+        }
+      };
+
+      // Count files in each report type folder
       const ultrasonicPath = pathJoin(String(reportsFolder), 'ultrasonic');
       const imuPath = pathJoin(String(reportsFolder), 'imu');
       const pathsPath = pathJoin(String(reportsFolder), 'paths');
 
-      const [ultrasonicResult, imuResult, pathsResult] = await Promise.all([
-        window.electronAPI.getImagesFromFolder(ultrasonicPath),
-        window.electronAPI.getImagesFromFolder(imuPath),
-        window.electronAPI.getImagesFromFolder(pathsPath),
+      const [ultrasonicCount, imuCount, pathsCount] = await Promise.all([
+        countJSONFilesInDateFolders(ultrasonicPath),
+        countJSONFilesInDateFolders(imuPath),
+        countJSONFilesInDateFolders(pathsPath),
       ]);
-      if (ultrasonicResult.success && ultrasonicResult.images) {
-        defaultData.totalUltrasonicData = ultrasonicResult.images.length;
-      }
-      if (imuResult.success && imuResult.images) {
-        defaultData.totalIMUData = imuResult.images.length;
-      }
-      if (pathsResult.success && pathsResult.images) {
-        defaultData.totalPathReports = pathsResult.images.length;
-      }
+
+      defaultData.totalUltrasonicData = ultrasonicCount;
+      defaultData.totalIMUData = imuCount;
+      defaultData.totalPathReports = pathsCount;
+      console.log('📊 [SUMMARY] Local data counts:', {
+        images: defaultData.totalImages,
+        ultrasonic: defaultData.totalUltrasonicData,
+        imu: defaultData.totalIMUData,
+        paths: defaultData.totalPathReports,
+        reportsFolder: String(reportsFolder),
+      });
+
+      // Debug information about folder structure
+      console.log('📁 [SUMMARY] Folder structure used:');
+      console.log(`  - Images: ${galleryOriginalsPath}`);
+      console.log(
+        `  - Ultrasonic: ${pathJoin(String(reportsFolder), 'ultrasonic')}`,
+      );
+      console.log(`  - IMU: ${pathJoin(String(reportsFolder), 'imu')}`);
+      console.log(`  - Paths: ${pathJoin(String(reportsFolder), 'paths')}`);
     } catch (error) {
       console.error('Error fetching local summary data:', error);
     }
+
     return defaultData;
   }, []);
   useEffect(() => {
@@ -215,19 +278,19 @@ const HomeSummaryCard: React.FC = () => {
     },
     {
       icon: 'solar:radar-2-bold',
-      title: 'Ultrasonic',
+      title: 'Ultrasonic Sessions',
       value: summaryData.totalUltrasonicData,
       color: 'blue',
     },
     {
       icon: 'solar:compass-bold',
-      title: 'IMU Data',
+      title: 'IMU Sessions',
       value: summaryData.totalIMUData,
       color: 'blue',
     },
     {
       icon: 'solar:routing-2-bold',
-      title: 'Path Reports',
+      title: 'Path Sessions',
       value: summaryData.totalPathReports,
       color: 'blue',
     },
