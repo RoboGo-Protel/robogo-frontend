@@ -31,6 +31,17 @@ interface UseDeviceStatusReturn {
   deviceData: DeviceData | null;
 }
 
+// Local storage keys
+const DEVICE_STATUS_KEY = 'robogo_device_status';
+
+// Default status for new devices
+const DEFAULT_STATUS: ComponentStatus = {
+  main: 'OFF',
+  camera: 'OFF',
+  ultrasonic: 'OFF',
+  imu: 'OFF',
+};
+
 export function useDeviceStatus(
   deviceName: string | null,
 ): UseDeviceStatusReturn {
@@ -39,7 +50,39 @@ export function useDeviceStatus(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch current device status
+  // Get device status from localStorage
+  const getStoredDeviceStatus = useCallback((name: string): ComponentStatus => {
+    try {
+      const stored = localStorage.getItem(`${DEVICE_STATUS_KEY}_${name}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.status || DEFAULT_STATUS;
+      }
+    } catch {
+      // Failed to parse stored device status, return default
+    }
+    return DEFAULT_STATUS;
+  }, []);
+
+  // Save device status to localStorage
+  const saveDeviceStatus = useCallback((name: string, deviceStatus: ComponentStatus) => {
+    try {
+      const deviceData = {
+        id: name,
+        deviceName: name,
+        status: deviceStatus,
+        cameraStreamUrl: null,
+        updatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(`${DEVICE_STATUS_KEY}_${name}`, JSON.stringify(deviceData));
+      return deviceData;
+    } catch {
+      // Failed to save device status
+      return null;
+    }
+  }, []);
+
+  // Fetch current device status from localStorage
   const fetchStatus = useCallback(async () => {
     if (!deviceName) {
       setStatus(null);
@@ -51,19 +94,20 @@ export function useDeviceStatus(
       setLoading(true);
       setError(null);
 
-      const response = await fetch(
-        `/api/devices/status?deviceName=${encodeURIComponent(deviceName)}`,
-      );
-      const data = await response.json();
+      // Simulate async operation for consistency
+      await new Promise(resolve => setTimeout(resolve, 50));
 
-      if (data.success) {
-        setStatus(data.data.status);
-        setDeviceData(data.data);
-      } else {
-        setError(data.message || 'Failed to fetch device status');
-        setStatus(null);
-        setDeviceData(null);
-      }
+      const deviceStatus = getStoredDeviceStatus(deviceName);
+      const data = {
+        id: deviceName,
+        deviceName,
+        status: deviceStatus,
+        cameraStreamUrl: null,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setStatus(deviceStatus);
+      setDeviceData(data);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to fetch device status';
@@ -73,7 +117,7 @@ export function useDeviceStatus(
     } finally {
       setLoading(false);
     }
-  }, [deviceName]);
+  }, [deviceName, getStoredDeviceStatus]);
 
   // Update single component
   const updateComponent = useCallback(
@@ -86,23 +130,24 @@ export function useDeviceStatus(
       try {
         setError(null);
 
-        const response = await fetch(
-          `/api/devices/status?deviceName=${encodeURIComponent(deviceName)}`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ [component]: newStatus }),
-          },
-        );
+        // Get current status
+        const currentStatus = getStoredDeviceStatus(deviceName);
+        
+        // Update the specific component
+        const updatedStatus = {
+          ...currentStatus,
+          [component]: newStatus,
+        };
 
-        const data = await response.json();
-
-        if (data.success) {
-          setStatus(data.data.status);
-          setDeviceData(data.data);
+        // Save to localStorage
+        const savedData = saveDeviceStatus(deviceName, updatedStatus);
+        
+        if (savedData) {
+          setStatus(updatedStatus);
+          setDeviceData(savedData);
           return true;
         } else {
-          setError(data.message || 'Failed to update component status');
+          setError('Failed to update component status');
           return false;
         }
       } catch (err) {
@@ -114,7 +159,7 @@ export function useDeviceStatus(
         return false;
       }
     },
-    [deviceName],
+    [deviceName, getStoredDeviceStatus, saveDeviceStatus],
   );
 
   // Update multiple components
@@ -125,23 +170,24 @@ export function useDeviceStatus(
       try {
         setError(null);
 
-        const response = await fetch(
-          `/api/devices/status?deviceName=${encodeURIComponent(deviceName)}`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates),
-          },
-        );
+        // Get current status
+        const currentStatus = getStoredDeviceStatus(deviceName);
+        
+        // Apply updates
+        const updatedStatus = {
+          ...currentStatus,
+          ...updates,
+        };
 
-        const data = await response.json();
-
-        if (data.success) {
-          setStatus(data.data.status);
-          setDeviceData(data.data);
+        // Save to localStorage
+        const savedData = saveDeviceStatus(deviceName, updatedStatus);
+        
+        if (savedData) {
+          setStatus(updatedStatus);
+          setDeviceData(savedData);
           return true;
         } else {
-          setError(data.message || 'Failed to update components status');
+          setError('Failed to update components status');
           return false;
         }
       } catch (err) {
@@ -153,7 +199,7 @@ export function useDeviceStatus(
         return false;
       }
     },
-    [deviceName],
+    [deviceName, getStoredDeviceStatus, saveDeviceStatus],
   );
 
   // Update all components to same status

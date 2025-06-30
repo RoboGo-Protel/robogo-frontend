@@ -2,6 +2,7 @@
 import { useDarkMode } from "@/context/DarkModeContext";
 import { Icon } from "@iconify/react";
 import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import clsx from 'clsx';
 
@@ -220,7 +221,10 @@ export default function TunnelPath({
     alert(`Detail Titik\nx: ${point.x}, y: ${point.y}`);
   };
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
       ref={wrapperRef}
       className={`relative w-full h-full rounded-xl overflow-hidden ${
         isDark ? 'bg-[#112133]' : 'bg-white'
@@ -237,21 +241,33 @@ export default function TunnelPath({
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
+            {' '}
             {/* Control Buttons */}
-            <div className='absolute z-30 top-3 right-3 flex gap-2'>
-              <button
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+              className='absolute z-30 top-3 right-3 flex gap-2'
+            >
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => zoomIn()}
                 className='bg-blue-500 text-white px-3 py-1 rounded-md'
               >
                 +
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => zoomOut()}
                 className='bg-blue-500 text-white px-3 py-1 rounded-md'
               >
                 -
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => resetTransform()}
                 className={`px-3 py-1 rounded-md ${
                   isDark
@@ -260,9 +276,8 @@ export default function TunnelPath({
                 }`}
               >
                 Reset
-              </button>
-            </div>
-
+              </motion.button>
+            </motion.div>
             <TransformComponent wrapperClass='w-full h-full'>
               <div
                 className='relative'
@@ -309,21 +324,25 @@ export default function TunnelPath({
                   const pos = getMarkerPosition(
                     point.position.x,
                     point.position.y,
-                  );                  const cardHeight = 120;
+                  );
+                  const cardHeight = 120;
                   const shouldPlaceAbove =
                     dimensions.height > 0
                       ? pos.top + cardHeight > dimensions.height
                       : false;
 
                   // Debug positioning logic
-                  console.log(`🗺️ [TUNNEL PATH DEBUG] Point ${idx} positioning:`, {
-                    position: point.position,
-                    pixelPos: pos,
-                    cardHeight,
-                    dimensionHeight: dimensions.height,
-                    shouldPlaceAbove,
-                    hasImage: !!point.imageUrl,
-                  });
+                  console.log(
+                    `🗺️ [TUNNEL PATH DEBUG] Point ${idx} positioning:`,
+                    {
+                      position: point.position,
+                      pixelPos: pos,
+                      cardHeight,
+                      dimensionHeight: dimensions.height,
+                      shouldPlaceAbove,
+                      hasImage: !!point.imageUrl,
+                    },
+                  );
 
                   const cardClass = `rounded-xl border p-1 shadow-md hover:shadow-lg transition ${
                     isDark
@@ -370,14 +389,17 @@ export default function TunnelPath({
                             <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center'>
                               <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]' />
                             </div>
-                          </div>                        ) : (                          /* If has image, show image cards with marker */
-                          <div className='flex flex-col items-center'>                            {/* Tooltip for start point with image - position based on card placement */}
+                          </div> /* If has image, show image cards with marker */
+                        ) : (
+                          <div className='flex flex-col items-center'>
+                            {' '}
+                            {/* Tooltip for start point with image - position based on card placement */}
                             <div
                               className={clsx(
                                 'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
                                 'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                 'min-w-max whitespace-nowrap z-30',
-                                shouldPlaceAbove 
+                                shouldPlaceAbove
                                   ? 'bottom-full mb-2' // If card is above, tooltip goes above the top card
                                   : 'top-full mt-2', // If card is below, tooltip goes below the bottom card
                                 isDark
@@ -385,9 +407,9 @@ export default function TunnelPath({
                                   : 'bg-white/95 text-amber-700 border border-amber-300',
                               )}
                             >
-                              🟡 START - 📍 ({point.position.x.toFixed(2)}, {point.position.y.toFixed(2)})
+                              🟡 START - 📍 ({point.position.x.toFixed(2)},{' '}
+                              {point.position.y.toFixed(2)})
                             </div>
-                            
                             {/* Top card */}
                             <div
                               onClick={
@@ -407,12 +429,10 @@ export default function TunnelPath({
                                 alt={`Start point at ${point.position.x}, ${point.position.y}`}
                               />
                             </div>
-
                             {/* Start point marker */}
                             <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FFC107]/30 to-[#FF9800]/30 flex items-center justify-center my-1'>
                               <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FFC107] to-[#FF9800]' />
                             </div>
-
                             {/* Bottom card */}
                             <div
                               onClick={
@@ -470,14 +490,17 @@ export default function TunnelPath({
                             <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FF623B]/30 to-[#CD2323]/30 flex items-center justify-center'>
                               <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323]' />
                             </div>
-                          </div>                        ) : (                          /* If has image, show image cards with marker */
-                          <div className='flex flex-col items-center'>                            {/* Tooltip for end point with image - position based on card placement */}
+                          </div> /* If has image, show image cards with marker */
+                        ) : (
+                          <div className='flex flex-col items-center'>
+                            {' '}
+                            {/* Tooltip for end point with image - position based on card placement */}
                             <div
                               className={clsx(
                                 'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
                                 'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                 'min-w-max whitespace-nowrap z-30',
-                                shouldPlaceAbove 
+                                shouldPlaceAbove
                                   ? 'bottom-full mb-2' // If card is above, tooltip goes above the top card
                                   : 'top-full mt-2', // If card is below, tooltip goes below the bottom card
                                 isDark
@@ -485,9 +508,9 @@ export default function TunnelPath({
                                   : 'bg-white/95 text-red-700 border border-red-300',
                               )}
                             >
-                              🔴 END - 🔊 ({point.position.x.toFixed(2)}, {point.position.y.toFixed(2)})
+                              🔴 END - 🔊 ({point.position.x.toFixed(2)},{' '}
+                              {point.position.y.toFixed(2)})
                             </div>
-                            
                             {/* Top card */}
                             <div
                               onClick={
@@ -507,12 +530,10 @@ export default function TunnelPath({
                                 alt={`End point at ${point.position.x}, ${point.position.y}`}
                               />
                             </div>
-
                             {/* End point marker */}
                             <div className='rounded-full w-8 h-8 bg-gradient-to-br from-[#FF623B]/30 to-[#CD2323]/30 flex items-center justify-center my-1'>
                               <div className='rounded-full w-5 h-5 bg-gradient-to-br from-[#FF623B] to-[#CD2323]' />
                             </div>
-
                             {/* Bottom card */}
                             <div
                               onClick={
@@ -548,14 +569,17 @@ export default function TunnelPath({
                         }}
                       >
                         <>
-                          {/* Show image cards only if image exists */}                          {point.imageUrl ? (
-                            <>                              {/* Tooltip for image points - position based on card placement */}
+                          {/* Show image cards only if image exists */}{' '}
+                          {point.imageUrl ? (
+                            <>
+                              {' '}
+                              {/* Tooltip for image points - position based on card placement */}
                               <div
                                 className={clsx(
                                   'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
                                   'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                   'min-w-max whitespace-nowrap z-30',
-                                  shouldPlaceAbove 
+                                  shouldPlaceAbove
                                     ? 'bottom-full mb-2' // If card is above, tooltip goes above the top card
                                     : 'top-full mt-2', // If card is below, tooltip goes below the bottom card
                                   isDark
@@ -563,14 +587,16 @@ export default function TunnelPath({
                                     : 'bg-white/95 text-blue-700 border border-blue-300',
                                 )}
                               >
-                                ({point.position.x.toFixed(2)}, {point.position.y.toFixed(2)})
+                                ({point.position.x.toFixed(2)},{' '}
+                                {point.position.y.toFixed(2)})
                                 {point.ultrasonic !== undefined && (
-                                  <span className={`ml-2 ${point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD ? 'text-red-500' : 'text-green-500'}`}>
+                                  <span
+                                    className={`ml-2 ${point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD ? 'text-red-500' : 'text-green-500'}`}
+                                  >
                                     {point.ultrasonic.toFixed(2)}cm
                                   </span>
                                 )}
                               </div>
-                              
                               {/* Top card */}
                               <div
                                 onClick={
@@ -589,15 +615,21 @@ export default function TunnelPath({
                                   className='w-40 h-24 object-cover rounded-md'
                                   alt={`Tunnel at ${point.position.x}, ${point.position.y}`}
                                 />
-                              </div>                              {/* Middle icon - show danger warning if obstacle detected */}
-                              <div className={`flex items-center justify-center rounded-full p-1.5 my-1 shadow ${
-                                point.ultrasonic !== undefined && point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD
-                                  ? 'bg-gradient-to-br from-red-600 to-red-500 animate-pulse'
-                                  : 'bg-gradient-to-br from-[#FF623B] to-[#CD2323]'
-                              }`}>
+                              </div>{' '}
+                              {/* Middle icon - show danger warning if obstacle detected */}
+                              <div
+                                className={`flex items-center justify-center rounded-full p-1.5 my-1 shadow ${
+                                  point.ultrasonic !== undefined &&
+                                  point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD
+                                    ? 'bg-gradient-to-br from-red-600 to-red-500 animate-pulse'
+                                    : 'bg-gradient-to-br from-[#FF623B] to-[#CD2323]'
+                                }`}
+                              >
                                 <Icon
                                   icon={
-                                    point.ultrasonic !== undefined && point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD
+                                    point.ultrasonic !== undefined &&
+                                    point.ultrasonic <
+                                      ULTRASONIC_DANGER_THRESHOLD
                                       ? 'material-symbols:warning'
                                       : 'mynaui:danger-triangle-solid'
                                   }
@@ -630,7 +662,8 @@ export default function TunnelPath({
                             <>
                               {/* Simple marker for points without images */}
                               {/* Show danger marker if ultrasonic detects obstacle */}
-                              {point.ultrasonic !== undefined && point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD ? (
+                              {point.ultrasonic !== undefined &&
+                              point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD ? (
                                 <div className='relative flex flex-col items-center'>
                                   {/* Danger tooltip */}
                                   <div
@@ -643,7 +676,8 @@ export default function TunnelPath({
                                         : 'bg-red-50/95 text-red-700 border border-red-300',
                                     )}
                                   >
-                                    ⚠️ OBSTACLE ({point.ultrasonic.toFixed(1)}cm)
+                                    ⚠️ OBSTACLE ({point.ultrasonic.toFixed(1)}
+                                    cm)
                                   </div>
                                   {/* Danger marker */}
                                   <div
@@ -673,7 +707,9 @@ export default function TunnelPath({
                                           : 'bg-white/95 text-blue-700 border border-blue-300',
                                       )}
                                     >
-                                      🔊 {point.ultrasonic.toFixed(1)}cm - ({point.position.x.toFixed(2)}, {point.position.y.toFixed(2)})
+                                      🔊 {point.ultrasonic.toFixed(1)}cm - (
+                                      {point.position.x.toFixed(2)},{' '}
+                                      {point.position.y.toFixed(2)})
                                     </div>
                                   )}
                                   {/* Regular marker */}
@@ -696,6 +732,6 @@ export default function TunnelPath({
           </>
         )}
       </TransformWrapper>
-    </div>
+    </motion.div>
   );
 }

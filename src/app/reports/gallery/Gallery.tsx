@@ -27,8 +27,8 @@ interface Image {
 }
 
 interface Metadata {
-  ultrasonic: number;
-  heading: number;
+  ultrasonic?: number;
+  heading?: number;
   direction?: string;
   accelerationMagnitude?: number;
   rotationRate?: number;
@@ -38,11 +38,11 @@ interface Metadata {
   velocityX?: number;
   velocityY?: number;
   magnetometer?: {
-    magnetometerX: number;
-    magnetometerY: number;
-    magnetometerZ: number;
+    magnetometerX?: number;
+    magnetometerY?: number;
+    magnetometerZ?: number;
   };
-  position: {
+  position?: {
     positionX?: number;
     positionY?: number;
   };
@@ -380,7 +380,7 @@ export default function Gallery() {
                 obstacle: false,
                 createdAt: img.dateCreated,
                 metadata: {
-                  ultrasonic: 0,
+                  ultrasonic: -1, // Use -1 to indicate no data loaded yet
                   heading: 0,
                   direction: 'Unknown',
                   accelerationMagnitude: 0,
@@ -530,68 +530,144 @@ export default function Gallery() {
 
             console.log('📷 [GALLERY DEBUG] sensorData found:', sensorData);
             console.log(
-              '📷 [GALLERY DEBUG] sensorData.ultrasonic:',
-              sensorData.ultrasonic,
-            );
-            console.log(
-              '📷 [GALLERY DEBUG] sensorData.heading:',
-              sensorData.heading,
-            );
-            console.log(
-              '📷 [GALLERY DEBUG] sensorData.direction:',
-              sensorData.direction,
+              '📷 [GALLERY DEBUG] sensorData keys:',
+              Object.keys(sensorData),
             );
 
-            const newMetadata = {
-              ultrasonic: Number(sensorData.ultrasonic) || 0,
-              heading: Number(sensorData.heading) || 0,
-              direction: sensorData.direction || 'Unknown',
-              accelerationMagnitude:
-                Number(sensorData.accelerationMagnitude) || 0,
-              rotationRate: Number(sensorData.rotationRate) || 0,
-              distanceTraveled: Number(sensorData.distanceTraveled) || 0,
-              linearAcceleration: Number(sensorData.linearAcceleration) || 0,
-              velocity: Number(sensorData.velocity) || 0,
-              velocityX: Number(sensorData.velocityX) || 0,
-              velocityY: Number(sensorData.velocityY) || 0,
-              magnetometer: sensorData.magnetometer || {
-                magnetometerX: 0,
-                magnetometerY: 0,
-                magnetometerZ: 0,
-              },
-              position: {
-                positionX:
-                  Number(sensorData.position?.positionX) ||
-                  Number(sensorData.position?.posX) ||
-                  0,
-                positionY:
-                  Number(sensorData.position?.positionY) ||
-                  Number(sensorData.position?.posY) ||
-                  0,
-              },
-              pitch: Number(sensorData.pitch) || 0,
-              roll: Number(sensorData.roll) || 0,
-              yaw: Number(sensorData.yaw) || 0,
+            // Helper function to check if a value is valid (not null, undefined, or empty)
+            const isValidSensorData = (value: unknown) => {
+              return (
+                value !== undefined &&
+                value !== null &&
+                value !== '' &&
+                !Number.isNaN(Number(value))
+              );
             };
 
+            // Only include fields that have actual data
+            const newMetadata: Partial<Metadata> = {};
+
+            // Check and include each sensor field only if it has valid data
+            if (isValidSensorData(sensorData.ultrasonic)) {
+              newMetadata.ultrasonic = Number(sensorData.ultrasonic);
+            }
+
+            if (isValidSensorData(sensorData.heading)) {
+              newMetadata.heading = Number(sensorData.heading);
+            }
+
+            if (sensorData.direction && sensorData.direction.trim() !== '') {
+              newMetadata.direction = sensorData.direction;
+            }
+
+            if (isValidSensorData(sensorData.accelerationMagnitude)) {
+              newMetadata.accelerationMagnitude = Number(
+                sensorData.accelerationMagnitude,
+              );
+            }
+
+            if (isValidSensorData(sensorData.rotationRate)) {
+              newMetadata.rotationRate = Number(sensorData.rotationRate);
+            }
+
+            if (isValidSensorData(sensorData.distanceTraveled)) {
+              newMetadata.distanceTraveled = Number(
+                sensorData.distanceTraveled,
+              );
+            }
+
+            if (isValidSensorData(sensorData.linearAcceleration)) {
+              newMetadata.linearAcceleration = Number(
+                sensorData.linearAcceleration,
+              );
+            }
+
+            if (isValidSensorData(sensorData.velocity)) {
+              newMetadata.velocity = Number(sensorData.velocity);
+            }
+
+            if (isValidSensorData(sensorData.velocityX)) {
+              newMetadata.velocityX = Number(sensorData.velocityX);
+            }
+
+            if (isValidSensorData(sensorData.velocityY)) {
+              newMetadata.velocityY = Number(sensorData.velocityY);
+            }
+
+            // Handle magnetometer data if available
+            if (
+              sensorData.magnetometer &&
+              (isValidSensorData(sensorData.magnetometer.magnetometerX) ||
+                isValidSensorData(sensorData.magnetometer.magnetometerY) ||
+                isValidSensorData(sensorData.magnetometer.magnetometerZ))
+            ) {
+              newMetadata.magnetometer = {
+                magnetometerX: isValidSensorData(
+                  sensorData.magnetometer.magnetometerX,
+                )
+                  ? Number(sensorData.magnetometer.magnetometerX)
+                  : undefined,
+                magnetometerY: isValidSensorData(
+                  sensorData.magnetometer.magnetometerY,
+                )
+                  ? Number(sensorData.magnetometer.magnetometerY)
+                  : undefined,
+                magnetometerZ: isValidSensorData(
+                  sensorData.magnetometer.magnetometerZ,
+                )
+                  ? Number(sensorData.magnetometer.magnetometerZ)
+                  : undefined,
+              };
+            }
+
+            // Handle position data if available
+            if (
+              sensorData.position &&
+              (isValidSensorData(sensorData.position.positionX) ||
+                isValidSensorData(sensorData.position.posX) ||
+                isValidSensorData(sensorData.position.positionY) ||
+                isValidSensorData(sensorData.position.posY))
+            ) {
+              newMetadata.position = {};
+
+              if (
+                isValidSensorData(sensorData.position.positionX) ||
+                isValidSensorData(sensorData.position.posX)
+              ) {
+                newMetadata.position.positionX =
+                  Number(sensorData.position.positionX) ||
+                  Number(sensorData.position.posX);
+              }
+
+              if (
+                isValidSensorData(sensorData.position.positionY) ||
+                isValidSensorData(sensorData.position.posY)
+              ) {
+                newMetadata.position.positionY =
+                  Number(sensorData.position.positionY) ||
+                  Number(sensorData.position.posY);
+              }
+            }
+
+            if (isValidSensorData(sensorData.pitch)) {
+              newMetadata.pitch = Number(sensorData.pitch);
+            }
+
+            if (isValidSensorData(sensorData.roll)) {
+              newMetadata.roll = Number(sensorData.roll);
+            }
+
+            if (isValidSensorData(sensorData.yaw)) {
+              newMetadata.yaw = Number(sensorData.yaw);
+            }
+
             console.log(
-              '📷 [GALLERY DEBUG] New metadata created from sensorData:',
+              '📷 [GALLERY DEBUG] New metadata created from available sensorData:',
               newMetadata,
             );
             console.log(
-              '📷 [GALLERY DEBUG] newMetadata.ultrasonic value:',
-              newMetadata.ultrasonic,
-              typeof newMetadata.ultrasonic,
-            );
-            console.log(
-              '📷 [GALLERY DEBUG] newMetadata.heading value:',
-              newMetadata.heading,
-              typeof newMetadata.heading,
-            );
-            console.log(
-              '📷 [GALLERY DEBUG] newMetadata.direction value:',
-              newMetadata.direction,
-              typeof newMetadata.direction,
+              '📷 [GALLERY DEBUG] Available sensor data keys:',
+              Object.keys(newMetadata),
             );
 
             metadata = newMetadata;
@@ -601,27 +677,122 @@ export default function Gallery() {
             );
 
             // Fallback: try direct mapping if sensorData is not available
-            const newMetadata = {
-              ultrasonic: jsonData.ultrasonic || 0,
-              heading: jsonData.heading || 0,
-              direction: jsonData.direction || 'Unknown',
-              accelerationMagnitude: jsonData.accelerationMagnitude || 0,
-              rotationRate: jsonData.rotationRate || 0,
-              distanceTraveled: jsonData.distanceTraveled || 0,
-              linearAcceleration: jsonData.linearAcceleration || 0,
-              velocity: jsonData.velocity || 0,
-              velocityX: jsonData.velocityX || 0,
-              velocityY: jsonData.velocityY || 0,
-              magnetometer: jsonData.magnetometer || {
-                magnetometerX: 0,
-                magnetometerY: 0,
-                magnetometerZ: 0,
-              },
-              position: jsonData.position || { positionX: 0, positionY: 0 },
-              pitch: jsonData.pitch || 0,
-              roll: jsonData.roll || 0,
-              yaw: jsonData.yaw || 0,
+            const isValidDirectData = (value: unknown) => {
+              return (
+                value !== undefined &&
+                value !== null &&
+                value !== '' &&
+                !Number.isNaN(Number(value))
+              );
             };
+
+            const newMetadata: Partial<Metadata> = {};
+
+            // Check and include each field only if it has valid data
+            if (isValidDirectData(jsonData.ultrasonic)) {
+              newMetadata.ultrasonic = Number(jsonData.ultrasonic);
+            }
+
+            if (isValidDirectData(jsonData.heading)) {
+              newMetadata.heading = Number(jsonData.heading);
+            }
+
+            if (jsonData.direction && jsonData.direction.trim() !== '') {
+              newMetadata.direction = jsonData.direction;
+            }
+
+            if (isValidDirectData(jsonData.accelerationMagnitude)) {
+              newMetadata.accelerationMagnitude = Number(
+                jsonData.accelerationMagnitude,
+              );
+            }
+
+            if (isValidDirectData(jsonData.rotationRate)) {
+              newMetadata.rotationRate = Number(jsonData.rotationRate);
+            }
+
+            if (isValidDirectData(jsonData.distanceTraveled)) {
+              newMetadata.distanceTraveled = Number(jsonData.distanceTraveled);
+            }
+
+            if (isValidDirectData(jsonData.linearAcceleration)) {
+              newMetadata.linearAcceleration = Number(
+                jsonData.linearAcceleration,
+              );
+            }
+
+            if (isValidDirectData(jsonData.velocity)) {
+              newMetadata.velocity = Number(jsonData.velocity);
+            }
+
+            if (isValidDirectData(jsonData.velocityX)) {
+              newMetadata.velocityX = Number(jsonData.velocityX);
+            }
+
+            if (isValidDirectData(jsonData.velocityY)) {
+              newMetadata.velocityY = Number(jsonData.velocityY);
+            }
+
+            // Handle magnetometer data if available
+            if (
+              jsonData.magnetometer &&
+              (isValidDirectData(jsonData.magnetometer.magnetometerX) ||
+                isValidDirectData(jsonData.magnetometer.magnetometerY) ||
+                isValidDirectData(jsonData.magnetometer.magnetometerZ))
+            ) {
+              newMetadata.magnetometer = {};
+
+              if (isValidDirectData(jsonData.magnetometer.magnetometerX)) {
+                newMetadata.magnetometer.magnetometerX = Number(
+                  jsonData.magnetometer.magnetometerX,
+                );
+              }
+
+              if (isValidDirectData(jsonData.magnetometer.magnetometerY)) {
+                newMetadata.magnetometer.magnetometerY = Number(
+                  jsonData.magnetometer.magnetometerY,
+                );
+              }
+
+              if (isValidDirectData(jsonData.magnetometer.magnetometerZ)) {
+                newMetadata.magnetometer.magnetometerZ = Number(
+                  jsonData.magnetometer.magnetometerZ,
+                );
+              }
+            }
+
+            // Handle position data if available
+            if (
+              jsonData.position &&
+              (isValidDirectData(jsonData.position.positionX) ||
+                isValidDirectData(jsonData.position.positionY))
+            ) {
+              newMetadata.position = {};
+
+              if (isValidDirectData(jsonData.position.positionX)) {
+                newMetadata.position.positionX = Number(
+                  jsonData.position.positionX,
+                );
+              }
+
+              if (isValidDirectData(jsonData.position.positionY)) {
+                newMetadata.position.positionY = Number(
+                  jsonData.position.positionY,
+                );
+              }
+            }
+
+            if (isValidDirectData(jsonData.pitch)) {
+              newMetadata.pitch = Number(jsonData.pitch);
+            }
+
+            if (isValidDirectData(jsonData.roll)) {
+              newMetadata.roll = Number(jsonData.roll);
+            }
+
+            if (isValidDirectData(jsonData.yaw)) {
+              newMetadata.yaw = Number(jsonData.yaw);
+            }
 
             console.log(
               '📷 [GALLERY DEBUG] New metadata created from direct mapping:',
@@ -635,63 +806,24 @@ export default function Gallery() {
             jsonResult.error || 'No content',
           );
           console.log(
-            '📷 [GALLERY DEBUG] Attempting to use test metadata for debugging...',
+            '📷 [GALLERY DEBUG] Using empty metadata for missing JSON file',
           );
 
-          // For debugging: create test metadata when JSON file not found
+          // For original photos without JSON file, use empty metadata
+          // This will result in no stats cards being shown
           if (viewMode === 'original') {
-            metadata = {
-              ultrasonic: 15.5,
-              heading: 270,
-              direction: 'West',
-              accelerationMagnitude: 1.2,
-              rotationRate: 0.8,
-              distanceTraveled: 45.3,
-              linearAcceleration: 0.9,
-              velocity: 2.1,
-              velocityX: 1.8,
-              velocityY: 1.2,
-              magnetometer: {
-                magnetometerX: 0.5,
-                magnetometerY: -0.3,
-                magnetometerZ: 0.8,
-              },
-              position: { positionX: 10.5, positionY: 7.2 },
-              pitch: 5.2,
-              roll: -2.1,
-              yaw: 270.0,
-            };
-            console.log('📷 [GALLERY DEBUG] Using test metadata:', metadata);
+            metadata = {}; // Empty metadata object
+            console.log('📷 [GALLERY DEBUG] Using empty metadata:', metadata);
           }
         }
       } catch (error) {
         console.error('📷 [GALLERY DEBUG] Error loading JSON metadata:', error);
 
-        // Always provide metadata for original photos even if JSON loading fails
+        // Use empty metadata when there's an error loading JSON file
         if (viewMode === 'original') {
-          metadata = {
-            ultrasonic: 15.5,
-            heading: 270,
-            direction: 'West',
-            accelerationMagnitude: 1.2,
-            rotationRate: 0.8,
-            distanceTraveled: 45.3,
-            linearAcceleration: 0.9,
-            velocity: 2.1,
-            velocityX: 1.8,
-            velocityY: 1.2,
-            magnetometer: {
-              magnetometerX: 0.5,
-              magnetometerY: -0.3,
-              magnetometerZ: 0.8,
-            },
-            position: { positionX: 10.5, positionY: 7.2 },
-            pitch: 5.2,
-            roll: -2.1,
-            yaw: 270.0,
-          };
+          metadata = {}; // Empty metadata object
           console.log(
-            '📷 [GALLERY DEBUG] Using fallback metadata due to error:',
+            '📷 [GALLERY DEBUG] Using empty metadata due to error:',
             metadata,
           );
         }
@@ -713,34 +845,11 @@ export default function Gallery() {
       );
 
       // For original view in non-local mode or when Electron API is not available,
-      // ensure we still have metadata for tabs to show
+      // use empty metadata if no metadata is available
       if (viewMode === 'original') {
-        metadata = metadata || {
-          ultrasonic: item.metadata?.ultrasonic || 12.3,
-          heading: item.metadata?.heading || 180,
-          direction: item.metadata?.direction || 'South',
-          accelerationMagnitude: item.metadata?.accelerationMagnitude || 1.0,
-          rotationRate: item.metadata?.rotationRate || 0.5,
-          distanceTraveled: item.metadata?.distanceTraveled || 25.7,
-          linearAcceleration: item.metadata?.linearAcceleration || 0.8,
-          velocity: item.metadata?.velocity || 1.5,
-          velocityX: item.metadata?.velocityX || 1.2,
-          velocityY: item.metadata?.velocityY || 0.9,
-          magnetometer: item.metadata?.magnetometer || {
-            magnetometerX: 0.3,
-            magnetometerY: -0.2,
-            magnetometerZ: 0.7,
-          },
-          position: item.metadata?.position || {
-            positionX: 8.4,
-            positionY: 5.1,
-          },
-          pitch: item.metadata?.pitch || 3.2,
-          roll: item.metadata?.roll || -1.8,
-          yaw: item.metadata?.yaw || 180.0,
-        };
+        metadata = metadata || {}; // Use empty object if no metadata
         console.log(
-          '📷 [GALLERY DEBUG] Using default metadata for original view:',
+          '📷 [GALLERY DEBUG] Using metadata for original view (non-local):',
           metadata,
         );
       }
@@ -809,10 +918,8 @@ export default function Gallery() {
       {isLocalMode && (
         <div
           className={clsx(
-            'fixed w-full z-20 border-b transition-colors duration-300',
-            isDark
-              ? 'bg-[#112133] border-gray-700'
-              : 'bg-white border-gray-200',
+            'fixed w-full z-20 transition-colors duration-300',
+            isDark ? 'bg-[#112133]' : 'bg-white',
           )}
           style={{
             top: topNavbarHeight + reportsNavbarHeight,
@@ -893,7 +1000,7 @@ export default function Gallery() {
         )}
         style={{
           paddingTop:
-            topNavbarHeight + reportsNavbarHeight + (isLocalMode ? 120 : 0), // Increased padding for header + spacing
+            topNavbarHeight + reportsNavbarHeight + (isLocalMode ? 78 : 0), // Increased padding for header + spacing
           paddingBottom: bottomNavbarHeight + 20,
         }}
       >
@@ -966,7 +1073,7 @@ export default function Gallery() {
                   isDark ? 'bg-[#112133] text-white' : 'bg-white text-black',
                 )}
                 style={{
-                  top: `calc(var(--top-navbar-height) + var(--reports-navbar-height) + ${isLocalMode ? 104 : 0}px)`,
+                  top: `calc(var(--top-navbar-height) + var(--reports-navbar-height) + ${isLocalMode ? 78 : 0}px)`,
                 }}
               >
                 <div
@@ -1003,8 +1110,19 @@ export default function Gallery() {
                     />
 
                     <div className='flex items-center gap-2 absolute top-2 right-2'>
-                      {item.metadata &&
-                        Object.keys(item.metadata).length > 0 && (
+                      {/* Metadata indicator - only show in metadata view when there's actual sensor data */}
+                      {viewMode === 'metadata' &&
+                        item.metadata &&
+                        Object.keys(item.metadata).some(
+                          (key) =>
+                            item.metadata[key as keyof Metadata] !==
+                              undefined &&
+                            item.metadata[key as keyof Metadata] !== null &&
+                            item.metadata[key as keyof Metadata] !== '' &&
+                            !Number.isNaN(
+                              Number(item.metadata[key as keyof Metadata]),
+                            ),
+                        ) && (
                           <>
                             <span
                               className='bg-gradient-to-br from-blue-500 to-blue-400 text-white text-xs p-1 rounded-lg shadow-md'
@@ -1024,29 +1142,35 @@ export default function Gallery() {
                               className='z-40'
                             />
                           </>
-                        )}
-
-                      {item.obstacle && (
-                        <>
-                          <span
-                            className='bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs p-1 rounded-lg shadow-md'
-                            data-tooltip-id={`obstacle-${idx}`}
-                            data-tooltip-content='This image contains an obstacle!'
-                          >
-                            <Icon
-                              icon='fluent:scan-object-24-filled'
-                              width={24}
-                              height={24}
+                        )}{' '}
+                      {/* Obstacle indicator - based on ultrasonic sensor value <= 20 and when data is available */}
+                      {item.metadata &&
+                        item.metadata.ultrasonic !== undefined &&
+                        item.metadata.ultrasonic !== null &&
+                        item.metadata.ultrasonic !== -1 &&
+                        !Number.isNaN(item.metadata.ultrasonic) &&
+                        item.metadata.ultrasonic > 0 &&
+                        item.metadata.ultrasonic <= 20 && (
+                          <>
+                            <span
+                              className='bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs p-1 rounded-lg shadow-md'
+                              data-tooltip-id={`obstacle-${idx}`}
+                              data-tooltip-content={`Obstacle detected! Distance: ${item.metadata.ultrasonic}cm`}
+                            >
+                              <Icon
+                                icon='fluent:scan-object-24-filled'
+                                width={24}
+                                height={24}
+                              />
+                            </span>
+                            <ReactTooltip
+                              id={`obstacle-${idx}`}
+                              place='top'
+                              variant='error'
+                              className='z-40'
                             />
-                          </span>
-                          <ReactTooltip
-                            id={`obstacle-${idx}`}
-                            place='top'
-                            variant='error'
-                            className='z-40'
-                          />
-                        </>
-                      )}
+                          </>
+                        )}
                     </div>
                   </div>
                 ))}

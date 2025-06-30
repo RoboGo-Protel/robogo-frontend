@@ -8,13 +8,12 @@ import TunnelPath from "./cards/TunnelPathCard";
 import { useDarkMode } from "@/context/DarkModeContext";
 import clsx from "clsx";
 import RemoveImagePopup from "./PopUpRemoveImage";
-import ImageWithAnalysis from "./ImageWithAnalysis";
-import { useUserConfig } from '@/hooks/useUserConfig';
+import ImageWithAnalysis from './ImageWithAnalysis';
 
 type SensorKey = 'ultrasonic' | 'battery' | 'gps' | 'obstacle';
 
 interface Metadata {
-  ultrasonic: number;
+  ultrasonic?: number;
   heading?: number;
   direction?: string;
   accelerationMagnitude?: number;
@@ -25,9 +24,9 @@ interface Metadata {
   velocityX?: number;
   velocityY?: number;
   magnetometer?: {
-    magnetometerX: number;
-    magnetometerY: number;
-    magnetometerZ: number;
+    magnetometerX?: number;
+    magnetometerY?: number;
+    magnetometerZ?: number;
   };
   position?: {
     positionX?: number;
@@ -150,7 +149,6 @@ export default function PhotoDetailsWithPaths({
   details,
   onClose,
 }: PhotoDetailsProps) {
-  const { selectedDevice } = useUserConfig();
   // Only show tabs if photo is from 'original' tab and has metadata
   const showTabs = details.fromTab === 'original';
   // Removed strict metadata check - tabs should always show for original photos
@@ -257,37 +255,57 @@ export default function PhotoDetailsWithPaths({
     }
     return null;
   };
-  const handleDownload = async () => {
-    try {
-      const deviceName = selectedDevice?.deviceName;
-      if (!deviceName) {
-        console.log('No device selected - cannot download image');
-        return;
+  // Check if we're in Electron mode
+  const isElectronMode = typeof window !== 'undefined' && window.electronAPI;
+
+  const handleOpenInExplorer = async () => {
+    console.log(
+      '🔍 [OPEN EXPLORER DEBUG] Attempting to open file:',
+      details.src,
+    );
+    console.log('🔍 [OPEN EXPLORER DEBUG] File details:', {
+      id: details.id,
+      fileName: details.fileName,
+      src: details.src,
+      fromTab: details.fromTab,
+    });
+
+    if (isElectronMode) {
+      try {
+        // For local mode, show the file in the system explorer
+        const result = await window.electronAPI?.showItemInFolder?.(
+          details.src,
+        );
+        console.log('🔍 [OPEN EXPLORER DEBUG] Result from Electron:', result);
+
+        if (!result?.success) {
+          console.error('Failed to show item in folder:', result?.error);
+          alert(
+            `Failed to open file location in explorer: ${result?.error || 'Unknown error'}`,
+          );
+        } else {
+          console.log(
+            '✅ [OPEN EXPLORER DEBUG] Successfully opened file in explorer',
+          );
+        }
+      } catch (err) {
+        console.error('Error opening file in explorer:', err);
+        alert('Failed to open file location in explorer');
       }
+    } else {
+      // For online mode, show a message or provide alternative action
+      alert('File explorer access is only available in desktop mode');
+    }
+  };
 
-      const res = await fetch(
-        `/api/reports/gallery/download/${details.id}?deviceName=${encodeURIComponent(deviceName)}`,
-      );
-      if (!res.ok) {
-        throw new Error('Failed to get image download URL');
-      }
-
-      const json = await res.json();
-      const signedUrl = json.data;
-
-      const imageRes = await fetch(signedUrl);
-      const blob = await imageRes.blob();
-
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = details.fileName || 'image.jpg';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Download failed:', err);
+  const handleDeletePhoto = async () => {
+    if (isElectronMode) {
+      // For local mode, we'll just trigger the remove popup
+      // The actual deletion will be handled by the RemoveImagePopup component
+      setIsPopUpRemoveImageOpen(true);
+    } else {
+      // For online mode, we could implement server-side deletion
+      setIsPopUpRemoveImageOpen(true);
     }
   };
 
@@ -494,14 +512,15 @@ export default function PhotoDetailsWithPaths({
                             />
                             <p>Categories</p>
                           </div>
-                          {details.obstacle ? (
+                          {details.metadata?.ultrasonic !== undefined &&
+                          details.metadata.ultrasonic <= 20 ? (
                             <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs font-normal flex items-center gap-1'>
                               <Icon
                                 icon='fluent:scan-object-24-filled'
                                 width={16}
                                 height={16}
                               />
-                              <p>Obstacles</p>
+                              <p>Obstacle</p>
                             </div>
                           ) : (
                             <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 text-white text-xs font-normal flex items-center gap-1'>
@@ -541,71 +560,81 @@ export default function PhotoDetailsWithPaths({
                       </div>
                     )}
                   </div>
-                  {/* Velocity Card - only show for original tab photos */}
+                  {/* Velocity Card - only show for original tab photos with velocity data */}
                   {details.fromTab === 'original' &&
-                    details.metadata?.velocity && (
+                    details.metadata?.velocity !== undefined && (
                       <StatCardList
                         variant='velocity'
                         infoItems={[
                           {
                             title: 'Velocity',
-                            value:
-                              details.metadata.velocity !== undefined
-                                ? `${details.metadata.velocity} cm/s`
-                                : '0 cm/s',
+                            value: `${details.metadata.velocity} cm/s`,
                           },
-                          {
-                            title: 'Velocity X',
-                            value:
-                              details.metadata.velocityX !== undefined
-                                ? `${details.metadata.velocityX} cm/s`
-                                : '0 cm/s',
-                          },
-                          {
-                            title: 'Velocity Y',
-                            value:
-                              details.metadata.velocityY !== undefined
-                                ? `${details.metadata.velocityY} cm/s`
-                                : '0 cm/s',
-                          },
+                          ...(details.metadata.velocityX !== undefined
+                            ? [
+                                {
+                                  title: 'Velocity X',
+                                  value: `${details.metadata.velocityX} cm/s`,
+                                },
+                              ]
+                            : []),
+                          ...(details.metadata.velocityY !== undefined
+                            ? [
+                                {
+                                  title: 'Velocity Y',
+                                  value: `${details.metadata.velocityY} cm/s`,
+                                },
+                              ]
+                            : []),
                         ]}
                       />
                     )}
+                  {/* Sensor Info Card - only show when ultrasonic or heading data is available */}
                   {details.fromTab === 'original' &&
-                    details.metadata?.ultrasonic &&
-                    details.metadata?.heading && (
+                    details.metadata &&
+                    (details.metadata.ultrasonic !== undefined ||
+                      details.metadata.heading !== undefined) && (
                       <div className='flex flex-col md:flex-row gap-4 items-center w-full'>
                         <MonitoringInfo<SensorKey>
                           infoItems={[
-                            {
-                              key: 'ultrasonic',
-                              icon: 'mdi:proximity-sensor',
-                              status: 'normal',
-                              title: 'Ultrasonic Reading',
-                              value: `${details.metadata.ultrasonic.toFixed(2)} cm`,
-                            },
-                            {
-                              key: 'gps',
-                              icon: 'fa6-solid:compass',
-                              status: 'normal',
-                              title: 'IMU Heading Direction',
-                              value: `${
-                                details.metadata.heading !== undefined
-                                  ? `${details.metadata.heading.toFixed(2)}° ${details.metadata.direction ?? ''}`
-                                  : 'N/A'
-                              }`,
-                            },
-                            {
-                              key: 'obstacle',
-                              icon: 'mynaui:danger-triangle-solid',
-                              status: `${
-                                categoryStatusAlert(
-                                  details.metadata.ultrasonic,
-                                ) || 'normal'
-                              }`,
-                              title: 'Obstacle Detection Alert',
-                              value: `${categoryAlert(details.metadata.ultrasonic)}`,
-                            },
+                            ...(details.metadata.ultrasonic !== undefined
+                              ? [
+                                  {
+                                    key: 'ultrasonic' as const,
+                                    icon: 'mdi:proximity-sensor',
+                                    status: 'normal' as const,
+                                    title: 'Ultrasonic Reading',
+                                    value: `${details.metadata.ultrasonic.toFixed(2)} cm`,
+                                  },
+                                ]
+                              : []),
+                            ...(details.metadata.heading !== undefined
+                              ? [
+                                  {
+                                    key: 'gps' as const,
+                                    icon: 'fa6-solid:compass',
+                                    status: 'normal' as const,
+                                    title: 'IMU Heading Direction',
+                                    value: `${details.metadata.heading.toFixed(2)}° ${details.metadata.direction ?? ''}`,
+                                  },
+                                ]
+                              : []),
+                            ...(details.metadata.ultrasonic !== undefined
+                              ? [
+                                  {
+                                    key: 'obstacle' as const,
+                                    icon: 'mynaui:danger-triangle-solid',
+                                    status: (categoryStatusAlert(
+                                      details.metadata.ultrasonic,
+                                    ) || 'normal') as
+                                      | 'normal'
+                                      | 'warning'
+                                      | 'danger',
+                                    title: 'Obstacle Detection Alert',
+                                    value: `${categoryAlert(details.metadata.ultrasonic)}`,
+                                  },
+                                ]
+                              : []),
                           ]}
                         />
                       </div>
@@ -667,34 +696,37 @@ export default function PhotoDetailsWithPaths({
             </AnimatePresence>
             <div className='flex flex-col md:flex-row gap-4 items-center justify-center w-full h-fit mt-7'>
               <button
-                onClick={() => {
-                  setIsPopUpRemoveImageOpen(true);
-                }}
+                onClick={handleOpenInExplorer}
+                className={clsx(
+                  'flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl w-full',
+                  'border-blue-400/20 hover:bg-blue-200/20 hover:border-blue-500 transition',
+                  isElectronMode ? '' : 'opacity-50 cursor-not-allowed',
+                )}
+                disabled={!isElectronMode}
+              >
+                <p className='bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text font-semibold text-sm'>
+                  Open in Explorer
+                </p>
+                <Icon
+                  icon='material-symbols:folder-open-outline'
+                  width={20}
+                  height={20}
+                  className='text-[#39A9F9]'
+                />
+              </button>
+              <button
+                onClick={handleDeletePhoto}
                 className={clsx(
                   'flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl w-full',
                   'border-red-500/30 text-red-500 hover:bg-red-200/20 hover:border-red-500 transition',
                 )}
               >
-                <p className='font-semibold text-sm'>Delete</p>
+                <p className='font-semibold text-sm'>Delete Photo</p>
                 <Icon
                   icon='material-symbols:delete-outline'
                   width={20}
                   height={20}
                   className='text-red-500'
-                />
-              </button>
-              <button
-                onClick={handleDownload}
-                className='flex flex-row gap-2 items-center justify-center border-blue-400/20 px-6 py-3 border-2 rounded-xl w-full hover:bg-blue-200/20 hover:border-blue-500 transition'
-              >
-                <p className='bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text font-semibold text-sm'>
-                  Download
-                </p>
-                <Icon
-                  icon='material-symbols:download'
-                  width={20}
-                  height={20}
-                  className='text-[#39A9F9]'
                 />
               </button>
             </div>
@@ -873,14 +905,15 @@ export default function PhotoDetailsWithPaths({
                           <Icon icon='solar:tag-bold' width={16} height={16} />
                           <p>Categories</p>
                         </div>
-                        {details.obstacle ? (
+                        {details.metadata?.ultrasonic !== undefined &&
+                        details.metadata.ultrasonic <= 20 ? (
                           <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-white text-xs font-normal flex items-center gap-1'>
                             <Icon
                               icon='fluent:scan-object-24-filled'
                               width={16}
                               height={16}
                             />
-                            <p>Obstacles</p>
+                            <p>Obstacle</p>
                           </div>
                         ) : (
                           <div className='w-fit px-4 py-2 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 text-white text-xs font-normal flex items-center gap-1'>
@@ -919,71 +952,81 @@ export default function PhotoDetailsWithPaths({
                     </div>
                   )}
                 </div>
-                {/* Velocity Card - only show for original tab photos */}
+                {/* Velocity Card - only show for original tab photos with velocity data */}
                 {details.fromTab === 'original' &&
-                  details.metadata?.velocity && (
+                  details.metadata?.velocity !== undefined && (
                     <StatCardList
                       variant='velocity'
                       infoItems={[
                         {
                           title: 'Velocity',
-                          value:
-                            details.metadata.velocity !== undefined
-                              ? `${details.metadata.velocity} cm/s`
-                              : '0 cm/s',
+                          value: `${details.metadata.velocity} cm/s`,
                         },
-                        {
-                          title: 'Velocity X',
-                          value:
-                            details.metadata.velocityX !== undefined
-                              ? `${details.metadata.velocityX} cm/s`
-                              : '0 cm/s',
-                        },
-                        {
-                          title: 'Velocity Y',
-                          value:
-                            details.metadata.velocityY !== undefined
-                              ? `${details.metadata.velocityY} cm/s`
-                              : '0 cm/s',
-                        },
+                        ...(details.metadata.velocityX !== undefined
+                          ? [
+                              {
+                                title: 'Velocity X',
+                                value: `${details.metadata.velocityX} cm/s`,
+                              },
+                            ]
+                          : []),
+                        ...(details.metadata.velocityY !== undefined
+                          ? [
+                              {
+                                title: 'Velocity Y',
+                                value: `${details.metadata.velocityY} cm/s`,
+                              },
+                            ]
+                          : []),
                       ]}
                     />
                   )}
+                {/* Sensor Info Card - only show when ultrasonic or heading data is available */}
                 {details.fromTab === 'original' &&
                   details.metadata &&
-                  Object.keys(details.metadata).length > 0 && (
+                  (details.metadata.ultrasonic !== undefined ||
+                    details.metadata.heading !== undefined) && (
                     <div className='flex flex-col md:flex-row gap-4 items-center w-full'>
                       <MonitoringInfo<SensorKey>
                         infoItems={[
-                          {
-                            key: 'ultrasonic',
-                            icon: 'mdi:proximity-sensor',
-                            status: 'normal',
-                            title: 'Ultrasonic Reading',
-                            value: `${details.metadata.ultrasonic.toFixed(2)} cm`,
-                          },
-                          {
-                            key: 'gps',
-                            icon: 'fa6-solid:compass',
-                            status: 'normal',
-                            title: 'IMU Heading Direction',
-                            value: `${
-                              details.metadata.heading !== undefined
-                                ? `${details.metadata.heading.toFixed(2)}° ${details.metadata.direction ?? ''}`
-                                : 'N/A'
-                            }`,
-                          },
-                          {
-                            key: 'obstacle',
-                            icon: 'mynaui:danger-triangle-solid',
-                            status: `${
-                              categoryStatusAlert(
-                                details.metadata.ultrasonic,
-                              ) || 'normal'
-                            }`,
-                            title: 'Obstacle Detection Alert',
-                            value: `${categoryAlert(details.metadata.ultrasonic)}`,
-                          },
+                          ...(details.metadata.ultrasonic !== undefined
+                            ? [
+                                {
+                                  key: 'ultrasonic' as const,
+                                  icon: 'mdi:proximity-sensor',
+                                  status: 'normal' as const,
+                                  title: 'Ultrasonic Reading',
+                                  value: `${details.metadata.ultrasonic.toFixed(2)} cm`,
+                                },
+                              ]
+                            : []),
+                          ...(details.metadata.heading !== undefined
+                            ? [
+                                {
+                                  key: 'gps' as const,
+                                  icon: 'fa6-solid:compass',
+                                  status: 'normal' as const,
+                                  title: 'IMU Heading Direction',
+                                  value: `${details.metadata.heading.toFixed(2)}° ${details.metadata.direction ?? ''}`,
+                                },
+                              ]
+                            : []),
+                          ...(details.metadata.ultrasonic !== undefined
+                            ? [
+                                {
+                                  key: 'obstacle' as const,
+                                  icon: 'mynaui:danger-triangle-solid',
+                                  status: (categoryStatusAlert(
+                                    details.metadata.ultrasonic,
+                                  ) || 'normal') as
+                                    | 'normal'
+                                    | 'warning'
+                                    | 'danger',
+                                  title: 'Obstacle Detection Alert',
+                                  value: `${categoryAlert(details.metadata.ultrasonic)}`,
+                                },
+                              ]
+                            : []),
                         ]}
                       />
                     </div>
@@ -1045,35 +1088,38 @@ export default function PhotoDetailsWithPaths({
           </AnimatePresence>
           <div className='flex flex-row gap-4 items-center justify-center w-full h-fit mt-7'>
             <button
-              onClick={() => {
-                setIsPopUpRemoveImageOpen(true);
-              }}
+              onClick={handleOpenInExplorer}
+              className={clsx(
+                'flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl w-full',
+                'border-blue-400/20 hover:bg-blue-200/20 hover:border-blue-500 transition',
+                isElectronMode ? '' : 'opacity-50 cursor-not-allowed',
+              )}
+              disabled={!isElectronMode}
+            >
+              <p className='bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text font-semibold text-sm'>
+                Open in Explorer
+              </p>
+              <Icon
+                icon='material-symbols:folder-open-outline'
+                width={20}
+                height={20}
+                className='text-[#39A9F9]'
+              />
+            </button>
+
+            <button
+              onClick={handleDeletePhoto}
               className={clsx(
                 'flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl w-full',
                 'border-red-500/30 text-red-500 hover:bg-red-200/20 hover:border-red-500 transition',
               )}
             >
-              <p className='font-semibold text-sm'>Delete</p>
+              <p className='font-semibold text-sm'>Delete Photo</p>
               <Icon
                 icon='material-symbols:delete-outline'
                 width={20}
                 height={20}
                 className='text-red-500'
-              />
-            </button>
-
-            <button
-              onClick={handleDownload}
-              className='flex flex-row gap-2 items-center justify-center px-6 py-3 border-2 rounded-xl w-full border-blue-400/20 hover:bg-blue-200/20 hover:border-blue-500 transition'
-            >
-              <p className='bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text font-semibold text-sm'>
-                Download
-              </p>
-              <Icon
-                icon='material-symbols:download'
-                width={20}
-                height={20}
-                className='text-[#39A9F9]'
               />
             </button>
           </div>

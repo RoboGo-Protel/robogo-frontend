@@ -2,10 +2,11 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // HYBRID MODE: Static client + separate backend server
 
-  // ✅ PORTABLE MODE - Static export for zero-runtime dependencies
-  output: 'export', // Generate static files that can be served by any HTTP server
-  distDir: 'out', // Output to 'out' folder for easy serving
+  // STATIC EXPORT MODE - Serve pre-built static files (FASTEST!)
+  output: 'export',
+  distDir: 'out',
   trailingSlash: true,
 
   // Cache optimization
@@ -14,23 +15,27 @@ const nextConfig: NextConfig = {
 
   // Optimize images for static export
   images: {
-    unoptimized: true, // Required for static export
+    unoptimized: true,
   },
 
   // Disable source maps in production untuk performa
   productionBrowserSourceMaps: false,
 
-  // Build optimizations
-  experimental: {
-    optimizePackageImports: ['@iconify/react'],
-  },
-
-  // Skip build-time checks for faster builds
+  // Skip build-time errors for API routes (they'll be handled by backend)
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+
+  // Exclude API routes from static export (they'll be handled by backend server)
+  async rewrites() {
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [],
+    };
   },
 };
 

@@ -847,9 +847,8 @@ export default function Paths() {
             <Select
               options={
                 selectedDate
-                  ? dateWithSessions.find(
-                      (d) => d.value === selectedDate.value,
-                    )?.sessions || []
+                  ? dateWithSessions.find((d) => d.value === selectedDate.value)
+                      ?.sessions || []
                   : []
               }
               styles={customStyles}
@@ -929,7 +928,7 @@ export default function Paths() {
           <div className='overflow-x-auto'>
             <PathsTable reports={isLocalMode ? filteredReports : reports} />
           </div>
-        </>
+        </div>
       )}
     </div>
   );

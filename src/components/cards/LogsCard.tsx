@@ -877,12 +877,11 @@ const renderFormattedSensorData = (
               icon={group.icon}
               width={14}
               height={14}
-              className={isDark ? 'text-gray-400' : 'text-gray-500'}
+              style={{ color: '#3B82F6' }}
             />
             <h4
-              className={`text-sm font-semibold ${
-                isDark ? 'text-gray-200' : 'text-gray-700'
-              }`}
+              className={`text-sm font-semibold`}
+              style={{ color: '#3B82F6' }}
             >
               {groupName}
             </h4>
@@ -1574,45 +1573,13 @@ Total Distance Traveled (KF): 0.00 cm
                     {activeTab === 'static' ? (
                       // Static View - Latest JSON data only
                       <div
-                        className={`flex-1 min-h-0 w-full rounded-md border-l-4 border-orange-500 overflow-hidden ${
+                        className={`flex-1 min-h-0 w-full rounded-md overflow-hidden ${
                           isDark ? 'bg-gray-900/50' : 'bg-gray-50'
                         }`}
                       >
                         <div className='h-full overflow-y-auto'>
                           {latestJsonData ? (
                             <div className='p-4'>
-                              <div className='flex items-center justify-between mb-4'>
-                                <div className='flex items-center gap-2'>
-                                  <Icon
-                                    icon='mdi:dashboard'
-                                    className={
-                                      isDark
-                                        ? 'text-orange-400'
-                                        : 'text-orange-600'
-                                    }
-                                    width={16}
-                                    height={16}
-                                  />
-                                  <h3
-                                    className={`text-sm font-semibold ${
-                                      isDark
-                                        ? 'text-orange-400'
-                                        : 'text-orange-600'
-                                    }`}
-                                  >
-                                    Latest ESP32 Data
-                                  </h3>
-                                </div>
-                                <div
-                                  className={`text-xs px-2 py-1 rounded-full ${
-                                    isDark
-                                      ? 'bg-orange-900/30 text-orange-300'
-                                      : 'bg-orange-100 text-orange-700'
-                                  }`}
-                                >
-                                  Live
-                                </div>
-                              </div>
                               {renderFormattedSensorData(
                                 latestJsonData,
                                 isDark,

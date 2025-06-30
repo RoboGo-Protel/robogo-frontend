@@ -16,6 +16,7 @@ import { useUserConfig } from '@/hooks/useUserConfig';
 import { truncateProfileName } from '@/utils/nameUtils';
 import { useLocalMode } from '@/context/LocalModeContext';
 import { ClipLoader } from 'react-spinners';
+import { useDeviceStatus } from '@/hooks/useDeviceStatus';
 
 export default function TopNavbar() {
   const { isDark, toggleDark } = useDarkMode();
@@ -35,7 +36,10 @@ export default function TopNavbar() {
     loading: deviceLoading,
   } = useUserConfig();
   const [rssiValue, setRssiValue] = useState<number | null>(null);
-  const [currentSession, setCurrentSession] = useState<number | null>(null); // ESP32 Connection State
+  const [currentSession, setCurrentSession] = useState<number | null>(null);
+  const [deviceName, setDeviceName] = useState<string | null>(null);
+
+  // ESP32 Connection State
   const {
     isConnected,
     connectToSerial,
@@ -44,6 +48,9 @@ export default function TopNavbar() {
     injectTestData,
     localData,
   } = useLocalMode();
+
+  // Device status hook for auto-updating component status
+  const { updateAllComponents } = useDeviceStatus(deviceName);
   // Test data injection function - now uses LocalModeContext
   const handleInjectTestData = () => {
     if (!isElectron) {
@@ -57,18 +64,100 @@ export default function TopNavbar() {
     try {
       injectTestData();
       showToast('Test data injected!', 'success');
-    } catch (error) {
-      console.error('Error injecting test data:', error);
+    } catch {
       showToast('Failed to inject test data', 'error');
     }
   };
 
   // Debug: Log connection state changes
   useEffect(() => {
-    console.log(
-      `[TopNavbar] Connection state changed - isConnected: ${isConnected}, connectedPort: ${connectedPort}`,
-    );
+    // Connection state changed - removed console.log
   }, [isConnected, connectedPort]);
+
+  // Get deviceName from selected device
+  useEffect(() => {
+    const fetchDeviceName = async () => {
+      if (!selectedDevice?.id) {
+        setDeviceName(null);
+        return;
+      }
+
+      try {
+        // In local mode, use the device name directly from selectedDevice
+        // selectedDevice is a Device object with deviceName property
+        setDeviceName(selectedDevice.deviceName);
+      } catch {
+        // Error fetching device name handled silently
+      }
+    };
+
+    fetchDeviceName();
+  }, [selectedDevice?.id, selectedDevice?.deviceName]);
+
+  // Auto-update device component status when successfully connected to COM port
+  useEffect(() => {
+    const autoUpdateDeviceStatus = async () => {
+      console.log('[TopNavbar] autoUpdateDeviceStatus called:', {
+        isConnected,
+        deviceName,
+        connectedPort,
+      });
+
+      if (isConnected && deviceName && connectedPort) {
+        try {
+          console.log(
+            '[TopNavbar] Attempting to update all components to ON...',
+          );
+          const success = await updateAllComponents('ON');
+          console.log('[TopNavbar] Update result:', success);
+          if (success) {
+            showToast(
+              `🤖 All robot components are now ON (Connected to ${connectedPort})`,
+              'success',
+            );
+          }
+        } catch (error) {
+          console.error(
+            '[TopNavbar] Error auto-updating device status:',
+            error,
+          );
+        }
+      } else if (!isConnected && deviceName) {
+        // Auto-update to OFF when disconnected
+        try {
+          console.log(
+            '[TopNavbar] Attempting to update all components to OFF...',
+          );
+          const success = await updateAllComponents('OFF');
+          console.log('[TopNavbar] Update OFF result:', success);
+          if (success) {
+            showToast(
+              '🤖 All robot components are now OFF (Disconnected)',
+              'info',
+            );
+          }
+        } catch (error) {
+          console.error(
+            '[TopNavbar] Error auto-updating device status on disconnect:',
+            error,
+          );
+        }
+      }
+    };
+
+    // Only trigger when connection state changes
+    if (deviceName) {
+      console.log(
+        '[TopNavbar] Triggering autoUpdateDeviceStatus with deviceName:',
+        deviceName,
+      );
+      autoUpdateDeviceStatus();
+    } else {
+      console.log(
+        '[TopNavbar] Skipping autoUpdateDeviceStatus - no deviceName',
+      );
+    }
+  }, [isConnected, deviceName, connectedPort, updateAllComponents, showToast]);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [availablePorts, setAvailablePorts] = useState<
     {
@@ -159,8 +248,7 @@ export default function TopNavbar() {
       } else {
         setShowConnectModal(true);
       }
-    } catch (error) {
-      console.error('Error getting serial ports:', error);
+    } catch {
       showToast('Failed to get serial ports list.', 'error');
     }
   };
@@ -171,10 +259,8 @@ export default function TopNavbar() {
     }
 
     try {
-      console.log(`[TopNavbar] Starting connection to ${selectedPort}`);
       setIsConnecting(true);
       const success = await connectToSerial(selectedPort);
-      console.log(`[TopNavbar] Connection result: ${success}`);
 
       if (success) {
         setShowConnectModal(false);
@@ -184,14 +270,10 @@ export default function TopNavbar() {
 
         // Small delay to ensure state updates properly
         await new Promise((resolve) => setTimeout(resolve, 500));
-        console.log(
-          `[TopNavbar] After delay - isConnected: ${isConnected}, connectedPort: ${connectedPort}`,
-        );
       } else {
         showToast('Failed to connect to ESP32.', 'error');
       }
-    } catch (error) {
-      console.error('Error connecting to serial port:', error);
+    } catch {
       showToast('Failed to connect to serial port.', 'error');
     } finally {
       setIsConnecting(false);
@@ -203,8 +285,7 @@ export default function TopNavbar() {
       await disconnectSerial();
       setSelectedPort('');
       showToast('Disconnected from ESP32', 'success');
-    } catch (error) {
-      console.error('Error disconnecting from serial port:', error);
+    } catch {
       showToast('Error disconnecting from serial port.', 'error');
     }
   };
@@ -340,11 +421,16 @@ export default function TopNavbar() {
       >
         <Link href='/' className='flex items-center gap-2 w-fit'>
           {isDark ? (
-            <Icon icon='ph:boat-fill' className='text-3xl text-white' />
+            <Image
+              src='/images/robogo_white.png'
+              alt='RoboGo Logo White'
+              width={32}
+              height={32}
+            />
           ) : (
             <Image
               src='/images/robogo_logo.png'
-              alt='Logo'
+              alt='RoboGo Logo'
               width={32}
               height={32}
             />
@@ -458,15 +544,11 @@ export default function TopNavbar() {
                               setTimeout(resolve, 200),
                             );
 
-                            // Manually trigger a re-render by updating a state that forces components to remount
-                            console.log(
-                              `Device switch completed for: ${device.deviceName}`,
-                            );
+                            // Device switch completed
                           } else {
                             showToast('Failed to switch device', 'error');
                           }
-                        } catch (error) {
-                          console.error('Device switch error:', error);
+                        } catch {
                           showToast('Error switching device', 'error');
                         }
                       }}

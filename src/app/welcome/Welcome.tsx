@@ -112,11 +112,11 @@ export default function Welcome() {
         >
           <div className='flex flex-col gap-6'>
             <button
-              className='w-full px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white transition-all duration-200 text-lg'
+              className='w-full px-6 py-3 rounded-xl font-semibold text-lg transition-all duration-200 bg-gray-300 text-gray-400 cursor-not-allowed'
               onClick={() => handleSelectMode('online')}
-              disabled={loading}
+              disabled={true}
             >
-              Online Mode (Login/Register)
+              Online Mode (Login/Register) - Disabled
             </button>
             <button
               className={`w-full px-6 py-3 rounded-xl font-semibold text-lg transition-all duration-200 ${

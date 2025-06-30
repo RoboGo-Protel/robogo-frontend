@@ -301,25 +301,109 @@ export default function MidArea_Monitoring({
       },
     );
   };
+  // Cache untuk mencegah duplikasi - HARUS di luar useEffect agar persisten
+  const processedDataCacheRef = useRef(new Set<string>());
+  const timestampCounterRef = useRef(0);
+
   // Effect to process serial buffer data
   useEffect(() => {
     // Function to parse serial data into reports format
-    const parseSerialDataToReports = (serialData: string) => {
+    const parseSerialDataToReports = (serialData: string, sourceInfo = '') => {
       try {
         // Try to parse as JSON
         const data = JSON.parse(serialData);
-        const timestamp = new Date().toISOString();
+
+        // Create a unique key untuk deduplication berdasarkan data ESP32 timestamp dan sensor values
+        const dataKey = `${data.timestamp}_${data.ultrasonic}_${data.heading}_${data.pitch}_${data.roll}`;
+
+        // Skip jika data sudah pernah diproses
+        if (processedDataCacheRef.current.has(dataKey)) {
+          console.log(
+            '📊 [MONITORING] Skipping duplicate data:',
+            dataKey,
+            sourceInfo,
+          );
+          return;
+        }
+
+        // STRICT validation - must have actual sensor data, not just timestamp
+        const hasValidUltrasonicData =
+          (data.ultrasonic !== undefined &&
+            data.ultrasonic !== null &&
+            typeof data.ultrasonic === 'number' &&
+            data.ultrasonic >= 0) ||
+          (data.ultrasonicDistance !== undefined &&
+            data.ultrasonicDistance !== null &&
+            typeof data.ultrasonicDistance === 'number' &&
+            data.ultrasonicDistance >= 0);
+
+        const hasValidIMUData =
+          (data.heading !== undefined &&
+            data.heading !== null &&
+            typeof data.heading === 'number' &&
+            !isNaN(data.heading)) ||
+          (data.pitch !== undefined &&
+            data.pitch !== null &&
+            typeof data.pitch === 'number' &&
+            !isNaN(data.pitch)) ||
+          (data.roll !== undefined &&
+            data.roll !== null &&
+            typeof data.roll === 'number' &&
+            !isNaN(data.roll));
+
+        const hasValidPosData =
+          (data.position &&
+            typeof data.position === 'object' &&
+            (typeof data.position.positionX === 'number' ||
+              typeof data.position.positionY === 'number')) ||
+          (typeof data.positionX === 'number' && data.positionX !== null) ||
+          (typeof data.positionY === 'number' && data.positionY !== null);
+
+        // Must have at least one type of valid sensor data (not just timestamp)
+        const hasValidSensorData =
+          hasValidUltrasonicData || hasValidIMUData || hasValidPosData;
+
+        // Skip entries that only have timestamp or other metadata
+        if (!hasValidSensorData) {
+          console.log(
+            '📊 [MONITORING] Skipping entry without valid sensor data:',
+            data,
+          );
+          return;
+        }
+
+        // Add to cache untuk prevent duplicate processing
+        processedDataCacheRef.current.add(dataKey);
+
+        // Limit cache size untuk prevent memory leak
+        if (processedDataCacheRef.current.size > 1000) {
+          const firstKey = processedDataCacheRef.current.values().next().value;
+          if (firstKey) {
+            processedDataCacheRef.current.delete(firstKey);
+          }
+        }
+
+        // Buat timestamp unik berdasarkan waktu kita menerima data
+        const now = Date.now();
+        const timestamp = new Date(
+          now + timestampCounterRef.current,
+        ).toISOString();
+        timestampCounterRef.current += 1; // Increment 1ms per entry untuk ensure uniqueness
 
         // Debug logging to see the actual data structure
-        console.log('📊 [DEBUG] Raw serial data structure:', data);
+        console.log('📊 [DEBUG] Valid sensor data found:', data, sourceInfo);
+        console.log('📊 [DEBUG] Generated timestamp:', timestamp);
+        console.log('📊 [DEBUG] Data key:', dataKey);
 
-        // Extract ultrasonic data
-        if (
-          data.ultrasonic !== undefined ||
-          data.ultrasonicDistance !== undefined
-        ) {
+        // Extract ultrasonic data - only if valid with strict validation
+        if (hasValidUltrasonicData) {
+          const ultrasonicValue =
+            data.ultrasonic !== undefined && data.ultrasonic >= 0
+              ? data.ultrasonic
+              : data.ultrasonicDistance;
+
           const ultrasonicEntry = {
-            ultrasonic: data.ultrasonic || data.ultrasonicDistance,
+            ultrasonic: ultrasonicValue,
             timestamp,
             ...(data.imageFileName && { imageFileName: data.imageFileName }),
           };
@@ -328,20 +412,24 @@ export default function MidArea_Monitoring({
             ...prev,
             ultrasonic: [...prev.ultrasonic, ultrasonicEntry],
           }));
+
+          console.log(
+            '📊 [MONITORING] Added ultrasonic entry:',
+            ultrasonicEntry,
+          );
         }
 
-        // Extract IMU data
-        if (
-          data.heading !== undefined ||
-          data.pitch !== undefined ||
-          data.roll !== undefined
-        ) {
+        // Extract IMU data - only if valid with strict validation
+        if (hasValidIMUData) {
           const imuEntry = {
             heading: data.heading,
             pitch: data.pitch,
             roll: data.roll,
             yaw: data.yaw,
-            ultrasonic: data.ultrasonic,
+            ultrasonic:
+              data.ultrasonic !== undefined && data.ultrasonic >= 0
+                ? data.ultrasonic
+                : undefined,
             accelerationMagnitude: data.accelerationMagnitude,
             rotationRate: data.rotationRate,
             linearAcceleration: data.linearAcceleration,
@@ -360,23 +448,29 @@ export default function MidArea_Monitoring({
             ...prev,
             imu: [...prev.imu, imuEntry],
           }));
+
+          console.log('📊 [MONITORING] Added IMU entry:', imuEntry);
         }
 
-        // Extract paths data - support both nested and flat position formats
-        if (
-          // Check for nested position format
+        // Extract paths data - hanya jika ada data posisi atau movement yang valid
+        const hasValidPositionData =
           (data.position &&
+            typeof data.position === 'object' &&
             (data.position.positionX !== undefined ||
               data.position.positionY !== undefined)) ||
-          // Check for flat position format
-          data.positionX !== undefined ||
-          data.positionY !== undefined ||
-          // Check for other position indicators
-          data.position !== undefined ||
-          // Check if we have location/movement data
-          (data.heading !== undefined &&
-            (data.speed !== undefined || data.velocity !== undefined))
-        ) {
+          (data.positionX !== undefined && data.positionX !== null) ||
+          (data.positionY !== undefined && data.positionY !== null) ||
+          (data.x !== undefined && data.x !== null) ||
+          (data.y !== undefined && data.y !== null);
+
+        const hasValidMovementData =
+          data.heading !== undefined &&
+          data.heading !== null &&
+          !isNaN(data.heading) &&
+          ((data.speed !== undefined && data.speed !== null) ||
+            (data.velocity !== undefined && data.velocity !== null));
+
+        if (hasValidPositionData || hasValidMovementData) {
           // Handle different position formats
           let positionData = {
             positionX: 0,
@@ -386,8 +480,8 @@ export default function MidArea_Monitoring({
           if (data.position && typeof data.position === 'object') {
             // Nested position format
             positionData = {
-              positionX: data.position.positionX || data.position.x || 0,
-              positionY: data.position.positionY || data.position.y || 0,
+              positionX: data.position.positionX ?? data.position.x ?? 0,
+              positionY: data.position.positionY ?? data.position.y ?? 0,
             };
           } else if (
             data.positionX !== undefined ||
@@ -395,30 +489,30 @@ export default function MidArea_Monitoring({
           ) {
             // Flat position format
             positionData = {
-              positionX: data.positionX || 0,
-              positionY: data.positionY || 0,
+              positionX: data.positionX ?? 0,
+              positionY: data.positionY ?? 0,
             };
           } else if (data.x !== undefined || data.y !== undefined) {
             // Alternative flat format
             positionData = {
-              positionX: data.x || 0,
-              positionY: data.y || 0,
+              positionX: data.x ?? 0,
+              positionY: data.y ?? 0,
             };
           }
 
           const pathEntry = {
             timestamp,
             position: positionData,
-            speed: data.speed || data.velocity || 0,
+            speed: data.speed ?? data.velocity ?? 0,
             velocity: data.velocity,
             heading: data.heading,
             direction: data.direction,
             distanceTraveled: data.distanceTraveled,
-            ultrasonic: data.ultrasonic,
+            ultrasonic: data.ultrasonic >= 0 ? data.ultrasonic : undefined,
             ...(data.imageFileName && { imageFileName: data.imageFileName }),
           };
 
-          console.log('📊 [DEBUG] Adding path entry:', pathEntry);
+          console.log('📊 [DEBUG] Adding valid path entry:', pathEntry);
 
           setMonitoringData((prev) => ({
             ...prev,
@@ -426,27 +520,20 @@ export default function MidArea_Monitoring({
           }));
         }
 
-        console.log('📊 [MONITORING] Parsed serial data:', {
-          data,
-          timestamp,
-          hasUltrasonic:
-            data.ultrasonic !== undefined ||
-            data.ultrasonicDistance !== undefined,
-          hasIMU:
-            data.heading !== undefined ||
-            data.pitch !== undefined ||
-            data.roll !== undefined,
-          hasPathsNested:
-            data.position &&
-            (data.position.positionX !== undefined ||
-              data.position.positionY !== undefined),
-          hasPathsFlat:
-            data.positionX !== undefined || data.positionY !== undefined,
-          hasPathsAlt: data.x !== undefined || data.y !== undefined,
-          hasMovement:
-            data.heading !== undefined &&
-            (data.speed !== undefined || data.velocity !== undefined),
-        });
+        console.log(
+          '📊 [MONITORING] Successfully processed valid sensor data:',
+          {
+            timestamp,
+            hasValidUltrasonic: hasValidUltrasonicData,
+            hasValidIMU: hasValidIMUData,
+            hasValidPosition: hasValidPosData,
+            ultrasonicValue:
+              data.ultrasonic !== undefined && data.ultrasonic >= 0
+                ? data.ultrasonic
+                : data.ultrasonicDistance,
+            dataKeys: Object.keys(data),
+          },
+        );
       } catch (error) {
         console.warn(
           '📊 [MONITORING] Failed to parse serial data:',
@@ -456,19 +543,64 @@ export default function MidArea_Monitoring({
       }
     };
     if (serialBuffer && isLocalMode && localCurrentSession) {
-      // Split by lines and process each line
+      // Track processed JSON content untuk prevent duplicate processing dari fragments
+      const processedJsonContent = new Set<string>();
+
+      // Split by lines dan reassemble JSON yang terpotong
       const lines = serialBuffer
         .split('\n')
         .filter((line: string) => line.trim());
 
       lines.forEach((line: string) => {
-        // Extract JSON from ESP32 log format: [timestamp] [ESP32] {json}
-        const jsonMatch = line.match(/\{.*\}/);
+        // Extract JSON dari ESP32 log format: [timestamp] [ESP32] {json}
+        // Match complete JSON objects that start with { and end with }
+        const jsonMatch = line.match(/\{[^}]*\}$/);
+
         if (jsonMatch) {
-          parseSerialDataToReports(jsonMatch[0]);
-        } else if (line.startsWith('{') && line.endsWith('}')) {
-          // Direct JSON format
-          parseSerialDataToReports(line);
+          // JSON lengkap ditemukan
+          const jsonStr = jsonMatch[0];
+
+          // Check if this exact JSON content has been processed already
+          if (processedJsonContent.has(jsonStr)) {
+            console.log(
+              '📊 [MONITORING] Skipping already processed JSON content',
+            );
+            return;
+          }
+
+          try {
+            // Test parsing untuk memastikan JSON valid dan complete
+            const testData = JSON.parse(jsonStr);
+
+            // Minimal validation - harus ada field sensor data, bukan hanya timestamp
+            if (
+              testData &&
+              typeof testData === 'object' &&
+              (typeof testData.ultrasonic === 'number' ||
+                typeof testData.heading === 'number' ||
+                typeof testData.pitch === 'number' ||
+                typeof testData.roll === 'number' ||
+                (testData.position && typeof testData.position === 'object'))
+            ) {
+              // Mark this JSON content as processed
+              processedJsonContent.add(jsonStr);
+              parseSerialDataToReports(jsonStr, 'complete_json');
+            } else {
+              console.log(
+                '📊 [MONITORING] Skipping JSON without actual sensor data:',
+                jsonStr,
+              );
+            }
+          } catch {
+            console.warn('📊 [MONITORING] Invalid JSON found:', jsonStr);
+          }
+        } else {
+          // DISABLE fragment processing untuk prevent duplikasi
+          // Hanya process JSON yang sudah lengkap
+          console.log(
+            '📊 [MONITORING] Ignoring fragment to prevent duplication:',
+            line,
+          );
         }
       });
     }
@@ -552,6 +684,13 @@ export default function MidArea_Monitoring({
                   imu: [],
                   paths: [],
                 });
+
+                // Reset deduplication cache untuk session baru
+                processedDataCacheRef.current.clear();
+                timestampCounterRef.current = 0;
+                console.log(
+                  '📊 [MONITORING] Reset deduplication cache for new session',
+                );
 
                 // Create monitoring session folder
                 const sessionFolder = `monitoring/${newSessionId}`;
@@ -1299,333 +1438,7 @@ export default function MidArea_Monitoring({
       // Photo capture failed silently
     }
   };
-  // Recalibrate IMU handler
-  const handleRecalibrateIMU = async () => {
-    if (isLocalMode) {
-      // In local mode, IMU calibration is not available through API
-      await promise(Promise.resolve(), {
-        loading: 'Calibrating...',
-        success: 'IMU calibration request sent to ESP32!',
-        error: 'Failed to calibrate IMU.',
-      });
-      return;
-    }
 
-    if (!selectedDevice) {
-      await promise(Promise.reject(new Error('No device selected')), {
-        loading: 'Calibrating...',
-        success: 'IMU calibrated!',
-        error: 'Please select a device first.',
-      });
-      return;
-    }
-
-    try {
-      await promise(
-        fetch(`/api/devices/${selectedDevice.id}/calibrate-imu`, {
-          method: 'POST',
-        }).then((res) => {
-          if (!res.ok) {
-            throw new Error('Failed to calibrate IMU');
-          }
-        }),
-        {
-          loading: 'Calibrating IMU...',
-          success: 'IMU calibration completed!',
-          error: 'Failed to calibrate IMU.',
-        },
-      );
-    } catch (error) {
-      console.error('IMU calibration failed:', error);
-    }
-  };
-  // Export logs handler for local mode
-  const handleExportLogs = async () => {
-    if (!isLocalMode) {
-      await promise(
-        Promise.reject(new Error('Export only available in local mode')),
-        {
-          loading: 'Exporting logs...',
-          success: 'Logs exported!',
-          error: 'Export only available in local mode.',
-        },
-      );
-      return;
-    }
-
-    try {
-      await promise(
-        new Promise<void>((resolve, reject) => {
-          try {
-            // Helper function to create table format
-            const createTable = (headers: string[], rows: string[][]) => {
-              const colWidths = headers.map((header, index) =>
-                Math.max(
-                  header.length,
-                  ...rows.map((row) => (row[index] || '').toString().length),
-                ),
-              );
-
-              const separator =
-                '+' + colWidths.map((w) => '-'.repeat(w + 2)).join('+') + '+\n';
-
-              let table = separator;
-
-              // Header row
-              table +=
-                '|' +
-                headers
-                  .map(
-                    (header, index) => ` ${header.padEnd(colWidths[index])} `,
-                  )
-                  .join('|') +
-                '|\n';
-
-              table += separator;
-
-              // Data rows
-              rows.forEach((row) => {
-                table +=
-                  '|' +
-                  row
-                    .map(
-                      (cell, index) =>
-                        ` ${(cell || '').toString().padEnd(colWidths[index])} `,
-                    )
-                    .join('|') +
-                  '|\n';
-              });
-
-              table += separator;
-              return table;
-            };
-
-            // Create formatted log content
-            let logContent = ''; // Add header
-            logContent += `RoboGo Sensor Data Export\n`;
-            logContent += `${'='.repeat(60)}\n`;
-            logContent += `Export Date: ${new Date().toLocaleString()}\n`;
-            logContent += `Device: ${selectedDevice?.deviceName || 'ESP32 (Local Mode)'}\n`;
-            logContent += `Mode: Local Mode\n`;
-            logContent += `${'='.repeat(60)}\n\n`;
-            // Process serial buffer data if available
-            if (serialBuffer && serialBuffer.trim().length > 0) {
-              const lines = serialBuffer
-                .trim()
-                .split('\n')
-                .filter((line) => line.trim());
-
-              // Parse and create structured data table from JSON lines
-              const structuredData: Array<{
-                timestamp: string;
-                ultrasonic?: number;
-                heading?: number;
-                direction?: string;
-                pitch?: number;
-                roll?: number;
-                yaw?: number;
-                positionX?: number;
-                positionY?: number;
-                velocityX?: number;
-                velocityY?: number;
-                distX?: number;
-                distY?: number;
-              }> = [];
-              lines.forEach((line) => {
-                try {
-                  let jsonString = line.trim();
-
-                  const debugPrefix = '[DEBUG] Forwarding JSON to UART2:';
-
-                  if (jsonString.includes(debugPrefix)) {
-                    const jsonStartIndex =
-                      jsonString.indexOf(debugPrefix) + debugPrefix.length;
-                    jsonString = jsonString.substring(jsonStartIndex).trim();
-                  }
-
-                  const parsedData = JSON.parse(jsonString);
-                  if (
-                    parsedData &&
-                    (parsedData.ultrasonic !== undefined ||
-                      parsedData.heading !== undefined)
-                  ) {
-                    // Use original timestamp from the parsed data
-                    let entryTimestamp: string;
-
-                    if (parsedData.receivedAt) {
-                      // Use receivedAt timestamp if available
-                      entryTimestamp = new Date(
-                        parsedData.receivedAt,
-                      ).toLocaleString();
-                    } else if (parsedData.timestamp) {
-                      // Use timestamp field if available
-                      entryTimestamp = new Date(
-                        parsedData.timestamp,
-                      ).toLocaleString();
-                    } else {
-                      // If no timestamp in data, use 'No timestamp'
-                      entryTimestamp = 'No timestamp';
-                    }
-
-                    structuredData.push({
-                      timestamp: entryTimestamp,
-                      ultrasonic: parsedData.ultrasonic,
-                      heading: parsedData.heading,
-                      direction: parsedData.direction,
-                      pitch: parsedData.pitch,
-                      roll: parsedData.roll,
-                      yaw: parsedData.yaw,
-                      positionX: parsedData.positionX,
-                      positionY: parsedData.positionY,
-                      velocityX: parsedData.velocityX,
-                      velocityY: parsedData.velocityY,
-                      distX: parsedData.distX,
-                      distY: parsedData.distY,
-                    });
-                  }
-                } catch {
-                  // Ignore non-JSON lines
-                }
-              });
-
-              // Create structured sensor data table if parsed data is available
-              if (structuredData.length > 0) {
-                logContent += `SENSOR DATA TABLE\n`;
-                logContent += `${'-'.repeat(40)}\n`;
-                logContent += `Total Sensor Records: ${structuredData.length}\n\n`;
-
-                const sensorHeaders = [
-                  'No',
-                  'Timestamp',
-                  'Ultrasonic (cm)',
-                  'Heading (°)',
-                  'Direction',
-                  'Pitch (°)',
-                  'Roll (°)',
-                  'Yaw (°)',
-                  'Position X',
-                  'Position Y',
-                  'Velocity X',
-                  'Velocity Y',
-                  'Dist X',
-                  'Dist Y',
-                ];
-
-                const sensorRows = structuredData.map((data, index) => [
-                  (index + 1).toString(),
-                  data.timestamp,
-                  data.ultrasonic?.toFixed(2) || 'N/A',
-                  data.heading?.toFixed(2) || 'N/A',
-                  data.direction || 'N/A',
-                  data.pitch?.toFixed(2) || 'N/A',
-                  data.roll?.toFixed(2) || 'N/A',
-                  data.yaw?.toFixed(2) || 'N/A',
-                  data.positionX?.toFixed(2) || 'N/A',
-                  data.positionY?.toFixed(2) || 'N/A',
-                  data.velocityX?.toFixed(2) || 'N/A',
-                  data.velocityY?.toFixed(2) || 'N/A',
-                  data.distX?.toFixed(2) || 'N/A',
-                  data.distY?.toFixed(2) || 'N/A',
-                ]);
-
-                logContent += createTable(sensorHeaders, sensorRows);
-                logContent += '\n';
-              } else {
-                logContent += `NO STRUCTURED SENSOR DATA AVAILABLE\n`;
-                logContent += `${'-'.repeat(40)}\n`;
-                logContent += `No valid JSON sensor data found in serial buffer.\n`;
-                logContent += `Make sure the device is sending structured data.\n\n`;
-              }
-            } else {
-              logContent += `NO SERIAL LOGS AVAILABLE\n`;
-              logContent += `${'-'.repeat(40)}\n`;
-              logContent += `The serial buffer is empty. Make sure the device is connected\n`;
-              logContent += `and generating data before exporting logs.\n\n`;
-            }
-
-            // Add current live data summary if available
-            if (liveSerialData) {
-              logContent += `CURRENT LIVE DATA SUMMARY\n`;
-              logContent += `${'-'.repeat(40)}\n\n`;
-
-              const liveHeaders = ['Sensor', 'Value', 'Unit'];
-              const liveRows = [
-                [
-                  'Ultrasonic',
-                  liveSerialData.ultrasonic?.toFixed(2) || 'N/A',
-                  'cm',
-                ],
-                ['Heading', liveSerialData.heading?.toFixed(2) || 'N/A', '°'],
-                ['Direction', liveSerialData.direction || 'N/A', ''],
-                ['Pitch', liveSerialData.pitch?.toFixed(2) || 'N/A', '°'],
-                ['Roll', liveSerialData.roll?.toFixed(2) || 'N/A', '°'],
-                ['Yaw', liveSerialData.yaw?.toFixed(2) || 'N/A', '°'],
-                [
-                  'Position X',
-                  liveSerialData.position?.positionX?.toFixed(2) || 'N/A',
-                  '',
-                ],
-                [
-                  'Position Y',
-                  liveSerialData.position?.positionY?.toFixed(2) || 'N/A',
-                  '',
-                ],
-                [
-                  'Velocity Total',
-                  liveSerialData.velocity?.toFixed(2) || 'N/A',
-                  'm/s',
-                ],
-                [
-                  'Distance Total',
-                  liveSerialData.distanceTraveled?.toFixed(2) || 'N/A',
-                  'cm',
-                ],
-              ];
-
-              logContent += createTable(liveHeaders, liveRows);
-              logContent += '\n';
-            }
-
-            // Add export footer
-            logContent += `\n${'='.repeat(60)}\n`;
-            logContent += `Export completed at: ${new Date().toLocaleString()}\n`;
-            logContent += `Generated by: RoboGo Dashboard v1.0\n`;
-            logContent += `${'='.repeat(60)}\n`;
-
-            // Create and download the file
-            const blob = new Blob([logContent], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url; // Generate filename with timestamp
-            const timestamp = new Date()
-              .toLocaleString()
-              .replace(/[\/:\s]/g, '-')
-              .replace(/,/g, '');
-            const deviceName =
-              selectedDevice?.deviceName?.replace(/[^a-zA-Z0-9]/g, '_') ||
-              'esp32_local';
-            link.download = `robogo_sensor_data_${deviceName}_${timestamp}.txt`;
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-
-            resolve();
-          } catch (error) {
-            reject(error);
-          }
-        }),
-        {
-          loading: 'Exporting logs...',
-          success: 'Logs exported successfully!',
-          error: 'Failed to export logs.',
-        },
-      );
-    } catch (error) {
-      console.error('Error during log export:', error);
-    }
-  };
   const listButtons = [
     {
       icon:
@@ -1634,11 +1447,6 @@ export default function MidArea_Monitoring({
           : 'fluent:stop-24-filled',
       text: recordingState === 'idle' ? 'Start Recording' : 'Stop Recording',
       onClick: handleRecordClick,
-    },
-    {
-      icon: 'mynaui:chip-solid',
-      text: 'Recalibrate IMU',
-      onClick: handleRecalibrateIMU,
     },
     {
       icon: 'mingcute:camera-2-ai-fill',
@@ -1650,16 +1458,15 @@ export default function MidArea_Monitoring({
       text: 'Flip Camera',
       onClick: handleToggleFlip,
     },
-    // Only show Export Logs button in local mode
-    ...(isLocalMode
-      ? [
-          {
-            icon: 'mingcute:download-fill',
-            text: 'Export Logs',
-            onClick: handleExportLogs,
-          },
-        ]
-      : []),
+    // ...(isLocalMode
+    //   ? [
+    //       {
+    //         icon: 'mingcute:download-fill',
+    //         text: 'Export Logs',
+    //         onClick: handleExportLogs,
+    //       },
+    //     ]
+    //   : []),
   ];
 
   return (
@@ -1739,14 +1546,14 @@ export default function MidArea_Monitoring({
       <div className='flex flex-col w-full gap-4'>
         <div className='flex flex-col w-full gap-2.5'>
           {' '}
-          <div className='grid grid-cols-2 md:grid-cols-20 gap-2.5 w-full h-fit'>
+          <div className='grid grid-cols-2 md:grid-cols-6 gap-2.5 w-full h-fit'>
             {' '}
             <button
               onClick={handleStartMonitoring}
               disabled={
                 !!effectiveCurrentSession && effectiveCurrentSession > 0
               }
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 text-white col-span-1 md:col-span-10 ${!!effectiveCurrentSession && effectiveCurrentSession > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 text-white col-span-1 md:col-span-3 ${!!effectiveCurrentSession && effectiveCurrentSession > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Icon icon='mingcute:play-fill' width={20} height={20} />
               <p className={`font-semibold text-sm text-white`}>
@@ -1758,7 +1565,7 @@ export default function MidArea_Monitoring({
               disabled={
                 !effectiveCurrentSession || effectiveCurrentSession === 0
               }
-              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl col-span-1 md:col-span-10 ${effectiveCurrentSession && effectiveCurrentSession > 0 ? 'bg-gradient-to-br from-red-500 to-red-700 text-white' : 'bg-gradient-to-br from-blue-500 to-blue-400 text-white opacity-50 cursor-not-allowed'}`}
+              className={`flex flex-row gap-2 items-center justify-center px-6 py-3 rounded-xl col-span-1 md:col-span-3 ${effectiveCurrentSession && effectiveCurrentSession > 0 ? 'bg-gradient-to-br from-red-500 to-red-700 text-white' : 'bg-gradient-to-br from-blue-500 to-blue-400 text-white opacity-50 cursor-not-allowed'}`}
             >
               <Icon icon='mingcute:stop-fill' width={20} height={20} />
               <p className={`font-semibold text-sm text-white`}>
@@ -1769,9 +1576,9 @@ export default function MidArea_Monitoring({
               // Define column spans for grid-cols-20
               const getColSpan = () => {
                 if (isLocalMode) {
-                  return 'col-span-1 md:col-span-4'; // 5 buttons: 4+4+4+4+4 = 20
+                  return 'col-span-1 md:col-span-2'; // 5 buttons: 4+4+4+4+4 = 20
                 } else {
-                  return 'col-span-1 md:col-span-5'; // 4 buttons: 5+5+5+5 = 20
+                  return 'col-span-1 md:col-span-2'; // 4 buttons: 5+5+5+5 = 20
                 }
               };
 

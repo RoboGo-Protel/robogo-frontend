@@ -54,7 +54,7 @@ export default function SettingsClient() {
   const { data: user } = useMeQuery();
   // Add hasMounted state to prevent hydration mismatch
   const [hasMounted, setHasMounted] = useState(false);
-  const [userDevices, setUserDevices] = useState<Device[]>([]);
+  const [, setUserDevices] = useState<Device[]>([]);
   const [topNavbarHeight, setTopNavbarHeight] = useState(0);
   const [bottomNavbarHeight, setBottomNavbarHeight] = useState(0);
   const [availableDevices, setAvailableDevices] = useState<Device[]>([]);
@@ -539,148 +539,6 @@ export default function SettingsClient() {
         ) : (
           <div className='space-y-8'>
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-              {/* Device Settings */}
-              <div
-                className={`rounded-2xl p-8 border ${
-                  isDark
-                    ? 'bg-gray-800 border-gray-700'
-                    : 'bg-white border-gray-200'
-                } shadow-lg`}
-              >
-                {' '}
-                <div className='flex items-center justify-between mb-6'>
-                  <div className='flex items-center space-x-3'>
-                    <Icon
-                      icon='solar:devices-bold'
-                      className='w-7 h-7 text-blue-500'
-                    />
-                    <h2
-                      className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}
-                    >
-                      Robot Devices
-                    </h2>
-                  </div>
-
-                  <button
-                    onClick={() => setShowAddDeviceModal(true)}
-                    disabled={assigningDeviceId !== null}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
-                      assigningDeviceId !== null
-                        ? 'bg-gray-400 cursor-not-allowed text-white'
-                        : 'bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white'
-                    }`}
-                  >
-                    <Icon icon='solar:add-circle-bold' className='w-5 h-5' />
-                    <span className='text-sm font-medium'>
-                      {assigningDeviceId !== null
-                        ? 'Processing...'
-                        : 'Add Device'}
-                    </span>
-                  </button>
-                </div>
-                {/* User's Devices */}
-                <div className='space-y-6'>
-                  <div>
-                    <h3
-                      className={`text-lg font-medium mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      Your Devices
-                    </h3>
-                    {userDevices.length > 0 ? (
-                      <div className='space-y-3'>
-                        {userDevices.map((device) => (
-                          <div
-                            key={device.id}
-                            className={`p-4 rounded-xl border flex items-center justify-between transition-all ${
-                              config.selectedDevice === device.id
-                                ? isDark
-                                  ? 'bg-gradient-to-r from-blue-500/20 to-blue-400/20 border-blue-500 shadow-md'
-                                  : 'bg-gradient-to-r from-blue-500/10 to-blue-400/10 border-blue-500 shadow-md'
-                                : isDark
-                                  ? 'bg-gray-700 border-gray-600'
-                                  : 'bg-gray-50 border-gray-200'
-                            }`}
-                          >
-                            <div className='flex items-center space-x-3'>
-                              {' '}
-                              <Icon
-                                icon='solar:cpu-bolt-bold'
-                                className='w-6 h-6 text-blue-500'
-                              />
-                              <div>
-                                <p
-                                  className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}
-                                >
-                                  {device.deviceName}
-                                </p>{' '}
-                                <p
-                                  className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
-                                >
-                                  Status: {formatDeviceStatus(device.status)}
-                                </p>
-                              </div>
-                            </div>{' '}
-                            <div className='flex items-center space-x-2'>
-                              <button
-                                onClick={() =>
-                                  setConfig((prev) => ({
-                                    ...prev,
-                                    selectedDevice: device.id,
-                                  }))
-                                }
-                                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                                  config.selectedDevice === device.id
-                                    ? 'bg-gradient-to-r from-blue-500 to-blue-400 text-white'
-                                    : isDark
-                                      ? 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-                                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                }`}
-                              >
-                                {config.selectedDevice === device.id
-                                  ? 'Selected'
-                                  : 'Select'}
-                              </button>{' '}
-                              <button
-                                onClick={() =>
-                                  setShowConfirmDialog({
-                                    type: 'unassign',
-                                    deviceId: device.id,
-                                    deviceName: device.deviceName,
-                                  })
-                                }
-                                disabled={unassigningDeviceId !== null}
-                                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                                  unassigningDeviceId !== null
-                                    ? 'bg-gray-400 cursor-not-allowed text-white'
-                                    : isDark
-                                      ? 'bg-orange-600 text-white hover:bg-orange-500'
-                                      : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-                                }`}
-                              >
-                                {unassigningDeviceId === device.id ? (
-                                  <ClipLoader
-                                    color='#ffffff'
-                                    size={16}
-                                    speedMultiplier={1.2}
-                                  />
-                                ) : (
-                                  'Unassign'
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p
-                        className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
-                      >
-                        No devices assigned to you
-                      </p>
-                    )}{' '}
-                  </div>{' '}
-                </div>
-              </div>
               {/* Camera Settings */}
               <div
                 className={`rounded-2xl p-8 border ${
@@ -912,7 +770,7 @@ export default function SettingsClient() {
                         : 'HTTP streaming for standard video streams (MJPEG, etc.)'}
                     </p>
                   </div>
-                  <div>
+                  {/* <div>
                     <label
                       className={`block text-sm font-medium mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
                     >
@@ -939,136 +797,13 @@ export default function SettingsClient() {
                       <option value='medium'>Medium (640x480)</option>
                       <option value='high'>High (1280x720)</option>
                     </select>
-                  </div>
+                  </div> */}
                 </div>
               </div>
-              {/* Monitoring Settings */}
-              <div
-                className={`rounded-2xl p-8 border mt-8 ${
-                  isDark
-                    ? 'bg-gray-800 border-gray-700'
-                    : 'bg-white border-gray-200'
-                } shadow-lg`}
-              >
-                <div className='flex items-center space-x-3 mb-6'>
-                  <Icon
-                    icon='solar:radar-bold'
-                    className='w-7 h-7 text-blue-500'
-                  />
-                  <h2
-                    className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}
-                  >
-                    Monitoring Settings
-                  </h2>
-                </div>
-                <div className='space-y-6'>
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      Monitoring Interface
-                    </label>
-                    <div
-                      className={`flex items-center justify-between p-4 rounded-xl border ${
-                        isDark
-                          ? 'bg-gray-700 border-gray-600'
-                          : 'bg-white border-gray-300'
-                      }`}
-                    >
-                      <div className='flex flex-col'>
-                        <span
-                          className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}
-                        >
-                          Hide Directional Controls
-                        </span>
-                        <span
-                          className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
-                        >
-                          Hide directional buttons (up, down, left, right) in
-                          monitoring
-                        </span>
-                      </div>
-                      <button
-                        type='button'
-                        onClick={() =>
-                          setConfig((prev) => ({
-                            ...prev,
-                            hideMonitoringControls:
-                              !prev.hideMonitoringControls,
-                          }))
-                        }
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                          config.hideMonitoringControls
-                            ? 'bg-blue-500'
-                            : isDark
-                              ? 'bg-gray-600'
-                              : 'bg-gray-200'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${
-                            config.hideMonitoringControls
-                              ? 'translate-x-6'
-                              : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      Local Mode (Offline)
-                    </label>
-                    <div
-                      className={`flex items-center justify-between p-4 rounded-xl border ${
-                        isDark
-                          ? 'bg-gray-700 border-gray-600'
-                          : 'bg-white border-gray-300'
-                      }`}
-                    >
-                      <div className='flex flex-col'>
-                        <span
-                          className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}
-                        >
-                          Use serial monitor data instead of API for monitoring
-                          page. Only works in Electron app with ESP32 connected.
-                        </span>
-                      </div>
-                      <button
-                        type='button'
-                        onClick={() => {
-                          const newLocalMode = !config.localMode;
-                          setConfig((prev) => ({
-                            ...prev,
-                            localMode: newLocalMode,
-                          }));
-                          // Also update the separate localMode state to keep them in sync
-                          setLocalMode(newLocalMode);
-                        }}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                          config.localMode
-                            ? 'bg-green-500'
-                            : isDark
-                              ? 'bg-gray-600'
-                              : 'bg-gray-200'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${
-                            config.localMode ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>{' '}
               {/* RoboGo Data Folder (Local Mode Only) */}
               {hasMounted && localMode && isElectron && (
                 <div
-                  className={`rounded-2xl p-8 border mt-8 ${
+                  className={`rounded-2xl p-8 border ${
                     isDark
                       ? 'bg-gray-800 border-gray-700'
                       : 'bg-white border-gray-200'

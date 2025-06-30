@@ -271,7 +271,6 @@ export default function Ultrasonic() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [topNavbarHeight, bottomNavbarHeight, reportsNavbarHeight]);
-
   const customStyles: StylesConfig<OptionType, false> = {
     container: (provided) => ({
       ...provided,
@@ -308,6 +307,25 @@ export default function Ultrasonic() {
     menu: (provided) => ({
       ...provided,
       zIndex: 9999,
+      backgroundColor: isDark ? '#23272f' : '#fff',
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected
+        ? isDark
+          ? '#3b82f6'
+          : '#60a5fa'
+        : state.isFocused
+          ? isDark
+            ? '#374151'
+            : '#e3f2fd'
+          : 'transparent',
+      color:
+        state.isSelected || state.isFocused ? '#fff' : isDark ? '#fff' : '#333',
+      ':hover': {
+        backgroundColor: isDark ? '#374151' : '#e3f2fd',
+        color: '#fff',
+      },
     }),
   };
 
@@ -1162,16 +1180,6 @@ export default function Ultrasonic() {
                   }}
                   isSearchable={false}
                   className='flex-1'
-                  theme={(theme) => ({
-                    ...theme,
-                    colors: {
-                      ...theme.colors,
-                      primary25: isDark ? '#23272f' : '#e3f2fd',
-                      primary: isDark ? '#3b82f6' : '#60a5fa',
-                      neutral0: isDark ? '#23272f' : '#fff',
-                      neutral80: isDark ? '#fff' : '#333',
-                    },
-                  })}
                 />
                 <Select
                   options={
@@ -1187,16 +1195,6 @@ export default function Ultrasonic() {
                   isSearchable={false}
                   isDisabled={!selectedDate}
                   className='flex-1'
-                  theme={(theme) => ({
-                    ...theme,
-                    colors: {
-                      ...theme.colors,
-                      primary25: isDark ? '#23272f' : '#e3f2fd',
-                      primary: isDark ? '#3b82f6' : '#60a5fa',
-                      neutral0: isDark ? '#23272f' : '#fff',
-                      neutral80: isDark ? '#fff' : '#333',
-                    },
-                  })}
                 />
               </div>
             )}{' '}

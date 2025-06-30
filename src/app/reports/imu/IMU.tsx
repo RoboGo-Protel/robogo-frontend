@@ -402,7 +402,6 @@ export default function IMU() {
       boxShadow: 'none',
       paddingLeft: '16px',
       paddingRight: '16px',
-
       overflow: 'visible',
       whiteSpace: 'nowrap',
     }),
@@ -423,6 +422,25 @@ export default function IMU() {
     menu: (provided) => ({
       ...provided,
       zIndex: 9999,
+      backgroundColor: isDark ? '#23272f' : '#fff',
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected
+        ? isDark
+          ? '#3b82f6'
+          : '#60a5fa'
+        : state.isFocused
+          ? isDark
+            ? '#374151'
+            : '#e3f2fd'
+          : 'transparent',
+      color:
+        state.isSelected || state.isFocused ? '#fff' : isDark ? '#fff' : '#333',
+      ':hover': {
+        backgroundColor: isDark ? '#374151' : '#e3f2fd',
+        color: '#fff',
+      },
     }),
   };
 
@@ -569,17 +587,63 @@ export default function IMU() {
             );
             console.log('📊 [IMU DEBUG] Total IMU reports:', allReports.length);
 
-            setDateWithSessions(allDateSessions);
-            setReports(allReports);
+            // Sort dates by newest first
+            allDateSessions.sort(
+              (a, b) =>
+                new Date(b.value).getTime() - new Date(a.value).getTime(),
+            );
 
-            // Auto-select first date and session if available
-            if (allDateSessions.length > 0 && !selectedDate) {
-              const firstDate = allDateSessions[0];
-              setSelectedDate(firstDate);
-              if (firstDate.sessions.length > 0) {
-                setSelectedSession(firstDate.sessions[0]);
+            // Sort sessions within each date by newest first
+            allDateSessions.forEach((dateItem) => {
+              if (dateItem.sessions && dateItem.sessions.length > 0) {
+                console.log(
+                  '📊 [IMU DEBUG] Before sorting sessions for',
+                  dateItem.value,
+                  ':',
+                  dateItem.sessions.map((s) => s.value),
+                );
+                dateItem.sessions.sort((a, b) => {
+                  // Extract session numbers for comparison
+                  const sessionA = parseInt(a.value.replace(/\D/g, '')) || 0;
+                  const sessionB = parseInt(b.value.replace(/\D/g, '')) || 0;
+                  return sessionB - sessionA; // Newest (highest number) first
+                });
+                console.log(
+                  '📊 [IMU DEBUG] After sorting sessions for',
+                  dateItem.value,
+                  ':',
+                  dateItem.sessions.map((s) => s.value),
+                );
               }
+            });
+
+            setDateWithSessions(allDateSessions);
+
+            // Auto-select the most recent date and session (only if not already selected)
+            if (allDateSessions.length > 0 && !selectedDate) {
+              const defaultDate = allDateSessions[0];
+              const defaultSession =
+                defaultDate.sessions.length > 0
+                  ? defaultDate.sessions[0]
+                  : null;
+
+              setSelectedDate(defaultDate);
+              setSelectedSession(defaultSession);
             }
+
+            // Set all reports, filtering will be handled by useMemo
+            const sortedReports = allReports.sort(
+              (a, b) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime(),
+            );
+            setReports(sortedReports);
+
+            console.log('📊 [IMU LOCAL] Successfully processed IMU data:', {
+              totalReports: allReports.length,
+              totalWithImages: allReports.filter((r) => r.hasImage).length,
+              dates: allDateSessions.length,
+            });
           } catch (localError) {
             console.error('📊 [IMU DEBUG] Error in local mode:', localError);
             setReports([]);
@@ -599,28 +663,55 @@ export default function IMU() {
           );
           const datesData = await datesRes.json();
           const data = datesData.data;
+
+          // Sort dates by newest first
+          data.sort(
+            (
+              a: { value: string; label: string; sessions: OptionType[] },
+              b: { value: string; label: string; sessions: OptionType[] },
+            ) => new Date(b.value).getTime() - new Date(a.value).getTime(),
+          );
+
+          // Sort sessions within each date by newest first
+          data.forEach(
+            (dateItem: {
+              value: string;
+              label: string;
+              sessions: OptionType[];
+            }) => {
+              if (dateItem.sessions && dateItem.sessions.length > 0) {
+                dateItem.sessions.sort((a: OptionType, b: OptionType) => {
+                  // Extract session numbers for comparison
+                  const sessionA = parseInt(a.value.replace(/\D/g, '')) || 0;
+                  const sessionB = parseInt(b.value.replace(/\D/g, '')) || 0;
+                  return sessionB - sessionA; // Newest (highest number) first
+                });
+              }
+            },
+          );
+
           setDateWithSessions(data);
 
-          let date = selectedDate;
-          let session = selectedSession;
+          // Auto-select the most recent date and session only if not already selected
+          if (!selectedDate && data.length > 0) {
+            const defaultDate = { value: data[0].value, label: data[0].label };
+            const defaultSession =
+              data[0].sessions.length > 0 ? data[0].sessions[0] : null;
 
-          if (!date && data.length > 0) {
-            date = { value: data[0].value, label: data[0].label };
-            setSelectedDate(date);
-
-            if (data[0].sessions.length > 0) {
-              session = data[0].sessions[0];
-              setSelectedSession(session);
+            setSelectedDate(defaultDate);
+            if (defaultSession) {
+              setSelectedSession(defaultSession);
             }
           }
 
+          // Use current selections or defaults for API calls
           const useDate =
-            date ||
+            selectedDate ||
             (data.length > 0
               ? { value: data[0].value, label: data[0].label }
               : null);
           const useSession =
-            session ||
+            selectedSession ||
             (data.length > 0 && data[0].sessions.length > 0
               ? data[0].sessions[0]
               : null);
@@ -666,7 +757,7 @@ export default function IMU() {
 
     fetchAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedSession, selectedDevice?.deviceName, isLocalMode]);
+  }, [selectedDevice?.deviceName, isLocalMode]);
 
   function getDirectionFromHeading(heading: number): string {
     const directions = [
@@ -894,45 +985,75 @@ export default function IMU() {
                 layout='grid grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-4 items-stretch'
               />
             </div>
-
-            <div className='flex flex-row gap-4 items-stretch md:items-center'>
-              <Select
-                options={dateWithSessions.map((d) => ({
-                  value: d.value,
-                  label: d.label,
-                }))}
-                styles={customStyles}
-                value={selectedDate}
-                onChange={(option) => {
-                  setSelectedDate(option);
-                  const selected = dateWithSessions.find(
-                    (d) => d.value === option?.value,
-                  );
-                  if (selected?.sessions.length) {
-                    setSelectedSession(selected.sessions[0]);
-                  } else {
-                    setSelectedSession(null);
+            {/* Show date/session selectors for both local and online mode */}
+            {dateWithSessions.length > 0 && (
+              <div className='flex flex-row gap-4 items-stretch md:items-center'>
+                <Select
+                  options={dateWithSessions.map((d) => ({
+                    value: d.value,
+                    label: d.label,
+                  }))}
+                  styles={customStyles}
+                  value={selectedDate}
+                  onChange={(option) => {
+                    setSelectedDate(option);
+                    const selected = dateWithSessions.find(
+                      (d) => d.value === option?.value,
+                    );
+                    if (selected?.sessions.length) {
+                      setSelectedSession(selected.sessions[0]);
+                    } else {
+                      setSelectedSession(null);
+                    }
+                  }}
+                  isSearchable={false}
+                  className='flex-1'
+                  theme={(theme) => ({
+                    ...theme,
+                    colors: {
+                      ...theme.colors,
+                      primary25: isDark ? '#23272f' : '#e3f2fd',
+                      primary: isDark ? '#3b82f6' : '#60a5fa',
+                      neutral0: isDark ? '#23272f' : '#fff',
+                      neutral80: isDark ? '#fff' : '#333',
+                      neutral20: isDark ? '#fff' : '#333',
+                      neutral50: isDark ? '#fff' : '#333',
+                      neutral60: isDark ? '#fff' : '#333',
+                      neutral10: isDark ? '#fff' : '#333',
+                    },
+                  })}
+                />
+                <Select
+                  options={
+                    selectedDate
+                      ? dateWithSessions.find(
+                          (d) => d.value === selectedDate.value,
+                        )?.sessions || []
+                      : []
                   }
-                }}
-                isSearchable={false}
-                className='flex-1'
-              />
-              <Select
-                options={
-                  selectedDate
-                    ? dateWithSessions.find(
-                        (d) => d.value === selectedDate.value,
-                      )?.sessions || []
-                    : []
-                }
-                styles={customStyles}
-                value={selectedSession}
-                onChange={setSelectedSession}
-                isSearchable={false}
-                isDisabled={!selectedDate}
-                className='flex-1'
-              />
-            </div>
+                  styles={customStyles}
+                  value={selectedSession}
+                  onChange={setSelectedSession}
+                  isSearchable={false}
+                  isDisabled={!selectedDate}
+                  className='flex-1'
+                  theme={(theme) => ({
+                    ...theme,
+                    colors: {
+                      ...theme.colors,
+                      primary25: isDark ? '#23272f' : '#e3f2fd',
+                      primary: isDark ? '#3b82f6' : '#60a5fa',
+                      neutral0: isDark ? '#23272f' : '#fff',
+                      neutral80: isDark ? '#fff' : '#333',
+                      neutral20: isDark ? '#fff' : '#333',
+                      neutral50: isDark ? '#fff' : '#333',
+                      neutral60: isDark ? '#fff' : '#333',
+                      neutral10: isDark ? '#fff' : '#333',
+                    },
+                  })}
+                />
+              </div>
+            )}
           </div>
           <IMUTable reports={isLocalMode ? filteredReports : reports} />
         </>

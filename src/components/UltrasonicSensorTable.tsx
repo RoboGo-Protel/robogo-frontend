@@ -1,9 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import { useState } from "react";
-import { Icon } from "@iconify/react";
-import PhotoDetailsWithPaths from "@/components/PhotoDetailsWithPaths";
-import { useDarkMode } from "@/context/DarkModeContext";
+import React, { useState } from 'react';
+import { Icon } from '@iconify/react';
+import PhotoDetailsWithPaths from '@/components/PhotoDetailsWithPaths';
+import { useDarkMode } from '@/context/DarkModeContext';
 
 interface ReportData {
   id: string;
@@ -67,6 +67,10 @@ export default function UltrasonicSensorTable({
     metadata: Metadata;
   }>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+
   const getAlertBadge = (level: string) => {
     switch (level) {
       case 'Safe':
@@ -102,12 +106,32 @@ export default function UltrasonicSensorTable({
 
   const getTimeOnlyWithoutDate = (dateString: string) => {
     const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    };
-    return date.toLocaleTimeString('id-ID', options).replace(/:/g, '.');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
+    return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+  };
+
+  // Pagination calculations
+  const totalItems = reports.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = reports.slice(startIndex, endIndex);
+
+  // Reset to first page when reports change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [reports.length]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page
   };
 
   const { isDark } = useDarkMode();
@@ -160,7 +184,7 @@ export default function UltrasonicSensorTable({
             </tr>
           </thead>
           <tbody className={isDark ? 'divide-[#223c5c]' : 'divide-gray-200'}>
-            {reports.map((report, index) => (
+            {currentItems.map((report, index) => (
               <tr
                 key={report.id}
                 className={isDark ? 'hover:bg-[#1a3350]' : 'hover:bg-gray-50'}
@@ -168,7 +192,7 @@ export default function UltrasonicSensorTable({
                 <td
                   className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
                 >
-                  {index + 1}
+                  {startIndex + index + 1}
                 </td>
                 <td
                   className={`py-3 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}
@@ -259,6 +283,110 @@ export default function UltrasonicSensorTable({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div
+          className={`flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 p-4 rounded-xl ${
+            isDark ? 'bg-[#112133] text-white' : 'bg-white text-black'
+          }`}
+        >
+          {/* Items per page selector */}
+          <div className='flex items-center gap-2'>
+            <span className='text-sm'>Items per page:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              className={`px-3 py-1 rounded border text-sm ${
+                isDark
+                  ? 'bg-[#1a3350] text-white border-[#223c5c]'
+                  : 'bg-white text-black border-gray-300'
+              }`}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+
+          {/* Page info */}
+          <div className='text-sm'>
+            Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{' '}
+            {totalItems} entries
+          </div>
+
+          {/* Pagination buttons */}
+          <div className='flex items-center gap-2'>
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-3 py-2 rounded border text-sm transition-colors ${
+                currentPage === 1
+                  ? isDark
+                    ? 'bg-[#1a3350] text-gray-500 border-[#223c5c] cursor-not-allowed'
+                    : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                  : isDark
+                    ? 'bg-[#1a3350] text-white border-[#223c5c] hover:bg-[#223c5c]'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <Icon icon='mdi:chevron-left' className='w-4 h-4' />
+            </button>
+
+            {/* Page numbers */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else {
+                if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`px-3 py-2 rounded border text-sm transition-colors ${
+                    currentPage === pageNum
+                      ? isDark
+                        ? 'bg-blue-500 text-white border-blue-500'
+                        : 'bg-blue-500 text-white border-blue-500'
+                      : isDark
+                        ? 'bg-[#1a3350] text-white border-[#223c5c] hover:bg-[#223c5c]'
+                        : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-2 rounded border text-sm transition-colors ${
+                currentPage === totalPages
+                  ? isDark
+                    ? 'bg-[#1a3350] text-gray-500 border-[#223c5c] cursor-not-allowed'
+                    : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                  : isDark
+                    ? 'bg-[#1a3350] text-white border-[#223c5c] hover:bg-[#223c5c]'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <Icon icon='mdi:chevron-right' className='w-4 h-4' />
+            </button>
+          </div>
+        </div>
+      )}
+
       {selectedPhoto && (
         <PhotoDetailsWithPaths
           details={selectedPhoto}

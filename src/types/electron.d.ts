@@ -94,6 +94,12 @@ interface ElectronAPI {
     content?: string;
     error?: string;
   }>;
+
+  // Show file in system explorer
+  showItemInFolder?: (filePath: string) => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
 }
 
 interface SerialPortInfo {

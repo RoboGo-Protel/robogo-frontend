@@ -1,11 +1,11 @@
 import { useState } from "react";
-import clsx from "clsx";
-import { AnimatePresence, motion } from "framer-motion";
-import { Icon } from "@iconify/react";
-import { ClipLoader } from "react-spinners";
+import clsx from 'clsx';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Icon } from '@iconify/react';
+// import { ClipLoader } from "react-spinners"; // COMMENTED OUT - Not used when analyze is disabled
 
 interface Metadata {
-  ultrasonic: number;
+  ultrasonic?: number;
   heading?: number;
   direction?: string;
   accelerationMagnitude?: number;
@@ -16,9 +16,9 @@ interface Metadata {
   velocityX?: number;
   velocityY?: number;
   magnetometer?: {
-    magnetometerX: number;
-    magnetometerY: number;
-    magnetometerZ: number;
+    magnetometerX?: number;
+    magnetometerY?: number;
+    magnetometerZ?: number;
   };
   position?: {
     positionX?: number;
@@ -45,11 +45,30 @@ interface PhotoDetailsProps {
 }
 
 function ImageWithAnalysis({ details, isDark }: PhotoDetailsProps) {
-  const [loading, setLoading] = useState(false);
-  const [obstacle, setObstacle] = useState<null | boolean>(null);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
 
+  // COMMENTED OUT - Analyze functionality temporarily disabled
+  // const [loading, setLoading] = useState(false);
+  // const [obstacle, setObstacle] = useState<null | boolean>(null);
+  // const [imageBase64, setImageBase64] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
+
+  const handleFullscreenOpen = () => {
+    setIsFullscreenOpen(true);
+  };
+
+  const handleFullscreenClose = () => {
+    setIsFullscreenOpen(false);
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleFullscreenClose();
+    }
+  };
+
+  // COMMENTED OUT - Analyze functionality temporarily disabled
+  /*
   const handleAnalyze = async () => {
     setLoading(true);
     setObstacle(null);
@@ -87,78 +106,86 @@ function ImageWithAnalysis({ details, isDark }: PhotoDetailsProps) {
       setLoading(false);
     }
   };
+  */
+
   return (
-    <div
-      className={clsx(
-        'relative rounded-xl overflow-hidden border-2',
-        // For metadata tab photos, use natural aspect ratio, for original use fixed 4:3
-        details.fromTab === 'metadata'
-          ? 'w-full max-w-md mx-auto'
-          : 'md:w-[420px] aspect-[4/3]',
-        isDark ? 'border-[#27426C]' : 'border-[#DFDFDF]',
-      )}
-    >
-      {/* Gambar */}{' '}
-      <motion.img
-        key={imageBase64 || details.src}
-        src={imageBase64 || details.src}
-        alt={details.alt}
+    <>
+      <div
         className={clsx(
-          'w-full',
-          // For metadata tab photos, maintain natural aspect ratio
+          'relative rounded-xl overflow-hidden border-2',
+          // For metadata tab photos, use natural aspect ratio, for original use fixed 4:3
           details.fromTab === 'metadata'
-            ? 'h-auto object-contain'
-            : 'h-full object-cover',
+            ? 'w-full max-w-md mx-auto'
+            : 'md:w-[420px] aspect-[4/3]',
+          isDark ? 'border-[#27426C]' : 'border-[#DFDFDF]',
         )}
-        initial={{ opacity: 0.5 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      />
-      {/* Compact Distance Traveled Card - Positioned absolute at top-right */}
-      {details.metadata?.distanceTraveled && (
-        <motion.div
+      >
+        {/* Gambar */}
+        <motion.img
+          key={details.src}
+          src={details.src}
+          // key={imageBase64 || details.src} // COMMENTED OUT - imageBase64 not used when analyze is disabled
+          // src={imageBase64 || details.src} // COMMENTED OUT - imageBase64 not used when analyze is disabled
+          alt={details.alt}
           className={clsx(
-            'absolute top-3 right-3 z-30 px-3 py-2 rounded-lg border shadow-lg backdrop-blur-sm',
-            isDark
-              ? 'border-[#27426C] bg-[#1A2B48]/90 text-white'
-              : 'border-[#DFDFDF] bg-white/90 text-black',
+            'w-full cursor-pointer',
+            // For metadata tab photos, maintain natural aspect ratio
+            details.fromTab === 'metadata'
+              ? 'h-auto object-contain'
+              : 'h-full object-cover',
           )}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          {' '}
-          <div className='flex items-center gap-2'>
-            <div className='text-right'>
-              <p
-                className={clsx(
-                  'text-sm font-bold leading-none',
-                  isDark ? 'text-white' : 'text-black',
-                )}
-              >
-                {details.metadata.distanceTraveled.toFixed(2)}m
-              </p>
-              <p
-                className={clsx(
-                  'text-[10px] leading-none',
-                  isDark ? 'text-gray-300' : 'text-gray-500',
-                )}
-              >
-                Distance Traveled
-              </p>
+          initial={{ opacity: 0.5 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          onClick={handleFullscreenOpen}
+          title='Click to view full image'
+        />
+        {/* Compact Distance Traveled Card - Positioned absolute at top-right */}
+        {details.metadata?.distanceTraveled && (
+          <motion.div
+            className={clsx(
+              'absolute top-3 right-3 z-30 px-3 py-2 rounded-lg border shadow-lg backdrop-blur-sm',
+              isDark
+                ? 'border-[#27426C] bg-[#1A2B48]/90 text-white'
+                : 'border-[#DFDFDF] bg-white/90 text-black',
+            )}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {' '}
+            <div className='flex items-center gap-2'>
+              <div className='text-right'>
+                <p
+                  className={clsx(
+                    'text-sm font-bold leading-none',
+                    isDark ? 'text-white' : 'text-black',
+                  )}
+                >
+                  {details.metadata.distanceTraveled.toFixed(2)}m
+                </p>
+                <p
+                  className={clsx(
+                    'text-[10px] leading-none',
+                    isDark ? 'text-gray-300' : 'text-gray-500',
+                  )}
+                >
+                  Distance Traveled
+                </p>
+              </div>
+              <div className='p-1 bg-gradient-to-br from-blue-500 to-blue-400 rounded'>
+                <Icon
+                  icon='mdi:map-marker-distance'
+                  width={14}
+                  height={14}
+                  className='text-white'
+                />
+              </div>
             </div>
-            <div className='p-1 bg-gradient-to-br from-blue-500 to-blue-400 rounded'>
-              <Icon
-                icon='mdi:map-marker-distance'
-                width={14}
-                height={14}
-                className='text-white'
-              />
-            </div>
-          </div>
-        </motion.div>
-      )}
-      {/* Radar scanning effect */}
+          </motion.div>
+        )}
+        {/* Radar scanning effect */}
+        {/* COMMENTED OUT - Analyze functionality temporarily disabled
       <AnimatePresence>
         {loading && (
           <motion.div
@@ -180,63 +207,150 @@ function ImageWithAnalysis({ details, isDark }: PhotoDetailsProps) {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Overlay analyze */}
-      <div className='absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[15px] px-3 py-2.5 flex justify-between items-center z-20'>
-        <button
-          onClick={handleAnalyze}
-          className='flex items-center justify-center bg-blue-600 text-white text-[13px] px-3 py-1.5 rounded-lg shadow hover:bg-blue-700 disabled:opacity-50'
-          disabled={loading}
-        >
-          {loading ? 'Analyzing...' : 'Analyze'}
-          {loading ? (
-            <ClipLoader size={16} color='#ffffff' className='ml-2' />
-          ) : (
-            <Icon fontSize={20} icon='tabler:zoom-scan' className='ml-2' />
-          )}
-        </button>
-
-        {(obstacle !== null || error) && (
-          <motion.div
-            className='ml-2 flex items-center gap-2'
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
+      */}
+        {/* View Full Image Button */}
+        <div className='absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[15px] px-3 py-2.5 flex justify-center items-center z-20'>
+          <button
+            onClick={handleFullscreenOpen}
+            className='flex items-center justify-center bg-blue-600 text-white text-[13px] px-3 py-1.5 rounded-lg shadow hover:bg-blue-700 transition-colors'
           >
+            View Full Image
             <Icon
-              icon={
-                error
-                  ? 'line-md:alert-circle'
-                  : obstacle
-                    ? 'line-md:alert-circle-twotone-loop'
-                    : 'line-md:circle-to-confirm-circle-twotone-transition'
-              }
-              className={clsx(
-                'text-xl',
-                error
-                  ? 'text-yellow-400'
-                  : obstacle
-                    ? 'text-red-400'
-                    : 'text-green-400',
-              )}
+              fontSize={16}
+              icon='tabler:arrows-maximize'
+              className='ml-2'
             />
-            <span
-              className={clsx(
-                'text-sm',
-                error
-                  ? 'text-yellow-400'
-                  : obstacle
-                    ? 'text-red-400'
-                    : 'text-green-400',
-              )}
+          </button>
+        </div>
+
+        {/* COMMENTED OUT - Analyze functionality temporarily disabled
+        <div className='absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[15px] px-3 py-2.5 flex justify-between items-center z-20'>
+          <button
+            onClick={handleAnalyze}
+            className='flex items-center justify-center bg-blue-600 text-white text-[13px] px-3 py-1.5 rounded-lg shadow hover:bg-blue-700 disabled:opacity-50'
+            disabled={loading}
+          >
+            {loading ? 'Analyzing...' : 'Analyze'}
+            {loading ? (
+              <ClipLoader size={16} color='#ffffff' className='ml-2' />
+            ) : (
+              <Icon fontSize={20} icon='tabler:zoom-scan' className='ml-2' />
+            )}
+          </button>
+
+          {(obstacle !== null || error) && (
+            <motion.div
+              className='ml-2 flex items-center gap-2'
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
             >
-              {error
-                ? `Error: ${error}`
-                : `Obstacle: ${obstacle ? 'Yes' : 'No'}`}
-            </span>
+              <Icon
+                icon={
+                  error
+                    ? 'line-md:alert-circle'
+                    : obstacle
+                      ? 'line-md:alert-circle-twotone-loop'
+                      : 'line-md:circle-to-confirm-circle-twotone-transition'
+                }
+                className={clsx(
+                  'text-xl',
+                  error
+                    ? 'text-yellow-400'
+                    : obstacle
+                      ? 'text-red-400'
+                      : 'text-green-400',
+                )}
+              />
+              <span
+                className={clsx(
+                  'text-sm',
+                  error
+                    ? 'text-yellow-400'
+                    : obstacle
+                      ? 'text-red-400'
+                      : 'text-green-400',
+                )}
+              >
+                {error
+                  ? `Error: ${error}`
+                  : `Obstacle: ${obstacle ? 'Yes' : 'No'}`}
+              </span>
+            </motion.div>
+          )}
+        </div>
+        */}
+      </div>
+
+      {/* Fullscreen Modal */}
+      <AnimatePresence>
+        {isFullscreenOpen && (
+          <motion.div
+            className='fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4'
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={handleBackdropClick}
+          >
+            {/* Close Button */}
+            <motion.button
+              className='absolute top-4 right-4 z-[10000] p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors'
+              onClick={handleFullscreenClose}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Icon icon='mdi:close' className='w-6 h-6' />
+            </motion.button>
+
+            {/* Fullscreen Image */}
+            <motion.img
+              src={details.src}
+              alt={details.alt}
+              className='max-w-full max-h-full object-contain'
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.3 }}
+            />
+
+            {/* Image Info Overlay */}
+            <motion.div
+              className='absolute bottom-4 left-4 right-4 bg-black/70 text-white rounded-lg p-4'
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h3 className='text-lg font-semibold mb-2'>{details.fileName}</h3>
+              <div className='grid grid-cols-2 gap-4 text-sm'>
+                <div>
+                  <span className='text-gray-300'>Date:</span> {details.date}
+                </div>
+                {details.metadata?.ultrasonic && (
+                  <div>
+                    <span className='text-gray-300'>Ultrasonic:</span>{' '}
+                    {details.metadata.ultrasonic}cm
+                  </div>
+                )}
+                {details.metadata?.distanceTraveled && (
+                  <div>
+                    <span className='text-gray-300'>Distance:</span>{' '}
+                    {details.metadata.distanceTraveled.toFixed(2)}m
+                  </div>
+                )}
+                {details.metadata?.heading && (
+                  <div>
+                    <span className='text-gray-300'>Heading:</span>{' '}
+                    {details.metadata.heading}°
+                  </div>
+                )}
+              </div>
+            </motion.div>
           </motion.div>
         )}
-      </div>
-    </div>
+      </AnimatePresence>
+    </>
   );
 }
 

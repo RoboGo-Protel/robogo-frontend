@@ -72,8 +72,8 @@ export function useUserConfig() {
               };
             }
           }
-        } catch (error) {
-          console.warn('Failed to load local config, using defaults:', error);
+        } catch {
+          // Failed to load local config, using defaults
         }
 
         setConfig(localConfig);
@@ -91,9 +91,7 @@ export function useUserConfig() {
   useEffect(() => {
     if (!isOffline || !modeChecked) return;
 
-    const handleConfigChange = async (event: Event) => {
-      const customEvent = event as CustomEvent;
-      console.log('Local config changed, reloading...', customEvent.detail);
+    const handleConfigChange = async () => {
       try {
         if (window.electronAPI?.getConfig) {
           const savedConfig = await window.electronAPI.getConfig('userConfig');
@@ -105,8 +103,8 @@ export function useUserConfig() {
             setConfig(savedConfig as UserConfig);
           }
         }
-      } catch (error) {
-        console.warn('Failed to reload config after change:', error);
+      } catch {
+        // Failed to reload config after change
       }
     };
 
@@ -137,7 +135,6 @@ export function useUserConfig() {
         throw new Error('Failed to fetch user config');
       }
     } catch (err) {
-      console.error('Error fetching user config:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
       return null;
     } finally {
@@ -158,7 +155,6 @@ export function useUserConfig() {
         throw new Error('Failed to fetch user devices');
       }
     } catch (err) {
-      console.error('Error fetching user devices:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
       return [];
     }
@@ -201,7 +197,6 @@ export function useUserConfig() {
         throw new Error('Failed to update selected device');
       }
     } catch (err) {
-      console.error('Error updating selected device:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
       return false;
     }
@@ -251,8 +246,8 @@ export function useUserConfig() {
             const updatedConfig = { ...config, ...newConfig };
             await window.electronAPI.setConfig('userConfig', updatedConfig);
           }
-        } catch (error) {
-          console.warn('Failed to save config to Electron:', error);
+        } catch {
+          // Failed to save config to Electron
         }
       }
     },
@@ -287,8 +282,8 @@ export function useUserConfig() {
               });
             }
           }
-        } catch (error) {
-          console.warn('Failed to reload local config:', error);
+        } catch {
+          // Failed to reload local config
         }
         return;
       }

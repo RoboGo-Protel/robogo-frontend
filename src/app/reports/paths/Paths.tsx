@@ -337,7 +337,6 @@ export default function Paths() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [topNavbarHeight, bottomNavbarHeight, reportsNavbarHeight]);
-
   const customStyles: StylesConfig<OptionType, false> = {
     container: (provided) => ({
       ...provided,
@@ -374,6 +373,25 @@ export default function Paths() {
     menu: (provided) => ({
       ...provided,
       zIndex: 9999,
+      backgroundColor: isDark ? '#23272f' : '#fff',
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected
+        ? isDark
+          ? '#3b82f6'
+          : '#60a5fa'
+        : state.isFocused
+          ? isDark
+            ? '#374151'
+            : '#e3f2fd'
+          : 'transparent',
+      color:
+        state.isSelected || state.isFocused ? '#fff' : isDark ? '#fff' : '#333',
+      ':hover': {
+        backgroundColor: isDark ? '#374151' : '#e3f2fd',
+        color: '#fff',
+      },
     }),
   };
 
@@ -518,18 +536,97 @@ export default function Paths() {
               '🛤️ [PATHS DEBUG] Total dates with sessions:',
               allDateSessions.length,
             );
-            console.log('🛤️ [PATHS DEBUG] Total Path reports:', allReports.length);
+            console.log(
+              '🛤️ [PATHS DEBUG] Total Path reports:',
+              allReports.length,
+            );
+
+            // Sort dates by newest first
+            allDateSessions.sort(
+              (a, b) =>
+                new Date(b.value).getTime() - new Date(a.value).getTime(),
+            );
+
+            // Sort sessions within each date by newest first
+            allDateSessions.forEach((dateItem) => {
+              if (dateItem.sessions && dateItem.sessions.length > 0) {
+                console.log(
+                  '🛤️ [PATHS DEBUG] Before sorting sessions for',
+                  dateItem.value,
+                  ':',
+                  dateItem.sessions.map((s) => s.value),
+                );
+                dateItem.sessions.sort((a, b) => {
+                  // Extract session numbers for comparison
+                  const sessionA = parseInt(a.value.replace(/\D/g, '')) || 0;
+                  const sessionB = parseInt(b.value.replace(/\D/g, '')) || 0;
+                  return sessionB - sessionA; // Newest (highest number) first
+                });
+                console.log(
+                  '🛤️ [PATHS DEBUG] After sorting sessions for',
+                  dateItem.value,
+                  ':',
+                  dateItem.sessions.map((s) => s.value),
+                );
+              }
+            });
 
             setDateWithSessions(allDateSessions);
-            setReports(allReports);
 
-            // Auto-select first date and session if available
-            if (allDateSessions.length > 0 && !selectedDate) {
-              const firstDate = allDateSessions[0];
-              setSelectedDate(firstDate);
-              if (firstDate.sessions.length > 0) {
-                setSelectedSession(firstDate.sessions[0]);
+            // Auto-select the most recent date and session
+            if (allDateSessions.length > 0) {
+              const defaultDate = allDateSessions[0];
+              const defaultSession =
+                defaultDate.sessions.length > 0
+                  ? defaultDate.sessions[0]
+                  : null;
+
+              setSelectedDate(defaultDate);
+              setSelectedSession(defaultSession);
+
+              // Filter reports for the selected date and session
+              let filteredReports = allReports;
+              if (defaultDate && defaultSession) {
+                filteredReports = allReports.filter((report) => {
+                  const reportDate = report.timestamp.split('T')[0];
+                  const reportSessionId = report.sessionId.toString();
+                  const selectedSessionId = defaultSession.value.replace(
+                    /\D/g,
+                    '',
+                  );
+
+                  return (
+                    reportDate === defaultDate.value &&
+                    reportSessionId === selectedSessionId
+                  );
+                });
               }
+
+              // Sort reports by newest first
+              const sortedReports = filteredReports.sort(
+                (a, b) =>
+                  new Date(b.timestamp).getTime() -
+                  new Date(a.timestamp).getTime(),
+              );
+              setReports(sortedReports);
+
+              console.log(
+                '🛤️ [PATHS LOCAL] Successfully processed Path data:',
+                {
+                  totalReports: filteredReports.length,
+                  totalWithImages: filteredReports.filter((r) => r.hasImage)
+                    .length,
+                  reports: sortedReports.length,
+                },
+              );
+            } else {
+              setReports(
+                allReports.sort(
+                  (a, b) =>
+                    new Date(b.timestamp).getTime() -
+                    new Date(a.timestamp).getTime(),
+                ),
+              );
             }
           } catch (localError) {
             console.error('🛤️ [PATHS DEBUG] Error in local mode:', localError);
@@ -550,28 +647,55 @@ export default function Paths() {
           );
           const datesData = await datesRes.json();
           const data = datesData.data;
+
+          // Sort dates by newest first
+          data.sort(
+            (
+              a: { value: string; label: string; sessions: OptionType[] },
+              b: { value: string; label: string; sessions: OptionType[] },
+            ) => new Date(b.value).getTime() - new Date(a.value).getTime(),
+          );
+
+          // Sort sessions within each date by newest first
+          data.forEach(
+            (dateItem: {
+              value: string;
+              label: string;
+              sessions: OptionType[];
+            }) => {
+              if (dateItem.sessions && dateItem.sessions.length > 0) {
+                dateItem.sessions.sort((a: OptionType, b: OptionType) => {
+                  // Extract session numbers for comparison
+                  const sessionA = parseInt(a.value.replace(/\D/g, '')) || 0;
+                  const sessionB = parseInt(b.value.replace(/\D/g, '')) || 0;
+                  return sessionB - sessionA; // Newest (highest number) first
+                });
+              }
+            },
+          );
+
           setDateWithSessions(data);
 
-          let date = selectedDate;
-          let session = selectedSession;
+          // Auto-select the most recent date and session only if not already selected
+          if (!selectedDate && data.length > 0) {
+            const defaultDate = { value: data[0].value, label: data[0].label };
+            const defaultSession =
+              data[0].sessions.length > 0 ? data[0].sessions[0] : null;
 
-          if (!date && data.length > 0) {
-            date = { value: data[0].value, label: data[0].label };
-            setSelectedDate(date);
-
-            if (data[0].sessions.length > 0) {
-              session = data[0].sessions[0];
-              setSelectedSession(session);
+            setSelectedDate(defaultDate);
+            if (defaultSession) {
+              setSelectedSession(defaultSession);
             }
           }
 
+          // Use current selections or defaults for API calls
           const useDate =
-            date ||
+            selectedDate ||
             (data.length > 0
               ? { value: data[0].value, label: data[0].label }
               : null);
           const useSession =
-            session ||
+            selectedSession ||
             (data.length > 0 && data[0].sessions.length > 0
               ? data[0].sessions[0]
               : null);
@@ -586,7 +710,8 @@ export default function Paths() {
 
             const sortedReports = pathData.sort(
               (a: PathData, b: PathData) =>
-                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime(),
             );
             setReports(sortedReports);
           } else {
@@ -604,7 +729,7 @@ export default function Paths() {
 
     fetchAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedSession, selectedDevice?.deviceName, isLocalMode]);
+  }, [selectedDevice?.deviceName, isLocalMode]);
 
   // Calculate filtered reports for display (computed during render, not in useEffect)
   const filteredReports = React.useMemo(() => {
@@ -692,17 +817,17 @@ export default function Paths() {
       {
         icon: 'mdi:speedometer',
         title: 'Average Speed',
-        summary: `${currentSummaries.averageSpeed.toFixed(2)} m/s`,
+        summary: `${currentSummaries.averageSpeed.toFixed(2)} cm/s`,
       },
       {
         icon: 'mdi:map-marker-distance',
         title: 'Total Distance',
-        summary: `${currentSummaries.totalDistance.toFixed(2)} m`,
+        summary: `${currentSummaries.totalDistance.toFixed(2)} cm`,
       },
       {
         icon: 'mdi:speedometer-medium',
         title: 'Max Speed',
-        summary: `${currentSummaries.maxSpeed.toFixed(2)} m/s`,
+        summary: `${currentSummaries.maxSpeed.toFixed(2)} cm/s`,
       },
     ];
   }, [summaries, computedSummaries, isLocalMode]);
@@ -834,16 +959,6 @@ export default function Paths() {
                   }}
                   isSearchable={false}
                   className='flex-1'
-                  theme={(theme) => ({
-                    ...theme,
-                    colors: {
-                      ...theme.colors,
-                      primary25: isDark ? '#23272f' : '#e3f2fd',
-                      primary: isDark ? '#3b82f6' : '#60a5fa',
-                      neutral0: isDark ? '#23272f' : '#fff',
-                      neutral80: isDark ? '#fff' : '#333',
-                    },
-                  })}
                 />
                 <Select
                   options={
@@ -859,41 +974,42 @@ export default function Paths() {
                   isSearchable={false}
                   isDisabled={!selectedDate}
                   className='flex-1'
-                  theme={(theme) => ({
-                    ...theme,
-                    colors: {
-                      ...theme.colors,
-                      primary25: isDark ? '#23272f' : '#e3f2fd',
-                      primary: isDark ? '#3b82f6' : '#60a5fa',
-                      neutral0: isDark ? '#23272f' : '#fff',
-                      neutral80: isDark ? '#fff' : '#333',
-                    },
-                  })}
                 />
               </div>
             )}
-          </div>          {/* Path Visualization */}
-          <TunnelPath 
-            showStartpoint 
-            showEndpoint 
+          </div>{' '}
+          {/* Path Visualization */}
+          <TunnelPath
+            showStartpoint
+            showEndpoint
             pathData={(() => {
-              const dataToPass = (isLocalMode ? filteredReports : reports).map(report => ({
-                ...report,
-                imageUrl: report.hasImage && report.imagePath ? `file://${report.imagePath}` : undefined
-              }));
-              console.log('🛤️ [PATHS DEBUG] Data passed to TunnelPath:', dataToPass);
-              console.log('🛤️ [PATHS DEBUG] Points with images:', dataToPass.filter(p => p.imageUrl));
+              const dataToPass = (isLocalMode ? filteredReports : reports).map(
+                (report) => ({
+                  ...report,
+                  imageUrl:
+                    report.hasImage && report.imagePath
+                      ? `file://${report.imagePath}`
+                      : undefined,
+                }),
+              );
+              console.log(
+                '🛤️ [PATHS DEBUG] Data passed to TunnelPath:',
+                dataToPass,
+              );
+              console.log(
+                '🛤️ [PATHS DEBUG] Points with images:',
+                dataToPass.filter((p) => p.imageUrl),
+              );
               console.log('🛤️ [PATHS DEBUG] First point details:', {
                 position: dataToPass[0]?.position,
                 imageUrl: dataToPass[0]?.imageUrl,
                 hasImage: dataToPass[0]?.hasImage,
                 imagePath: dataToPass[0]?.imagePath,
-                imageFileName: dataToPass[0]?.imageFileName
+                imageFileName: dataToPass[0]?.imageFileName,
               });
               return dataToPass;
-            })()} 
+            })()}
           />
-
           {/* Legends Section */}
           <div className='flex flex-col md:flex-row gap-4 w-full'>
             <div className='flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-500 to-blue-400 rounded-xl text-white justify-center md:justify-start'>
@@ -922,7 +1038,8 @@ export default function Paths() {
                 <p className='bg-gradient-to-br from-[#FF9799] to-[#EB0C0F] text-transparent bg-clip-text font-medium'>
                   End Point
                 </p>
-              </div>              <div className='flex items-center gap-2 min-w-[130px]'>
+              </div>{' '}
+              <div className='flex items-center gap-2 min-w-[130px]'>
                 <div className='w-8 h-1 bg-gradient-to-br from-blue-500 to-blue-400 rounded-full' />
                 <p className='bg-gradient-to-br from-blue-500 to-blue-400 text-transparent bg-clip-text font-medium'>
                   RoboGo Path
@@ -930,7 +1047,12 @@ export default function Paths() {
               </div>
               <div className='flex items-center gap-2 min-w-[130px]'>
                 <div className='rounded-full w-8 h-8 bg-gradient-to-br from-red-600 to-red-500 flex items-center justify-center animate-pulse'>
-                  <Icon icon='material-symbols:warning' className='text-white' width={16} height={16} />
+                  <Icon
+                    icon='material-symbols:warning'
+                    className='text-white'
+                    width={16}
+                    height={16}
+                  />
                 </div>
                 <p className='bg-gradient-to-br from-red-600 to-red-500 text-transparent bg-clip-text font-medium'>
                   Obstacle Detected
@@ -938,7 +1060,6 @@ export default function Paths() {
               </div>
             </div>
           </div>
-
           {/* Paths Table */}
           <div className='overflow-x-auto'>
             <PathsTable reports={isLocalMode ? filteredReports : reports} />
