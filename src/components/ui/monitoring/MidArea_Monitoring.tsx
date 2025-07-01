@@ -97,13 +97,11 @@ export default function MidArea_Monitoring({
   );
 
   // Auto photo capture states - using props instead of local state
-  const [lastObstaclePhotoTime, setLastObstaclePhotoTime] = useState<number>(0);
   const [isCapturingObstaclePhoto, setIsCapturingObstaclePhoto] =
     useState<boolean>(false);
 
-  // Constants for obstacle detection
-  const OBSTACLE_THRESHOLD = 10; // cm - distance threshold for obstacle detection
-  const PHOTO_CAPTURE_INTERVAL = 2000; // ms - 2 seconds between photos
+  // Constants for obstacle detection - single threshold, no interval
+  const OBSTACLE_THRESHOLD = 20; // cm - Auto-capture when ultrasonic < 20cm
 
   // Local mode session management
   const [localCurrentSession, setLocalCurrentSession] = useState<number | null>(
@@ -1525,15 +1523,7 @@ export default function MidArea_Monitoring({
       const isObstacle = ultrasonicValue < OBSTACLE_THRESHOLD;
       if (!isObstacle && !forceCapture) return;
 
-      // Check time interval to prevent spam
-      const now = Date.now();
-      if (
-        !forceCapture &&
-        now - lastObstaclePhotoTime < PHOTO_CAPTURE_INTERVAL
-      ) {
-        console.log('🚨 [AUTO PHOTO] Skipping - too soon since last capture');
-        return;
-      }
+      // No interval check - capture immediately on every obstacle detection
 
       // Check if already capturing to prevent multiple simultaneous captures
       if (isCapturingObstaclePhoto) {
@@ -1555,10 +1545,12 @@ export default function MidArea_Monitoring({
 
       try {
         setIsCapturingObstaclePhoto(true);
-        setLastObstaclePhotoTime(now);
 
         console.log(
           `🚨 [AUTO PHOTO] OBSTACLE DETECTED! Distance: ${ultrasonicValue.toFixed(2)}cm - Capturing photo...`,
+        );
+        console.log(
+          '📸 [UI INDICATOR] Auto-capture indicator should now be visible!',
         );
 
         // Capture frame from camera stream
@@ -2198,6 +2190,9 @@ export default function MidArea_Monitoring({
         console.error('🚨 [AUTO PHOTO] Error capturing obstacle photo:', error);
       } finally {
         setIsCapturingObstaclePhoto(false);
+        console.log(
+          '📸 [UI INDICATOR] Auto-capture indicator should now be hidden!',
+        );
       }
     },
     [
@@ -2205,8 +2200,6 @@ export default function MidArea_Monitoring({
       isLocalMode,
       localCurrentSession,
       OBSTACLE_THRESHOLD,
-      PHOTO_CAPTURE_INTERVAL,
-      lastObstaclePhotoTime,
       isCapturingObstaclePhoto,
       displayData,
       selectedDevice,
@@ -2260,6 +2253,7 @@ export default function MidArea_Monitoring({
           isLocalMode={isLocalMode}
           autoPhotoEnabled={autoPhotoEnabled}
           onAutoPhotoToggle={onAutoPhotoToggle}
+          isCapturingObstaclePhoto={isCapturingObstaclePhoto}
         />
       </div>{' '}
       {/* Stats and monitoring data display */}

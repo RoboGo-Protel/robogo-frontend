@@ -344,7 +344,7 @@ export default function TunnelPath({
                     },
                   );
 
-                  const cardClass = `rounded-xl border p-1 shadow-md hover:shadow-lg transition ${
+                  const cardClass = `rounded-xl border p-1 transition ${
                     isDark
                       ? 'bg-[#1E334A] border-[#2A435C] text-white'
                       : 'bg-white border-gray-300 text-black'

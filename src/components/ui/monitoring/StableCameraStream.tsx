@@ -28,6 +28,7 @@ interface StableCameraStreamProps {
   isLocalMode?: boolean;
   autoPhotoEnabled?: boolean;
   onAutoPhotoToggle?: (enabled: boolean) => void;
+  isCapturingObstaclePhoto?: boolean;
 }
 
 export interface StableCameraStreamRef {
@@ -46,6 +47,7 @@ const StableCameraStream = forwardRef<
       isLocalMode = false,
       autoPhotoEnabled = false,
       onAutoPhotoToggle,
+      isCapturingObstaclePhoto = false,
     },
     ref,
   ) => {
