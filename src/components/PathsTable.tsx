@@ -28,7 +28,7 @@ interface PathsTableProps {
   reports: ReportData[];
 }
 
-export default function PathsTable({ reports }: PathsTableProps) {
+const PathsTableComponent = function PathsTable({ reports }: PathsTableProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<null | {
     id: string;
     src: string;
@@ -383,4 +383,6 @@ export default function PathsTable({ reports }: PathsTableProps) {
       )}
     </>
   );
-}
+};
+
+export default React.memo(PathsTableComponent);

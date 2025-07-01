@@ -43,7 +43,7 @@ interface TunnelPathProps {
   showEndpoint?: boolean;
 }
 
-export default function TunnelPath({
+const TunnelPathComponent = function TunnelPath({
   pathData = [],
   showStartpoint = false,
   showEndpoint = false,
@@ -373,7 +373,7 @@ export default function TunnelPath({
                             {/* Tooltip positioned absolutely above marker */}{' '}
                             <div
                               className={clsx(
-                                'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold',
                                 'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                 'min-w-max whitespace-nowrap z-30',
                                 isDark
@@ -396,7 +396,7 @@ export default function TunnelPath({
                             {/* Tooltip for start point with image - position based on card placement */}
                             <div
                               className={clsx(
-                                'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                'absolute px-4 py-2 rounded-lg text-sm font-semibold',
                                 'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                 'min-w-max whitespace-nowrap z-30',
                                 shouldPlaceAbove
@@ -474,7 +474,7 @@ export default function TunnelPath({
                             {/* Tooltip positioned absolutely above marker */}{' '}
                             <div
                               className={clsx(
-                                'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold',
                                 'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                 'min-w-max whitespace-nowrap z-30',
                                 isDark
@@ -497,7 +497,7 @@ export default function TunnelPath({
                             {/* Tooltip for end point with image - position based on card placement */}
                             <div
                               className={clsx(
-                                'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                'absolute px-4 py-2 rounded-lg text-sm font-semibold',
                                 'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                 'min-w-max whitespace-nowrap z-30',
                                 shouldPlaceAbove
@@ -576,7 +576,7 @@ export default function TunnelPath({
                               {/* Tooltip for image points - ONLY show on hover */}
                               <div
                                 className={clsx(
-                                  'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                  'absolute px-4 py-2 rounded-lg text-sm font-semibold',
                                   'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                   'min-w-max whitespace-nowrap z-30',
                                   'opacity-0 group-hover:opacity-100 pointer-events-none', // Only show on hover
@@ -619,7 +619,7 @@ export default function TunnelPath({
                               </div>{' '}
                               {/* Middle icon - show danger warning if obstacle detected */}
                               <div
-                                className={`flex items-center justify-center rounded-full p-1.5 my-1 shadow ${
+                                className={`flex items-center justify-center rounded-full p-1.5 my-1 ${
                                   point.ultrasonic !== undefined &&
                                   point.ultrasonic < ULTRASONIC_DANGER_THRESHOLD
                                     ? 'bg-gradient-to-br from-red-600 to-red-500 animate-pulse'
@@ -669,7 +669,7 @@ export default function TunnelPath({
                                   {/* Danger tooltip */}
                                   <div
                                     className={clsx(
-                                      'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                      'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold',
                                       'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                       'min-w-max whitespace-nowrap z-30',
                                       isDark
@@ -682,7 +682,7 @@ export default function TunnelPath({
                                   </div>
                                   {/* Danger marker */}
                                   <div
-                                    className='rounded-full w-8 h-8 bg-gradient-to-br from-red-600 to-red-500 cursor-pointer shadow-lg animate-pulse flex items-center justify-center'
+                                    className='rounded-full w-8 h-8 bg-gradient-to-br from-red-600 to-red-500 cursor-pointer flex items-center justify-center'
                                     onClick={() => handleClick(point.position)}
                                     title={`Obstacle detected: ${point.ultrasonic.toFixed(1)}cm at (${point.position.x}, ${point.position.y})`}
                                   >
@@ -702,7 +702,7 @@ export default function TunnelPath({
                                   {point.ultrasonic !== undefined && (
                                     <div
                                       className={clsx(
-                                        'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
+                                        'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold',
                                         'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                         'min-w-max whitespace-nowrap z-30',
                                         'opacity-0 group-hover:opacity-100 pointer-events-none', // Only show on hover
@@ -718,7 +718,7 @@ export default function TunnelPath({
                                   )}
                                   {/* Regular marker */}
                                   <div
-                                    className='rounded-full w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-400 cursor-pointer shadow-lg'
+                                    className='rounded-full w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-400 cursor-pointer'
                                     onClick={() => handleClick(point.position)}
                                     title={`Position: (${point.position.x}, ${point.position.y})${point.ultrasonic !== undefined ? ` - Distance: ${point.ultrasonic.toFixed(1)}cm` : ''}`}
                                   />
@@ -738,4 +738,6 @@ export default function TunnelPath({
       </TransformWrapper>
     </motion.div>
   );
-}
+};
+
+export default React.memo(TunnelPathComponent);

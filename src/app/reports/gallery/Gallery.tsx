@@ -1143,8 +1143,9 @@ export default function Gallery() {
                             />
                           </>
                         )}{' '}
-                      {/* Obstacle indicator - based on ultrasonic sensor value <= 20 and when data is available */}
-                      {item.metadata &&
+                      {/* Obstacle indicator - only show in original view when ultrasonic <= 20 and data is available */}
+                      {viewMode === 'original' &&
+                        item.metadata &&
                         item.metadata.ultrasonic !== undefined &&
                         item.metadata.ultrasonic !== null &&
                         item.metadata.ultrasonic !== -1 &&
