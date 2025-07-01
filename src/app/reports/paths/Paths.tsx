@@ -573,8 +573,8 @@ export default function Paths() {
 
             setDateWithSessions(allDateSessions);
 
-            // Auto-select the most recent date and session
-            if (allDateSessions.length > 0) {
+            // Auto-select the most recent date and session only if not already selected
+            if (!selectedDate && allDateSessions.length > 0) {
               const defaultDate = allDateSessions[0];
               const defaultSession =
                 defaultDate.sessions.length > 0
@@ -582,52 +582,25 @@ export default function Paths() {
                   : null;
 
               setSelectedDate(defaultDate);
-              setSelectedSession(defaultSession);
-
-              // Filter reports for the selected date and session
-              let filteredReports = allReports;
-              if (defaultDate && defaultSession) {
-                filteredReports = allReports.filter((report) => {
-                  const reportDate = report.timestamp.split('T')[0];
-                  const reportSessionId = report.sessionId.toString();
-                  const selectedSessionId = defaultSession.value.replace(
-                    /\D/g,
-                    '',
-                  );
-
-                  return (
-                    reportDate === defaultDate.value &&
-                    reportSessionId === selectedSessionId
-                  );
-                });
+              if (defaultSession) {
+                setSelectedSession(defaultSession);
               }
+            }
 
-              // Sort reports by newest first
-              const sortedReports = filteredReports.sort(
+            // Set ALL reports data (no filtering here - let useMemo handle filtering)
+            setReports(
+              allReports.sort(
                 (a, b) =>
                   new Date(b.timestamp).getTime() -
                   new Date(a.timestamp).getTime(),
-              );
-              setReports(sortedReports);
+              ),
+            );
 
-              console.log(
-                '🛤️ [PATHS LOCAL] Successfully processed Path data:',
-                {
-                  totalReports: filteredReports.length,
-                  totalWithImages: filteredReports.filter((r) => r.hasImage)
-                    .length,
-                  reports: sortedReports.length,
-                },
-              );
-            } else {
-              setReports(
-                allReports.sort(
-                  (a, b) =>
-                    new Date(b.timestamp).getTime() -
-                    new Date(a.timestamp).getTime(),
-                ),
-              );
-            }
+            console.log('🛤️ [PATHS LOCAL] Successfully loaded ALL Path data:', {
+              totalReports: allReports.length,
+              totalWithImages: allReports.filter((r) => r.hasImage).length,
+              dateWithSessions: allDateSessions.length,
+            });
           } catch (localError) {
             console.error('🛤️ [PATHS DEBUG] Error in local mode:', localError);
             setReports([]);
@@ -733,17 +706,44 @@ export default function Paths() {
 
   // Calculate filtered reports for display (computed during render, not in useEffect)
   const filteredReports = React.useMemo(() => {
+    console.log('🛤️ [PATHS DEBUG] useMemo filteredReports triggered', {
+      isLocalMode,
+      selectedDate: selectedDate?.value,
+      selectedSession: selectedSession?.value,
+      totalReports: reports.length,
+    });
+
     if (isLocalMode && selectedDate && selectedSession) {
-      return reports.filter((report) => {
+      const filtered = reports.filter((report) => {
         const reportDate = report.timestamp.split('T')[0];
         const reportSessionId = report.sessionId.toString();
         const selectedSessionId = selectedSession.value.replace(/\D/g, '');
 
-        return (
+        const matches =
           reportDate === selectedDate.value &&
-          reportSessionId === selectedSessionId
-        );
+          reportSessionId === selectedSessionId;
+
+        if (!matches) {
+          console.log('🛤️ [PATHS DEBUG] Report filtered out:', {
+            reportDate,
+            reportSessionId,
+            selectedDate: selectedDate.value,
+            selectedSessionId,
+            timestamp: report.timestamp,
+          });
+        }
+
+        return matches;
       });
+
+      console.log('🛤️ [PATHS DEBUG] Filtering result:', {
+        totalReports: reports.length,
+        filteredReports: filtered.length,
+        selectedDate: selectedDate.value,
+        selectedSession: selectedSession.value,
+      });
+
+      return filtered;
     }
     return reports;
   }, [reports, selectedDate, selectedSession, isLocalMode]);
@@ -947,13 +947,21 @@ export default function Paths() {
                   styles={customStyles}
                   value={selectedDate}
                   onChange={(option) => {
+                    console.log('🛤️ [PATHS DEBUG] Date changed:', option);
                     setSelectedDate(option);
                     const selected = dateWithSessions.find(
                       (d) => d.value === option?.value,
                     );
                     if (selected?.sessions.length) {
+                      console.log(
+                        '🛤️ [PATHS DEBUG] Auto-selecting first session:',
+                        selected.sessions[0],
+                      );
                       setSelectedSession(selected.sessions[0]);
                     } else {
+                      console.log(
+                        '🛤️ [PATHS DEBUG] No sessions found for date',
+                      );
                       setSelectedSession(null);
                     }
                   }}
@@ -970,7 +978,10 @@ export default function Paths() {
                   }
                   styles={customStyles}
                   value={selectedSession}
-                  onChange={setSelectedSession}
+                  onChange={(option) => {
+                    console.log('🛤️ [PATHS DEBUG] Session changed:', option);
+                    setSelectedSession(option);
+                  }}
                   isSearchable={false}
                   isDisabled={!selectedDate}
                   className='flex-1'

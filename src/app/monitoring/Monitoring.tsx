@@ -57,6 +57,18 @@ export default function Monitoring() {
   const [currentSession, setCurrentSession] = useState<number | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [modeChecked, setModeChecked] = useState(false);
+
+  // Auto Photo state - only used in local mode
+  const [autoPhotoEnabled, setAutoPhotoEnabled] = useState<boolean>(false);
+
+  // Auto photo toggle handler
+  const handleAutoPhotoToggle = (enabled: boolean) => {
+    setAutoPhotoEnabled(enabled);
+    console.log(
+      `🚨 [AUTO PHOTO] ${enabled ? 'Enabled' : 'Disabled'} from settings - will capture photos when obstacles detected (<10cm)`,
+    );
+  };
+
   // Get user and device context
   const { user, loading: userLoading } = useUser();
   const { selectedDevice, deviceChangeVersion } = useUserConfig(); // Get local mode context for serial data
@@ -231,7 +243,8 @@ export default function Monitoring() {
                     rotationRate: localData.rotationRate,
                     distanceTraveled: localData.distanceTraveled,
                     linearAcceleration: localData.linearAcceleration,
-                    velocity: localData.velocity,                    velocityX: localData.velocityX,
+                    velocity: localData.velocity,
+                    velocityX: localData.velocityX,
                     velocityY: localData.velocityY,
                     position: {
                       positionX: localData.positionX,
@@ -251,6 +264,8 @@ export default function Monitoring() {
             isLocalMode={true}
             isConnected={isConnected}
             serialBuffer={serialBuffer}
+            autoPhotoEnabled={autoPhotoEnabled}
+            onAutoPhotoToggle={handleAutoPhotoToggle}
             liveSerialData={
               localData
                 ? {
@@ -261,7 +276,8 @@ export default function Monitoring() {
                     rotationRate: localData.rotationRate,
                     distanceTraveled: localData.distanceTraveled,
                     linearAcceleration: localData.linearAcceleration,
-                    velocity: localData.velocity,                    velocityX: localData.velocityX,
+                    velocity: localData.velocity,
+                    velocityX: localData.velocityX,
                     velocityY: localData.velocityY,
                     position: {
                       positionX: localData.positionX,
@@ -273,7 +289,8 @@ export default function Monitoring() {
                   }
                 : null
             }
-          />{' '}          <RightArea_Monitoring
+          />{' '}
+          <RightArea_Monitoring
             key={`right-offline`}
             serialBuffer={serialBuffer}
             liveSerialData={
@@ -289,7 +306,8 @@ export default function Monitoring() {
                     linearAcceleration: localData.linearAcceleration,
                     velocity: localData.velocity,
                     velocityX: localData.velocityX,
-                    velocityY: localData.velocityY,                    position: {
+                    velocityY: localData.velocityY,
+                    position: {
                       positionX: localData.positionX,
                       positionY: localData.positionY,
                     },
@@ -307,10 +325,10 @@ export default function Monitoring() {
                     accelX: localData.accelX,
                     accelY: localData.accelY,
                     accelZ: localData.accelZ,
-                    // Gyroscope details  
+                    // Gyroscope details
                     gyroX: localData.gyroX,
                     gyroY: localData.gyroY,
-                    gyroZ: localData.gyroZ,                    // Magnetometer details (use direct field names to match LogsCard)
+                    gyroZ: localData.gyroZ, // Magnetometer details (use direct field names to match LogsCard)
                     magX: localData.magX,
                     magY: localData.magY,
                     magZ: localData.magZ,
@@ -386,6 +404,8 @@ export default function Monitoring() {
           isLocalMode={false}
           isConnected={true}
           serialBuffer={serialBuffer}
+          autoPhotoEnabled={autoPhotoEnabled}
+          onAutoPhotoToggle={handleAutoPhotoToggle}
         />{' '}
         <RightArea_Monitoring
           key={`right-${selectedDevice?.id || 'no-device'}-${deviceChangeVersion}`}

@@ -125,8 +125,12 @@ export default function Ultrasonic() {
         `🔊 [ULTRASONIC DEBUG] Checking image in gallery: ${imageFileName}`,
       );
 
-      // Check in both originals and main gallery folder
-      const galleryFolders = ['reports/gallery/originals', 'reports/gallery'];
+      // Prioritize originals folder for display, then check main gallery
+      const galleryFolders = [
+        'reports/gallery/originals',
+        'reports/gallery/metadata',
+        'reports/gallery',
+      ];
 
       for (const folder of galleryFolders) {
         try {
@@ -157,26 +161,33 @@ export default function Ultrasonic() {
             ];
 
             for (const extension of imageExtensions) {
-              const targetFilename = imageFileName.endsWith(extension)
-                ? imageFileName
-                : `${imageFileName}${extension}`;
+              // Try multiple filename patterns for auto-captured images
+              const patterns = [
+                imageFileName.endsWith(extension)
+                  ? imageFileName
+                  : `${imageFileName}${extension}`,
+                `${imageFileName}_original${extension}`, // Auto-captured pattern
+                `${imageFileName}_metadata${extension}`, // Alternative pattern
+              ];
 
-              console.log(
-                `🔊 [ULTRASONIC DEBUG] Looking for: ${targetFilename}`,
-              );
-
-              const foundImage = galleryResult.images.find(
-                (img) => img.fileName === targetFilename,
-              );
-
-              if (foundImage) {
+              for (const targetFilename of patterns) {
                 console.log(
-                  `🔊 [ULTRASONIC DEBUG] Found image: ${foundImage.filePath}`,
+                  `🔊 [ULTRASONIC DEBUG] Looking for: ${targetFilename}`,
                 );
-                return {
-                  exists: true,
-                  imagePath: foundImage.filePath,
-                };
+
+                const foundImage = galleryResult.images.find(
+                  (img) => img.fileName === targetFilename,
+                );
+
+                if (foundImage) {
+                  console.log(
+                    `🔊 [ULTRASONIC DEBUG] Found image: ${foundImage.filePath}`,
+                  );
+                  return {
+                    exists: true,
+                    imagePath: foundImage.filePath,
+                  };
+                }
               }
             }
           }
@@ -198,6 +209,140 @@ export default function Ultrasonic() {
         error,
       );
       return { exists: false };
+    }
+  };
+
+  // Function to parse ultrasonic file content (JSON or ESP32 log format)
+  const parseUltrasonicFile = async (
+    content: string,
+    date: string,
+    sessionId: number,
+  ): Promise<Ultrasonic[]> => {
+    try {
+      console.log(
+        '🔊 [ULTRASONIC DEBUG] Parsing ultrasonic file content, length:',
+        content.length,
+      );
+
+      const reports: Ultrasonic[] = [];
+      let data: UltrasonicData[] = [];
+
+      // Try to parse as JSON array first
+      try {
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+          data = parsed;
+          console.log(
+            '🔊 [ULTRASONIC DEBUG] Parsed as JSON array, length:',
+            data.length,
+          );
+        } else {
+          data = [parsed];
+          console.log('🔊 [ULTRASONIC DEBUG] Parsed as single JSON object');
+        }
+      } catch {
+        // If JSON parsing fails, try ESP32 log format (line by line)
+        console.log(
+          '🔊 [ULTRASONIC DEBUG] JSON parsing failed, trying ESP32 log format',
+        );
+        const lines = content.split('\n').filter((line) => line.trim());
+
+        for (const line of lines) {
+          // ESP32 log format: [timestamp] [ESP32] {json}
+          const jsonMatch = line.match(/\{.*\}/);
+          if (jsonMatch) {
+            try {
+              const lineData = JSON.parse(jsonMatch[0]);
+              data.push(lineData);
+            } catch {
+              console.warn('🔊 [ULTRASONIC DEBUG] Failed to parse line:', line);
+            }
+          }
+        }
+        console.log(
+          '🔊 [ULTRASONIC DEBUG] Parsed ESP32 log format, entries:',
+          data.length,
+        );
+      }
+
+      // Convert data to Ultrasonic format
+      for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+
+        // Generate timestamp if not provided
+        const timestamp =
+          item.timestamp || item.createdAt || new Date().toISOString();
+
+        // Check if image exists in gallery
+        let hasImage = false;
+        let imagePath = '';
+        if (item.imageFileName) {
+          const imageCheck = await checkImageExistsInGallery(
+            item.imageFileName,
+          );
+          hasImage = imageCheck.exists;
+          imagePath = imageCheck.imagePath || '';
+          console.log(
+            '🔊 [ULTRASONIC DEBUG] Image check for',
+            item.imageFileName,
+            ':',
+            imageCheck,
+          );
+        }
+
+        // Calculate alert level based on distance
+        const ultrasonicValue = item.ultrasonic || 0;
+        const alertLevel: 'High' | 'Medium' | 'Safe' =
+          ultrasonicValue < 10
+            ? 'High'
+            : ultrasonicValue < 20
+              ? 'Medium'
+              : 'Safe';
+
+        const report: Ultrasonic = {
+          id: `${date}-${sessionId}-${i}`,
+          timestamp,
+          sessionId,
+          distance: ultrasonicValue,
+          alertLevel,
+          imageId:
+            item.imageFileName || item.imageId || item.fileName || `image-${i}`,
+          createdAt: timestamp,
+          imageFileName: item.imageFileName,
+          hasImage,
+          imagePath,
+          metadata: {
+            ultrasonic: ultrasonicValue,
+            heading: item.heading || 0,
+            direction: item.direction,
+            accelerationMagnitude: item.accelerationMagnitude,
+            rotationRate: item.rotationRate,
+            distanceTraveled: item.distanceTraveled,
+            linearAcceleration: item.linearAcceleration,
+            velocity: item.velocity,
+            velocityX: item.velocityX,
+            velocityY: item.velocityY,
+            position: item.position || { positionX: 0, positionY: 0 },
+            pitch: item.pitch,
+            roll: item.roll,
+            yaw: item.yaw,
+          },
+        };
+
+        reports.push(report);
+      }
+
+      console.log(
+        '🔊 [ULTRASONIC DEBUG] Final reports generated:',
+        reports.length,
+      );
+      return reports;
+    } catch (error) {
+      console.error(
+        '🔊 [ULTRASONIC DEBUG] Error parsing ultrasonic file:',
+        error,
+      );
+      return [];
     }
   };
 
@@ -338,563 +483,226 @@ export default function Ultrasonic() {
         console.log('🔊 [ULTRASONIC DEBUG] selectedDevice:', selectedDevice);
 
         if (isLocalMode) {
-          // Local mode: Get ultrasonic data from local folder structure
+          // LOCAL MODE: Read from reports/ultrasonic/{date}/{sessionId}.json
           console.log(
-            '🔊 [ULTRASONIC LOCAL] Fetching ultrasonic data from reports/ultrasonic...',
+            '🔊 [ULTRASONIC DEBUG] Local mode - fetching ultrasonic data from files',
           );
 
-          if (
-            typeof window !== 'undefined' &&
-            (window.electronAPI?.getImagesFromFolder ||
-              window.electronAPI?.getUltrasonicFiles) &&
-            window.electronAPI?.readFile
-          ) {
+          try {
+            if (!window.electronAPI?.getUltrasonicFiles) {
+              throw new Error('electronAPI.getUltrasonicFiles not available');
+            }
+
+            // Read ultrasonic folder structure
+            const folderResult =
+              await window.electronAPI.getUltrasonicFiles('reports/ultrasonic');
             console.log(
-              '🔊 [ULTRASONIC LOCAL] Attempting to read reports/ultrasonic folder structure...',
+              '🔊 [ULTRASONIC DEBUG] Ultrasonic folder result:',
+              folderResult,
             );
 
-            try {
-              // First, get the list of date folders using either handler
-              const dateResult = window.electronAPI?.getUltrasonicFiles
-                ? await window.electronAPI.getUltrasonicFiles(
-                    'reports/ultrasonic',
-                  )
-                : await window.electronAPI?.getImagesFromFolder?.(
-                    'reports/ultrasonic',
-                  );
-
-              console.log(
-                '🔊 [ULTRASONIC DEBUG] Date folders result:',
-                dateResult,
+            if (!folderResult.success) {
+              throw new Error(
+                folderResult.error || 'Failed to read ultrasonic folder',
               );
-              console.log(
-                '🔊 [ULTRASONIC DEBUG] Raw images array:',
-                dateResult?.images,
-              );
+            }
 
-              if (
-                dateResult?.success &&
-                dateResult?.images &&
-                dateResult.images.length > 0
-              ) {
-                // Process date folders and sessions
-                const dateWithSessionsData: {
-                  value: string;
-                  label: string;
-                  sessions: OptionType[];
-                }[] = [];
-                const allReports: Ultrasonic[] = [];
+            const allDateSessions: {
+              value: string;
+              label: string;
+              sessions: OptionType[];
+            }[] = [];
+            const allReports: Ultrasonic[] = [];
 
-                // Extract unique dates from folder structure
-                const uniqueDates = new Set<string>();
-                dateResult.images?.forEach((item) => {
-                  if (item.fileName.includes('/')) {
-                    // Extract date from path like "2024-12-23/session1.json"
-                    const datePart = item.fileName.split('/')[0];
-                    uniqueDates.add(datePart);
-                  } else if (item.fileName.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    // Direct date folder name
-                    uniqueDates.add(item.fileName);
-                  }
-                });
-
+            // Process each date folder
+            for (const item of folderResult.images || []) {
+              if (item.isDirectory) {
+                const dateFolder = item.fileName;
                 console.log(
-                  '🔊 [ULTRASONIC DEBUG] Found unique dates:',
-                  Array.from(uniqueDates),
+                  '🔊 [ULTRASONIC DEBUG] Processing date folder:',
+                  dateFolder,
                 );
 
-                // Process each date folder
-                for (const dateStr of uniqueDates) {
-                  try {
-                    console.log(
-                      `🔊 [ULTRASONIC DEBUG] Processing date folder: ${dateStr}`,
-                    );
+                const sessions: OptionType[] = [];
 
-                    // Get sessions for this date using new handler
-                    const sessionResult =
-                      await window.electronAPI?.getUltrasonicFiles?.(
-                        `reports/ultrasonic/${dateStr}`,
+                // Get session files for this date
+                const sessionResult =
+                  await window.electronAPI.getUltrasonicFiles(
+                    `reports/ultrasonic/${dateFolder}`,
+                  );
+                console.log(
+                  '🔊 [ULTRASONIC DEBUG] Session result for',
+                  dateFolder,
+                  ':',
+                  sessionResult,
+                );
+
+                if (sessionResult.success && sessionResult.images) {
+                  for (const sessionItem of sessionResult.images) {
+                    if (
+                      !sessionItem.isDirectory &&
+                      sessionItem.fileName.endsWith('.json')
+                    ) {
+                      const sessionId = sessionItem.fileName.replace(
+                        '.json',
+                        '',
                       );
+                      sessions.push({
+                        value: sessionId,
+                        label: `Session ${sessionId}`,
+                      });
 
-                    console.log(
-                      `🔊 [ULTRASONIC DEBUG] Sessions for ${dateStr}:`,
-                      sessionResult,
-                    );
-
-                    if (sessionResult?.success && sessionResult?.images) {
-                      const sessions: OptionType[] = [];
-
-                      // Process each session file
-                      for (const sessionFile of sessionResult.images) {
-                        if (sessionFile.fileName.endsWith('.json')) {
-                          const sessionId = sessionFile.fileName.replace(
-                            '.json',
-                            '',
+                      // Read and parse session file
+                      try {
+                        if (!window.electronAPI?.readFileContent) {
+                          console.error(
+                            '🔊 [ULTRASONIC DEBUG] readFileContent API not available',
                           );
-                          sessions.push({
-                            value: sessionId,
-                            label: `Session ${sessionId}`,
-                          });
-
-                          console.log(
-                            `🔊 [ULTRASONIC DEBUG] Reading session file: ${dateStr}/${sessionFile.fileName}`,
-                          );
-
-                          // Read the JSON file for this session
-                          try {
-                            const jsonResult =
-                              await window.electronAPI.readFile(
-                                `reports/ultrasonic/${dateStr}/${sessionFile.fileName}`,
-                              );
-
-                            if (jsonResult.success && jsonResult.content) {
-                              console.log(
-                                `🔊 [ULTRASONIC DEBUG] Raw file content for ${dateStr}/${sessionId}:`,
-                                jsonResult.content.substring(0, 200) + '...',
-                              );
-
-                              let sessionData:
-                                | UltrasonicData[]
-                                | UltrasonicData
-                                | null = null;
-
-                              try {
-                                // Try parsing as JSON array first
-                                sessionData = JSON.parse(jsonResult.content);
-                                console.log(
-                                  `🔊 [ULTRASONIC DEBUG] Parsed as JSON array:`,
-                                  sessionData,
-                                );
-                              } catch {
-                                console.log(
-                                  `🔊 [ULTRASONIC DEBUG] Not a JSON array, trying line-by-line parsing...`,
-                                );
-
-                                // Try parsing as multiline JSON (each line is a JSON object)
-                                const lines = jsonResult.content.split('\n');
-                                const parsedLines: UltrasonicData[] = [];
-
-                                for (const line of lines) {
-                                  const trimmedLine = line.trim();
-                                  if (
-                                    trimmedLine &&
-                                    trimmedLine.startsWith('{')
-                                  ) {
-                                    try {
-                                      // Extract JSON from ESP32 log format
-                                      // Pattern: [timestamp] [ESP32] [timestamp] {"ultrasonic":7}
-                                      let jsonStr = trimmedLine;
-
-                                      // Check if it's ESP32 log format
-                                      const jsonMatch =
-                                        trimmedLine.match(/\{.*\}$/);
-                                      if (jsonMatch) {
-                                        jsonStr = jsonMatch[0];
-                                      }
-
-                                      const lineData = JSON.parse(jsonStr);
-                                      if (lineData.ultrasonic !== undefined) {
-                                        parsedLines.push(lineData);
-                                      }
-                                    } catch (lineError) {
-                                      console.warn(
-                                        `🔊 [ULTRASONIC DEBUG] Failed to parse line: ${trimmedLine}`,
-                                        lineError,
-                                      );
-                                    }
-                                  }
-                                }
-
-                                sessionData = parsedLines;
-                                console.log(
-                                  `🔊 [ULTRASONIC DEBUG] Parsed ${parsedLines.length} lines from ESP32 log format`,
-                                );
-                              }
-
-                              // Convert session data to ultrasonic reports
-                              if (
-                                Array.isArray(sessionData) &&
-                                sessionData.length > 0
-                              ) {
-                                const sessionReports: Ultrasonic[] = [];
-
-                                // Process each item and check for images
-                                for (
-                                  let index = 0;
-                                  index < sessionData.length;
-                                  index++
-                                ) {
-                                  const item = sessionData[index];
-                                  const ultrasonicValue =
-                                    item.ultrasonic ||
-                                    Math.round(Math.random() * 50) + 5;
-                                  const alertLevel =
-                                    ultrasonicValue < 10
-                                      ? 'High'
-                                      : ultrasonicValue < 20
-                                        ? 'Medium'
-                                        : 'Safe';
-
-                                  // Handle imageFileName field for gallery integration
-                                  const imageId =
-                                    item.imageFileName ||
-                                    item.imageId ||
-                                    item.fileName ||
-                                    `image-${index}`;
-
-                                  console.log(
-                                    `🔊 [ULTRASONIC DEBUG] Processing item ${index}:`,
-                                    {
-                                      ultrasonic: ultrasonicValue,
-                                      imageFileName: item.imageFileName,
-                                      imageId: imageId,
-                                      timestamp: item.timestamp,
-                                    },
-                                  );
-
-                                  // Check if image exists in gallery (only if imageFileName is provided)
-                                  let hasImage = false;
-                                  let imagePath = '';
-
-                                  if (item.imageFileName && isLocalMode) {
-                                    try {
-                                      const imageCheck =
-                                        await checkImageExistsInGallery(
-                                          item.imageFileName,
-                                        );
-                                      hasImage = imageCheck.exists;
-                                      imagePath = imageCheck.imagePath || '';
-
-                                      console.log(
-                                        `🔊 [ULTRASONIC DEBUG] Image check for ${item.imageFileName}:`,
-                                        { hasImage, imagePath },
-                                      );
-                                    } catch (imageError) {
-                                      console.warn(
-                                        `🔊 [ULTRASONIC DEBUG] Error checking image ${item.imageFileName}:`,
-                                        imageError,
-                                      );
-                                    }
-                                  }
-
-                                  const report: Ultrasonic = {
-                                    id: `${dateStr}-${sessionId}-${index}`,
-                                    timestamp:
-                                      item.timestamp ||
-                                      new Date(dateStr).toISOString(),
-                                    sessionId:
-                                      parseInt(sessionId.replace(/\D/g, '')) ||
-                                      1,
-                                    distance: ultrasonicValue, // Using ultrasonic value as distance
-                                    alertLevel,
-                                    imageId: imageId,
-                                    createdAt:
-                                      item.createdAt ||
-                                      item.timestamp ||
-                                      new Date(dateStr).toISOString(),
-                                    imageFileName: item.imageFileName, // Store original imageFileName
-                                    hasImage: hasImage, // Flag indicating if image exists
-                                    imagePath: imagePath, // Full path to image if exists
-                                    metadata: {
-                                      ultrasonic: ultrasonicValue,
-                                      heading:
-                                        item.heading ||
-                                        Math.round(Math.random() * 360),
-                                      direction:
-                                        item.direction ||
-                                        ['North', 'South', 'East', 'West'][
-                                          Math.floor(Math.random() * 4)
-                                        ],
-                                      accelerationMagnitude:
-                                        item.accelerationMagnitude ||
-                                        Math.random() * 2,
-                                      rotationRate:
-                                        item.rotationRate || Math.random() * 1,
-                                      distanceTraveled:
-                                        item.distanceTraveled ||
-                                        Math.random() * 100,
-                                      linearAcceleration:
-                                        item.linearAcceleration ||
-                                        Math.random() * 1,
-                                      velocity:
-                                        item.velocity || Math.random() * 5,
-                                      velocityX:
-                                        item.velocityX || Math.random() * 3,
-                                      velocityY:
-                                        item.velocityY || Math.random() * 3,
-                                      position: item.position || {
-                                        positionX: Math.random() * 20,
-                                        positionY: Math.random() * 20,
-                                      },
-                                      pitch:
-                                        item.pitch || Math.random() * 180 - 90,
-                                      roll:
-                                        item.roll || Math.random() * 180 - 90,
-                                      yaw: item.yaw || Math.random() * 360,
-                                    },
-                                  };
-
-                                  sessionReports.push(report);
-                                }
-
-                                allReports.push(...sessionReports);
-
-                                // Count items with images for debugging
-                                const itemsWithImages = sessionReports.filter(
-                                  (r) => r.hasImage,
-                                ).length;
-                                console.log(
-                                  `🔊 [ULTRASONIC DEBUG] Added ${sessionReports.length} reports from ${dateStr}/${sessionId}`,
-                                  `(${itemsWithImages} with images)`,
-                                );
-                              } else if (
-                                sessionData &&
-                                typeof sessionData === 'object' &&
-                                !Array.isArray(sessionData)
-                              ) {
-                                // Single object format
-                                const ultrasonicValue =
-                                  sessionData.ultrasonic ||
-                                  Math.round(Math.random() * 50) + 5;
-                                const alertLevel =
-                                  ultrasonicValue < 10
-                                    ? 'High'
-                                    : ultrasonicValue < 20
-                                      ? 'Medium'
-                                      : 'Safe';
-
-                                // Handle imageFileName field for gallery integration
-                                const imageId =
-                                  sessionData.imageFileName ||
-                                  sessionData.imageId ||
-                                  sessionData.fileName ||
-                                  'single-image';
-
-                                console.log(
-                                  `🔊 [ULTRASONIC DEBUG] Processing single object:`,
-                                  {
-                                    ultrasonic: ultrasonicValue,
-                                    imageFileName: sessionData.imageFileName,
-                                    imageId: imageId,
-                                    timestamp: sessionData.timestamp,
-                                  },
-                                );
-
-                                // Check if image exists in gallery (only if imageFileName is provided)
-                                let hasImage = false;
-                                let imagePath = '';
-
-                                if (sessionData.imageFileName && isLocalMode) {
-                                  try {
-                                    const imageCheck =
-                                      await checkImageExistsInGallery(
-                                        sessionData.imageFileName,
-                                      );
-                                    hasImage = imageCheck.exists;
-                                    imagePath = imageCheck.imagePath || '';
-
-                                    console.log(
-                                      `🔊 [ULTRASONIC DEBUG] Single object image check for ${sessionData.imageFileName}:`,
-                                      { hasImage, imagePath },
-                                    );
-                                  } catch (imageError) {
-                                    console.warn(
-                                      `🔊 [ULTRASONIC DEBUG] Error checking single object image ${sessionData.imageFileName}:`,
-                                      imageError,
-                                    );
-                                  }
-                                }
-
-                                const singleReport: Ultrasonic = {
-                                  id: `${dateStr}-${sessionId}-0`,
-                                  timestamp:
-                                    sessionData.timestamp ||
-                                    new Date(dateStr).toISOString(),
-                                  sessionId:
-                                    parseInt(sessionId.replace(/\D/g, '')) || 1,
-                                  distance: ultrasonicValue, // Using ultrasonic value as distance
-                                  alertLevel,
-                                  imageId: imageId,
-                                  createdAt:
-                                    sessionData.createdAt ||
-                                    sessionData.timestamp ||
-                                    new Date(dateStr).toISOString(),
-                                  imageFileName: sessionData.imageFileName, // Store original imageFileName
-                                  hasImage: hasImage, // Flag indicating if image exists
-                                  imagePath: imagePath, // Full path to image if exists
-                                  metadata: {
-                                    ultrasonic: ultrasonicValue,
-                                    heading:
-                                      sessionData.heading ||
-                                      Math.round(Math.random() * 360),
-                                    direction:
-                                      sessionData.direction ||
-                                      ['North', 'South', 'East', 'West'][
-                                        Math.floor(Math.random() * 4)
-                                      ],
-                                    accelerationMagnitude:
-                                      sessionData.accelerationMagnitude ||
-                                      Math.random() * 2,
-                                    rotationRate:
-                                      sessionData.rotationRate ||
-                                      Math.random() * 1,
-                                    distanceTraveled:
-                                      sessionData.distanceTraveled ||
-                                      Math.random() * 100,
-                                    linearAcceleration:
-                                      sessionData.linearAcceleration ||
-                                      Math.random() * 1,
-                                    velocity:
-                                      sessionData.velocity || Math.random() * 5,
-                                    velocityX:
-                                      sessionData.velocityX ||
-                                      Math.random() * 3,
-                                    velocityY:
-                                      sessionData.velocityY ||
-                                      Math.random() * 3,
-                                    position: sessionData.position || {
-                                      positionX: Math.random() * 20,
-                                      positionY: Math.random() * 20,
-                                    },
-                                    pitch:
-                                      sessionData.pitch ||
-                                      Math.random() * 180 - 90,
-                                    roll:
-                                      sessionData.roll ||
-                                      Math.random() * 180 - 90,
-                                    yaw: sessionData.yaw || Math.random() * 360,
-                                  },
-                                };
-
-                                allReports.push(singleReport);
-                                console.log(
-                                  `🔊 [ULTRASONIC DEBUG] Added single report from ${dateStr}/${sessionId}`,
-                                  `(has image: ${hasImage})`,
-                                );
-                              } else {
-                                console.warn(
-                                  `🔊 [ULTRASONIC DEBUG] No valid ultrasonic data found in ${dateStr}/${sessionId}`,
-                                );
-                              }
-                            }
-                          } catch (jsonError) {
-                            console.error(
-                              `🔊 [ULTRASONIC DEBUG] Error reading JSON file ${dateStr}/${sessionFile.fileName}:`,
-                              jsonError,
-                            );
-                          }
+                          continue;
                         }
-                      }
 
-                      if (sessions.length > 0) {
-                        dateWithSessionsData.push({
-                          value: dateStr,
-                          label: new Date(dateStr).toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric',
-                          }),
-                          sessions,
-                        });
+                        const fileResult =
+                          await window.electronAPI.readFileContent(
+                            `reports/ultrasonic/${dateFolder}/${sessionItem.fileName}`,
+                          );
+                        console.log(
+                          '🔊 [ULTRASONIC DEBUG] File result for',
+                          sessionItem.fileName,
+                          ':',
+                          fileResult,
+                        );
+
+                        if (fileResult.success && fileResult.content) {
+                          const sessionReports = await parseUltrasonicFile(
+                            fileResult.content,
+                            dateFolder,
+                            parseInt(sessionId),
+                          );
+                          allReports.push(...sessionReports);
+                          console.log(
+                            '🔊 [ULTRASONIC DEBUG] Parsed',
+                            sessionReports.length,
+                            'ultrasonic reports from',
+                            sessionItem.fileName,
+                          );
+                        }
+                      } catch (parseError) {
+                        console.error(
+                          '🔊 [ULTRASONIC DEBUG] Error parsing ultrasonic file:',
+                          sessionItem.fileName,
+                          parseError,
+                        );
                       }
                     }
-                  } catch (dateError) {
-                    console.error(
-                      `🔊 [ULTRASONIC DEBUG] Error processing date folder ${dateStr}:`,
-                      dateError,
-                    );
                   }
                 }
 
-                // Sort dates by newest first
-                dateWithSessionsData.sort(
-                  (a, b) =>
-                    new Date(b.value).getTime() - new Date(a.value).getTime(),
-                );
-
-                console.log('🔊 [ULTRASONIC DEBUG] Final processed data:', {
-                  dates: dateWithSessionsData.length,
-                  totalReports: allReports.length,
-                  dateWithSessionsData,
-                });
-
-                if (dateWithSessionsData.length > 0 && allReports.length > 0) {
-                  setDateWithSessions(dateWithSessionsData);
-
-                  // Set default selections
-                  const defaultDate = dateWithSessionsData[0];
-                  const defaultSession = defaultDate.sessions[0];
-                  setSelectedDate(defaultDate);
-                  setSelectedSession(defaultSession);
-
-                  // Filter reports for selected date and session (if any are selected)
-                  let filteredReports = allReports;
-                  if (selectedDate && selectedSession) {
-                    filteredReports = allReports.filter(
-                      (report) =>
-                        report.timestamp.includes(selectedDate.value) &&
-                        report.sessionId.toString() ===
-                          selectedSession.value.replace(/\D/g, ''),
-                    );
-                  } else if (defaultDate && defaultSession) {
-                    filteredReports = allReports.filter(
-                      (report) =>
-                        report.timestamp.includes(defaultDate.value) &&
-                        report.sessionId.toString() ===
-                          defaultSession.value.replace(/\D/g, ''),
-                    );
-                  }
-
-                  const sortedReports = filteredReports.sort(
-                    (a, b) =>
-                      new Date(b.timestamp).getTime() -
-                      new Date(a.timestamp).getTime(),
-                  );
-                  setReports(sortedReports);
-
-                  // Count items with gallery images
-                  const totalWithImages = filteredReports.filter(
-                    (r) => r.hasImage,
-                  ).length;
-
-                  console.log(
-                    '🔊 [ULTRASONIC LOCAL] Successfully processed ultrasonic data:',
-                    {
-                      totalImages: filteredReports.length,
-                      totalObstacles: filteredReports.filter(
-                        (r) => r.alertLevel === 'High',
-                      ).length,
-                      reports: sortedReports.length,
-                      totalWithImages, // New stat showing items with gallery images
-                    },
-                  );
-                } else {
-                  console.log(
-                    '🔊 [ULTRASONIC LOCAL] No valid ultrasonic data found',
-                  );
-                  setDateWithSessions([]);
-                  setReports([]);
+                if (sessions.length > 0) {
+                  allDateSessions.push({
+                    value: dateFolder,
+                    label: new Date(dateFolder).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    }),
+                    sessions: sessions.sort(
+                      (a, b) => parseInt(a.value) - parseInt(b.value),
+                    ),
+                  });
                 }
-              } else {
-                console.log(
-                  '🔊 [ULTRASONIC LOCAL] No date folders found in ultrasonic directory',
-                );
-                setDateWithSessions([]);
-                setReports([]);
               }
-            } catch (folderError) {
-              console.error(
-                '🔊 [ULTRASONIC DEBUG] Error reading ultrasonic folder structure:',
-                folderError,
-              );
-              setDateWithSessions([]);
-              setReports([]);
             }
-          } else {
-            console.log('🔊 [ULTRASONIC LOCAL] Electron API not available');
-            setDateWithSessions([]);
+
+            console.log(
+              '🔊 [ULTRASONIC DEBUG] Total dates with sessions:',
+              allDateSessions.length,
+            );
+            console.log(
+              '🔊 [ULTRASONIC DEBUG] Total ultrasonic reports:',
+              allReports.length,
+            );
+
+            // Sort dates by newest first
+            allDateSessions.sort(
+              (a, b) =>
+                new Date(b.value).getTime() - new Date(a.value).getTime(),
+            );
+
+            // Sort sessions within each date by newest first
+            allDateSessions.forEach((dateItem) => {
+              if (dateItem.sessions && dateItem.sessions.length > 0) {
+                console.log(
+                  '🔊 [ULTRASONIC DEBUG] Before sorting sessions for',
+                  dateItem.value,
+                  ':',
+                  dateItem.sessions.map((s) => s.value),
+                );
+                dateItem.sessions.sort((a, b) => {
+                  // Extract session numbers for comparison
+                  const sessionA = parseInt(a.value.replace(/\D/g, '')) || 0;
+                  const sessionB = parseInt(b.value.replace(/\D/g, '')) || 0;
+                  return sessionB - sessionA; // Newest (highest number) first
+                });
+                console.log(
+                  '🔊 [ULTRASONIC DEBUG] After sorting sessions for',
+                  dateItem.value,
+                  ':',
+                  dateItem.sessions.map((s) => s.value),
+                );
+              }
+            });
+
+            setDateWithSessions(allDateSessions);
+
+            // Auto-select the most recent date and session (only if not already selected)
+            if (allDateSessions.length > 0 && !selectedDate) {
+              const defaultDate = allDateSessions[0];
+              const defaultSession =
+                defaultDate.sessions.length > 0
+                  ? defaultDate.sessions[0]
+                  : null;
+
+              setSelectedDate(defaultDate);
+              setSelectedSession(defaultSession);
+            }
+
+            // Set all reports, filtering will be handled by useMemo
+            const sortedReports = allReports.sort(
+              (a, b) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime(),
+            );
+            setReports(sortedReports);
+
+            console.log(
+              '🔊 [ULTRASONIC LOCAL] Successfully processed ultrasonic data:',
+              {
+                totalReports: allReports.length,
+                totalWithImages: allReports.filter((r) => r.hasImage).length,
+                dates: allDateSessions.length,
+                reportsBySession: allReports.reduce(
+                  (acc, report) => {
+                    const key = `${report.timestamp.split('T')[0]}-${report.sessionId}`;
+                    acc[key] = (acc[key] || 0) + 1;
+                    return acc;
+                  },
+                  {} as Record<string, number>,
+                ),
+                allReportIds: allReports.map((r) => ({
+                  id: r.id,
+                  sessionId: r.sessionId,
+                  date: r.timestamp.split('T')[0],
+                })),
+              },
+            );
+          } catch (localError) {
+            console.error(
+              '🔊 [ULTRASONIC DEBUG] Error in local mode:',
+              localError,
+            );
             setReports([]);
+            setDateWithSessions([]);
           }
         } else {
           // Online mode: Get data from API endpoint
@@ -930,24 +738,14 @@ export default function Ultrasonic() {
             (data.length > 0
               ? { value: data[0].value, label: data[0].label }
               : null);
-          const useSession =
-            session ||
-            (data.length > 0 && data[0].sessions.length > 0
-              ? data[0].sessions[0]
-              : null);
-          if (useDate && useSession) {
-            // In online mode, we'll rely on computed summaries instead of API
-            // const summariesRes = await fetch(...)
-            // We can remove this since summaries are now computed
-          }
 
           if (
             (date && session) ||
             (data.length > 0 && data[0].sessions.length > 0)
           ) {
-            const useSession = session || data[0].sessions[0];
+            const finalSession = session || data[0].sessions[0];
             const reportsRes = await fetch(
-              `/api/reports/ultrasonic/date/${useDate?.value}/session/${useSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
+              `/api/reports/ultrasonic/date/${useDate?.value}/session/${finalSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
             );
             const reportsData = await reportsRes.json();
             const sortedReports = (reportsData.data || []).sort(
@@ -971,22 +769,83 @@ export default function Ultrasonic() {
 
     fetchAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDevice, isLocalMode]);
+  }, [selectedDevice?.deviceName, isLocalMode]);
+
+  // Additional useEffect to handle session changes for online mode
+  useEffect(() => {
+    const fetchSessionData = async () => {
+      if (
+        !isLocalMode &&
+        selectedDate &&
+        selectedSession &&
+        selectedDevice?.deviceName
+      ) {
+        try {
+          const deviceName = selectedDevice.deviceName;
+          const reportsRes = await fetch(
+            `/api/reports/ultrasonic/date/${selectedDate.value}/session/${selectedSession.value}?deviceName=${encodeURIComponent(deviceName)}`,
+          );
+          const reportsData = await reportsRes.json();
+          const sortedReports = (reportsData.data || []).sort(
+            (a: Ultrasonic, b: Ultrasonic) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+          );
+          setReports(sortedReports);
+        } catch (error) {
+          console.error('Error fetching session data:', error);
+          setReports([]);
+        }
+      }
+    };
+
+    // Only fetch if we're in online mode and have valid selections
+    if (!isLocalMode && selectedDate && selectedSession) {
+      fetchSessionData();
+    }
+  }, [selectedDate, selectedSession, isLocalMode, selectedDevice?.deviceName]);
 
   // Calculate filtered reports for display (computed during render, not in useEffect)
   const filteredReports = React.useMemo(() => {
+    console.log('🔊 [FILTER DEBUG] Starting filter calculation:', {
+      isLocalMode,
+      selectedDate: selectedDate?.value,
+      selectedSession: selectedSession?.value,
+      totalReports: reports.length,
+    });
+
     if (isLocalMode && selectedDate && selectedSession) {
-      return reports.filter((report) => {
+      const filtered = reports.filter((report) => {
         const reportDate = report.timestamp.split('T')[0];
         const reportSessionId = report.sessionId.toString();
         const selectedSessionId = selectedSession.value.replace(/\D/g, '');
 
-        return (
+        const matches =
           reportDate === selectedDate.value &&
-          reportSessionId === selectedSessionId
-        );
+          reportSessionId === selectedSessionId;
+
+        console.log('🔊 [FILTER DEBUG] Report filter check:', {
+          reportId: report.id,
+          reportDate,
+          reportSessionId,
+          selectedDate: selectedDate.value,
+          selectedSessionId,
+          matches,
+        });
+
+        return matches;
       });
+
+      console.log('🔊 [FILTER DEBUG] Filter result:', {
+        totalFiltered: filtered.length,
+        filteredIds: filtered.map((r) => r.id),
+      });
+
+      return filtered;
     }
+
+    console.log(
+      '🔊 [FILTER DEBUG] Not in local mode or missing selections, returning all reports',
+    );
     return reports;
   }, [reports, selectedDate, selectedSession, isLocalMode]);
   // Calculate summaries based on filtered reports (computed during render)
@@ -1180,6 +1039,20 @@ export default function Ultrasonic() {
                   }}
                   isSearchable={false}
                   className='flex-1'
+                  theme={(theme) => ({
+                    ...theme,
+                    colors: {
+                      ...theme.colors,
+                      primary25: isDark ? '#23272f' : '#e3f2fd',
+                      primary: isDark ? '#3b82f6' : '#60a5fa',
+                      neutral0: isDark ? '#23272f' : '#fff',
+                      neutral80: isDark ? '#fff' : '#333',
+                      neutral20: isDark ? '#fff' : '#333',
+                      neutral50: isDark ? '#fff' : '#333',
+                      neutral60: isDark ? '#fff' : '#333',
+                      neutral10: isDark ? '#fff' : '#333',
+                    },
+                  })}
                 />
                 <Select
                   options={
@@ -1191,10 +1064,31 @@ export default function Ultrasonic() {
                   }
                   styles={customStyles}
                   value={selectedSession}
-                  onChange={setSelectedSession}
+                  onChange={(newSession) => {
+                    console.log('🔊 [SESSION CHANGE] Session changed:', {
+                      from: selectedSession?.value,
+                      to: newSession?.value,
+                      selectedDate: selectedDate?.value,
+                    });
+                    setSelectedSession(newSession);
+                  }}
                   isSearchable={false}
                   isDisabled={!selectedDate}
                   className='flex-1'
+                  theme={(theme) => ({
+                    ...theme,
+                    colors: {
+                      ...theme.colors,
+                      primary25: isDark ? '#23272f' : '#e3f2fd',
+                      primary: isDark ? '#3b82f6' : '#60a5fa',
+                      neutral0: isDark ? '#23272f' : '#fff',
+                      neutral80: isDark ? '#fff' : '#333',
+                      neutral20: isDark ? '#fff' : '#333',
+                      neutral50: isDark ? '#fff' : '#333',
+                      neutral60: isDark ? '#fff' : '#333',
+                      neutral10: isDark ? '#fff' : '#333',
+                    },
+                  })}
                 />
               </div>
             )}{' '}

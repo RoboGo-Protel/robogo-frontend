@@ -72,6 +72,8 @@ interface MidAreaMonitoringProps {
   isConnected?: boolean;
   serialBuffer?: string;
   liveSerialData?: Metadata | null;
+  autoPhotoEnabled?: boolean;
+  onAutoPhotoToggle?: (enabled: boolean) => void;
 }
 
 export default function MidArea_Monitoring({
@@ -81,6 +83,8 @@ export default function MidArea_Monitoring({
   isConnected = false,
   serialBuffer = '',
   liveSerialData = null,
+  autoPhotoEnabled = false,
+  onAutoPhotoToggle,
 }: MidAreaMonitoringProps) {
   const { isDark } = useDarkMode();
   const { promise } = useToast();
@@ -91,6 +95,15 @@ export default function MidArea_Monitoring({
   const [recordingState, setRecordingState] = useState<'idle' | 'recording'>(
     'idle',
   );
+
+  // Auto photo capture states - using props instead of local state
+  const [lastObstaclePhotoTime, setLastObstaclePhotoTime] = useState<number>(0);
+  const [isCapturingObstaclePhoto, setIsCapturingObstaclePhoto] =
+    useState<boolean>(false);
+
+  // Constants for obstacle detection
+  const OBSTACLE_THRESHOLD = 10; // cm - distance threshold for obstacle detection
+  const PHOTO_CAPTURE_INTERVAL = 2000; // ms - 2 seconds between photos
 
   // Local mode session management
   const [localCurrentSession, setLocalCurrentSession] = useState<number | null>(
@@ -256,8 +269,13 @@ export default function MidArea_Monitoring({
       console.error('💾 [MONITORING] Error saving monitoring data:', error);
     }
   }; // Function to inject imageFileName into monitoring data
-  const injectImageFileName = (imageFileName: string) => {
-    // Add imageFileName to the latest entries of each type
+  const injectImageFileName = React.useCallback((imageFileName: string) => {
+    console.log(
+      '📸 [MONITORING] Starting imageFileName injection:',
+      imageFileName,
+    );
+
+    // Add imageFileName to the latest entries of each type with enhanced logic
     setMonitoringData(
       (prev: {
         ultrasonic: UltrasonicData[];
@@ -265,6 +283,7 @@ export default function MidArea_Monitoring({
         paths: PathData[];
       }) => {
         const newData = { ...prev };
+        let injectionCount = 0;
 
         // Add to latest ultrasonic entry if exists
         if (newData.ultrasonic.length > 0) {
@@ -273,6 +292,13 @@ export default function MidArea_Monitoring({
             ...newData.ultrasonic[lastIndex],
             imageFileName,
           };
+          injectionCount++;
+          console.log(
+            `📸 [MONITORING] Injected imageFileName to ultrasonic entry ${lastIndex}:`,
+            newData.ultrasonic[lastIndex],
+          );
+        } else {
+          console.log('📸 [MONITORING] No ultrasonic data to inject into');
         }
 
         // Add to latest IMU entry if exists
@@ -282,6 +308,13 @@ export default function MidArea_Monitoring({
             ...newData.imu[lastIndex],
             imageFileName,
           };
+          injectionCount++;
+          console.log(
+            `📸 [MONITORING] Injected imageFileName to IMU entry ${lastIndex}:`,
+            newData.imu[lastIndex],
+          );
+        } else {
+          console.log('📸 [MONITORING] No IMU data to inject into');
         }
 
         // Add to latest paths entry if exists
@@ -291,16 +324,23 @@ export default function MidArea_Monitoring({
             ...newData.paths[lastIndex],
             imageFileName,
           };
+          injectionCount++;
+          console.log(
+            `📸 [MONITORING] Injected imageFileName to paths entry ${lastIndex}:`,
+            newData.paths[lastIndex],
+          );
+        } else {
+          console.log('📸 [MONITORING] No paths data to inject into');
         }
 
         console.log(
-          '📸 [MONITORING] Injected imageFileName to monitoring data:',
-          imageFileName,
+          `📸 [MONITORING] Successfully injected imageFileName "${imageFileName}" into ${injectionCount} data types`,
         );
+
         return newData;
       },
     );
-  };
+  }, []);
   // Cache untuk mencegah duplikasi - HARUS di luar useEffect agar persisten
   const processedDataCacheRef = useRef(new Set<string>());
   const timestampCounterRef = useRef(0);
@@ -605,6 +645,7 @@ export default function MidArea_Monitoring({
       });
     }
   }, [serialBuffer, isLocalMode, localCurrentSession]);
+
   const latestData = dataMonitoring[dataMonitoring.length - 1];
   // Create default data for local mode when connected but no data yet
   const defaultLocalData = React.useMemo(
@@ -657,6 +698,41 @@ export default function MidArea_Monitoring({
       displayData?.metadata,
     );
   }, [displayData, liveSerialData, latestData, isLocalMode, isConnected]);
+
+  // Auto obstacle detection and photo capture
+  useEffect(() => {
+    // Only run in local mode with active monitoring session and auto photo enabled
+    if (!isLocalMode || !localCurrentSession || !autoPhotoEnabled) return;
+
+    // Get current ultrasonic value from displayData or liveSerialData
+    const currentUltrasonic =
+      displayData?.metadata?.ultrasonic ?? liveSerialData?.ultrasonic ?? null;
+
+    // Check if we have valid ultrasonic data and it indicates an obstacle
+    if (
+      currentUltrasonic !== null &&
+      typeof currentUltrasonic === 'number' &&
+      currentUltrasonic >= 0 &&
+      currentUltrasonic < OBSTACLE_THRESHOLD
+    ) {
+      console.log(
+        `🚨 [OBSTACLE MONITOR] Obstacle detected: ${currentUltrasonic.toFixed(2)}cm (threshold: ${OBSTACLE_THRESHOLD}cm)`,
+      );
+
+      // Trigger auto photo capture
+      handleAutoObstaclePhoto(currentUltrasonic);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    displayData?.metadata?.ultrasonic,
+    liveSerialData?.ultrasonic,
+    isLocalMode,
+    localCurrentSession,
+    autoPhotoEnabled,
+    OBSTACLE_THRESHOLD,
+    // handleAutoObstaclePhoto - excluded to avoid circular dependency
+  ]);
+
   // Determine the effective current session (use localCurrentSession in local mode, currentSession in online mode)
   const effectiveCurrentSession = isLocalMode
     ? localCurrentSession || 0
@@ -1439,6 +1515,705 @@ export default function MidArea_Monitoring({
     }
   };
 
+  // Auto obstacle photo capture handler - captures photo when obstacle detected
+  const handleAutoObstaclePhoto = React.useCallback(
+    async (ultrasonicValue: number, forceCapture = false) => {
+      // Check if auto photo is enabled or force capture
+      if (!autoPhotoEnabled && !forceCapture) return;
+
+      // Check if obstacle detected (distance < threshold)
+      const isObstacle = ultrasonicValue < OBSTACLE_THRESHOLD;
+      if (!isObstacle && !forceCapture) return;
+
+      // Check time interval to prevent spam
+      const now = Date.now();
+      if (
+        !forceCapture &&
+        now - lastObstaclePhotoTime < PHOTO_CAPTURE_INTERVAL
+      ) {
+        console.log('🚨 [AUTO PHOTO] Skipping - too soon since last capture');
+        return;
+      }
+
+      // Check if already capturing to prevent multiple simultaneous captures
+      if (isCapturingObstaclePhoto) {
+        console.log('🚨 [AUTO PHOTO] Skipping - already capturing');
+        return;
+      }
+
+      // Check camera connection
+      if (!cameraStreamRef.current?.isConnected) {
+        console.log('🚨 [AUTO PHOTO] Skipping - camera not connected');
+        return;
+      }
+
+      // Check if we have active monitoring session (local mode only)
+      if (isLocalMode && !localCurrentSession) {
+        console.log('🚨 [AUTO PHOTO] Skipping - no active monitoring session');
+        return;
+      }
+
+      try {
+        setIsCapturingObstaclePhoto(true);
+        setLastObstaclePhotoTime(now);
+
+        console.log(
+          `🚨 [AUTO PHOTO] OBSTACLE DETECTED! Distance: ${ultrasonicValue.toFixed(2)}cm - Capturing photo...`,
+        );
+
+        // Capture frame from camera stream
+        const blob = await cameraStreamRef.current!.captureFrame();
+
+        if (isLocalMode) {
+          // Local mode: Use SAME LOGIC as manual take photo for consistency
+          const image = new Image();
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          if (!ctx) {
+            throw new Error('Canvas context not available');
+          }
+
+          // Convert blob to image
+          const imageUrl = window.URL.createObjectURL(blob);
+
+          await new Promise<void>((imageResolve, imageReject) => {
+            image.onload = () => {
+              // Prepare metadata text with OBSTACLE WARNING
+              const currentTime = new Date().toLocaleString();
+              const deviceName = isLocalMode
+                ? 'ESP32 (Local Mode)'
+                : selectedDevice?.deviceName || 'Unknown Device';
+
+              const metadataLines = [
+                `🚨 OBSTACLE AUTO-CAPTURE - ${currentTime}`,
+                `Device: ${deviceName}`,
+              ];
+
+              if (displayData?.metadata) {
+                const metadata = displayData.metadata;
+                metadataLines.push(
+                  `⚠️ OBSTACLE: ${metadata.ultrasonic?.toFixed(2) || ultrasonicValue.toFixed(2)} cm`,
+                  `Heading: ${metadata.heading?.toFixed(2) || 'N/A'}°`,
+                  `Direction: ${metadata.direction || 'N/A'}`,
+                );
+
+                if (
+                  metadata.pitch !== undefined ||
+                  metadata.roll !== undefined ||
+                  metadata.yaw !== undefined
+                ) {
+                  metadataLines.push(
+                    `Pitch: ${metadata.pitch?.toFixed(2) || 'N/A'}°`,
+                    `Roll: ${metadata.roll?.toFixed(2) || 'N/A'}°`,
+                    `Yaw: ${metadata.yaw?.toFixed(2) || 'N/A'}°`,
+                  );
+                }
+
+                if (
+                  metadata.position?.positionX !== undefined ||
+                  metadata.position?.positionY !== undefined
+                ) {
+                  metadataLines.push(
+                    `Position X: ${metadata.position.positionX?.toFixed(2) || 'N/A'}`,
+                    `Position Y: ${metadata.position.positionY?.toFixed(2) || 'N/A'}`,
+                  );
+                }
+
+                if (
+                  metadata.velocityX !== undefined ||
+                  metadata.velocityY !== undefined
+                ) {
+                  metadataLines.push(
+                    `Velocity X: ${metadata.velocityX?.toFixed(2) || 'N/A'} m/s`,
+                    `Velocity Y: ${metadata.velocityY?.toFixed(2) || 'N/A'} m/s`,
+                  );
+                }
+              }
+
+              // Calculate dynamic height based on content (SAME as manual take photo)
+              const originalWidth = image.width;
+              const originalHeight = image.height;
+
+              // Calculate required height for metadata
+              const headerHeight = 60;
+              const lineHeight = 18;
+              const padding = 20;
+              const footerHeight = 30;
+              const sensorDataLines = metadataLines.length - 2; // Exclude timestamp and device name
+              const columnsCount = Math.min(3, Math.ceil(originalWidth / 200)); // Dynamic columns based on width
+              const itemsPerColumn = Math.ceil(sensorDataLines / columnsCount);
+              const contentHeight =
+                headerHeight +
+                80 +
+                itemsPerColumn * lineHeight +
+                padding +
+                footerHeight;
+
+              const metadataHeight = Math.max(200, contentHeight); // Minimum 200px
+              const totalWidth = originalWidth;
+              const totalHeight = originalHeight + metadataHeight;
+
+              // Set canvas size to accommodate both image and metadata
+              canvas.width = totalWidth;
+              canvas.height = totalHeight;
+
+              // Fill background with OBSTACLE WARNING COLOR
+              ctx.fillStyle = '#fef2f2'; // Light red background for obstacle warning
+              ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+              // Draw the original image at the top
+              ctx.drawImage(image, 0, 0, originalWidth, originalHeight);
+
+              // Add a RED border around the image for obstacle warning
+              ctx.strokeStyle = '#dc2626';
+              ctx.lineWidth = 4;
+              ctx.strokeRect(0, 0, originalWidth, originalHeight);
+
+              // Draw metadata area background below the image
+              const metadataY = originalHeight;
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, metadataY, originalWidth, metadataHeight);
+
+              // Add horizontal divider line
+              ctx.strokeStyle = '#dc2626'; // Red divider for obstacle warning
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.moveTo(0, metadataY);
+              ctx.lineTo(originalWidth, metadataY);
+              ctx.stroke();
+
+              // Draw header section with OBSTACLE WARNING
+              ctx.fillStyle = '#dc2626'; // Red header for obstacle
+              ctx.fillRect(0, metadataY, originalWidth, headerHeight);
+
+              // Draw RoboGo logo/title with obstacle warning
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 20px Arial, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText(
+                '🚨 RoboGo AUTO-CAPTURE',
+                originalWidth / 2,
+                metadataY + 25,
+              );
+              ctx.font = '12px Arial, sans-serif';
+              ctx.fillText(
+                'Obstacle Detection Report',
+                originalWidth / 2,
+                metadataY + 45,
+              );
+
+              // Draw metadata content (SAME layout as manual take photo)
+              ctx.fillStyle = '#374151';
+              ctx.font = '14px Arial, sans-serif';
+              ctx.textAlign = 'left';
+
+              let currentY = metadataY + headerHeight + 20;
+              const leftMargin = 20;
+              const columnWidth = (originalWidth - 40) / columnsCount; // Dynamic columns
+
+              metadataLines.forEach((line, index) => {
+                if (index === 0) {
+                  // Timestamp - full width
+                  ctx.fillStyle = '#dc2626'; // Red for obstacle warning
+                  ctx.font = 'bold 14px Arial, sans-serif';
+                  ctx.textAlign = 'center';
+                  ctx.fillText(line, originalWidth / 2, currentY);
+                  currentY += lineHeight + 10;
+
+                  // Draw separator line
+                  ctx.strokeStyle = '#e5e7eb';
+                  ctx.lineWidth = 1;
+                  ctx.beginPath();
+                  ctx.moveTo(leftMargin, currentY - 5);
+                  ctx.lineTo(originalWidth - leftMargin, currentY - 5);
+                  ctx.stroke();
+                  currentY += 10;
+                } else if (index === 1) {
+                  // Device name - full width
+                  ctx.fillStyle = '#374151';
+                  ctx.font = 'bold 14px, Arial, sans-serif';
+                  ctx.textAlign = 'center';
+                  ctx.fillText(line, originalWidth / 2, currentY);
+                  currentY += lineHeight + 15;
+
+                  // Reset for column layout
+                  currentY = metadataY + headerHeight + 80;
+                  ctx.textAlign = 'left';
+                } else {
+                  // Sensor data in dynamic columns
+                  const dataIndex = index - 2;
+                  const currentColumn = Math.floor(dataIndex / itemsPerColumn);
+                  const itemInColumn = dataIndex % itemsPerColumn;
+
+                  const xPos = leftMargin + currentColumn * columnWidth;
+                  const yPos = currentY + itemInColumn * lineHeight;
+                  if (
+                    currentColumn < columnsCount &&
+                    yPos < metadataY + metadataHeight - footerHeight - 10
+                  ) {
+                    ctx.fillStyle = '#374151';
+                    ctx.font = '12px Arial, sans-serif';
+                    // Split label and value for better formatting
+                    const [label, value] = line.split(': ');
+                    const maxLabelWidth = columnWidth * 0.6; // 60% for label
+
+                    // Truncate label if too long
+                    let displayLabel = label;
+                    ctx.fillStyle = '#374151';
+                    ctx.font = '12px Arial, sans-serif';
+                    if (
+                      ctx.measureText(displayLabel + ':').width > maxLabelWidth
+                    ) {
+                      while (
+                        ctx.measureText(displayLabel + '...').width >
+                          maxLabelWidth &&
+                        displayLabel.length > 3
+                      ) {
+                        displayLabel = displayLabel.slice(0, -1);
+                      }
+                      displayLabel += '...';
+                    }
+
+                    ctx.fillText(`${displayLabel}:`, xPos, yPos);
+
+                    // Use RED color for obstacle values
+                    ctx.fillStyle = line.includes('OBSTACLE')
+                      ? '#dc2626'
+                      : '#059669';
+                    ctx.font = 'bold 12px Arial, sans-serif';
+                    const labelWidth = ctx.measureText(
+                      `${displayLabel}:`,
+                    ).width;
+                    ctx.fillText(value || 'N/A', xPos + labelWidth + 5, yPos);
+
+                    ctx.fillStyle = '#374151';
+                    ctx.font = '12px Arial, sans-serif';
+                  }
+                }
+              });
+
+              // Add footer with AUTO-CAPTURE branding (dynamic position)
+              const footerY = totalHeight - footerHeight + 10;
+              ctx.fillStyle = '#dc2626'; // Red footer for obstacle
+              ctx.font = '10px Arial, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText(
+                '🚨 AUTO-CAPTURED: OBSTACLE DETECTION SYSTEM',
+                originalWidth / 2,
+                footerY,
+              );
+
+              // Convert canvas to blob
+              canvas.toBlob(
+                async (resultBlob) => {
+                  if (resultBlob) {
+                    try {
+                      // Generate filename with obstacle prefix (SAME naming as manual)
+                      const now = new Date();
+                      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+                      const timeStr = now
+                        .toTimeString()
+                        .split(' ')[0]
+                        .replace(/:/g, '-'); // HH-MM-SS
+                      const dateTime = `${dateStr}_${timeStr}`;
+                      const deviceNameClean = isLocalMode
+                        ? 'esp32_local'
+                        : selectedDevice?.deviceName?.replace(
+                            /[^a-zA-Z0-9]/g,
+                            '_',
+                          ) || 'unknown';
+
+                      // SPECIAL filename for obstacle detection
+                      const baseFileName = `robogo_OBSTACLE_${deviceNameClean}_${dateTime}_${ultrasonicValue.toFixed(2)}cm`;
+
+                      // ENHANCED: Inject imageFileName into monitoring data for reports (SAME as manual)
+                      // Also create monitoring data entry if needed to ensure auto-captured images appear in reports
+                      if (localCurrentSession) {
+                        console.log(
+                          '📸 [AUTO PHOTO] Injecting imageFileName into monitoring data...',
+                        );
+
+                        // First inject into existing monitoring data
+                        injectImageFileName(baseFileName);
+
+                        // Also ensure we have at least one monitoring entry for this image
+                        // This is critical for auto-captured images to appear in reports
+                        setTimeout(() => {
+                          setMonitoringData((prev) => {
+                            const newData = { ...prev };
+                            const timestamp = now.toISOString();
+
+                            // Check if any monitoring data was updated with imageFileName
+                            const hasUltrasonicWithImage =
+                              newData.ultrasonic.some(
+                                (item) => item.imageFileName === baseFileName,
+                              );
+                            const hasIMUWithImage = newData.imu.some(
+                              (item) => item.imageFileName === baseFileName,
+                            );
+                            const hasPathsWithImage = newData.paths.some(
+                              (item) => item.imageFileName === baseFileName,
+                            );
+
+                            console.log(
+                              `📸 [AUTO PHOTO] Monitoring data check: ultrasonic=${hasUltrasonicWithImage}, imu=${hasIMUWithImage}, paths=${hasPathsWithImage}`,
+                            );
+
+                            // If no monitoring data has this imageFileName, create entries
+                            if (
+                              !hasUltrasonicWithImage &&
+                              !hasIMUWithImage &&
+                              !hasPathsWithImage
+                            ) {
+                              console.log(
+                                '📸 [AUTO PHOTO] Creating monitoring entries for auto-captured image...',
+                              );
+
+                              // Create ultrasonic entry with obstacle data
+                              const ultrasonicEntry: UltrasonicData = {
+                                ultrasonic: ultrasonicValue,
+                                timestamp,
+                                imageFileName: baseFileName,
+                              };
+                              newData.ultrasonic.push(ultrasonicEntry);
+
+                              // Create IMU entry with current sensor data
+                              if (displayData?.metadata) {
+                                const imuEntry: IMUData = {
+                                  heading: displayData.metadata.heading || 0,
+                                  pitch: displayData.metadata.pitch || 0,
+                                  roll: displayData.metadata.roll || 0,
+                                  yaw: displayData.metadata.yaw || 0,
+                                  ultrasonic: ultrasonicValue,
+                                  timestamp,
+                                  imageFileName: baseFileName,
+                                };
+                                newData.imu.push(imuEntry);
+                              }
+
+                              // Create paths entry if position data available
+                              if (
+                                displayData?.metadata?.position ||
+                                displayData?.metadata?.velocityX !==
+                                  undefined ||
+                                displayData?.metadata?.velocityY !== undefined
+                              ) {
+                                const pathsEntry: PathData = {
+                                  timestamp,
+                                  position: {
+                                    positionX:
+                                      displayData.metadata.position
+                                        ?.positionX || 0,
+                                    positionY:
+                                      displayData.metadata.position
+                                        ?.positionY || 0,
+                                  },
+                                  velocity: displayData.metadata.velocity || 0,
+                                  heading: displayData.metadata.heading || 0,
+                                  direction:
+                                    displayData.metadata.direction || 'North',
+                                  distanceTraveled:
+                                    displayData.metadata.distanceTraveled || 0,
+                                  ultrasonic: ultrasonicValue,
+                                  imageFileName: baseFileName,
+                                };
+                                newData.paths.push(pathsEntry);
+                              }
+
+                              console.log(
+                                '📸 [AUTO PHOTO] Created monitoring entries for auto-captured image:',
+                                {
+                                  ultrasonic: ultrasonicEntry,
+                                  totalUltrasonic: newData.ultrasonic.length,
+                                  totalIMU: newData.imu.length,
+                                  totalPaths: newData.paths.length,
+                                },
+                              );
+                            }
+
+                            return newData;
+                          });
+                        }, 100); // Small delay to ensure injection completes first
+                      }
+
+                      // SAME file structure as manual take photo
+                      const originalFileName = `${baseFileName}_original.jpg`;
+                      const metadataFileName = `${baseFileName}_metadata.jpg`;
+                      const jsonFileName = `${baseFileName}.json`;
+
+                      // Check if running in Electron and save locally (SAME as manual)
+                      if (
+                        typeof window !== 'undefined' &&
+                        window.electronAPI?.saveImageToFolder
+                      ) {
+                        // 1. Save original image (without metadata overlay)
+                        const originalBuffer = new Uint8Array(
+                          await blob.arrayBuffer(),
+                        );
+
+                        // 2. Save metadata-enhanced image (current resultBlob)
+                        const metadataBuffer = new Uint8Array(
+                          await resultBlob.arrayBuffer(),
+                        );
+
+                        // 3. Create and save metadata JSON file (SAME as manual)
+                        const metadataJson = {
+                          captureInfo: {
+                            timestamp: now.toISOString(),
+                            createdAt: baseFileName,
+                            deviceName: deviceNameClean,
+                            captureMode: 'auto_obstacle_detection', // Special mode
+                            obstacleDistance: ultrasonicValue,
+                            dangerLevel: 'HIGH',
+                            originalFileName: originalFileName,
+                            metadataFileName: metadataFileName,
+                            jsonFileName: jsonFileName,
+                          },
+                          sensorData: displayData?.metadata || {},
+                          obstacleInfo: {
+                            detected: true,
+                            distance: ultrasonicValue,
+                            threshold: OBSTACLE_THRESHOLD,
+                            autoCapture: true,
+                          },
+                          imageInfo: {
+                            width: image.width,
+                            height: image.height,
+                            format: 'JPEG',
+                            quality: 0.95,
+                          },
+                          session: {
+                            sessionId: localCurrentSession || 'no-session',
+                            sessionActive: !!localCurrentSession,
+                          },
+                        };
+
+                        const jsonContent = JSON.stringify(
+                          metadataJson,
+                          null,
+                          2,
+                        );
+                        const jsonBlob = new Blob([jsonContent], {
+                          type: 'application/json',
+                        });
+                        const jsonBuffer = new Uint8Array(
+                          await jsonBlob.arrayBuffer(),
+                        );
+
+                        const saveResults = [];
+
+                        // IMPORTANT: Auto-captured images should ALWAYS go to reports/gallery
+                        // (same as manual take photo) so they appear in gallery and reports
+                        const baseLocation = 'reports/gallery';
+
+                        // SAME organized subfolders as manual take photo
+                        const originalLocation = `${baseLocation}/originals`;
+                        const metadataLocation = `${baseLocation}/metadata`;
+                        const jsonLocation = `${baseLocation}/json`;
+
+                        try {
+                          // Save all three files to SAME organized folders as manual
+                          const originalResult =
+                            await window.electronAPI.saveImageToFolder(
+                              originalBuffer,
+                              originalFileName,
+                              originalLocation,
+                            );
+                          saveResults.push({
+                            type: 'original',
+                            result: originalResult,
+                          });
+
+                          const metadataResult =
+                            await window.electronAPI.saveImageToFolder(
+                              metadataBuffer,
+                              metadataFileName,
+                              metadataLocation,
+                            );
+                          saveResults.push({
+                            type: 'metadata',
+                            result: metadataResult,
+                          });
+
+                          // Save JSON metadata using the same API
+                          const jsonResult =
+                            await window.electronAPI.saveImageToFolder(
+                              jsonBuffer,
+                              jsonFileName,
+                              jsonLocation,
+                            );
+                          saveResults.push({
+                            type: 'json',
+                            result: jsonResult,
+                          });
+
+                          // Log results
+                          console.log(
+                            '🚨 [AUTO PHOTO] All obstacle files saved to reports/gallery (same as manual photos):',
+                          );
+                          saveResults.forEach(({ type, result }) => {
+                            if (result.success) {
+                              console.log(
+                                `✅ ${type.toUpperCase()}: ${result.filePath}`,
+                              );
+                            } else {
+                              console.error(
+                                `❌ ${type.toUpperCase()}: ${result.error}`,
+                              );
+                            }
+                          });
+
+                          // Check if all saves were successful
+                          const allSuccessful = saveResults.every(
+                            ({ result }) => result.success,
+                          );
+
+                          if (!allSuccessful) {
+                            const failedSaves = saveResults
+                              .filter(({ result }) => !result.success)
+                              .map(({ type }) => type)
+                              .join(', ');
+                            throw new Error(`Failed to save: ${failedSaves}`);
+                          }
+
+                          console.log(
+                            `🚨 [AUTO PHOTO] Obstacle photo saved to reports/gallery: ${baseFileName}`,
+                          );
+                        } catch (saveError) {
+                          console.error(
+                            '🚨 [AUTO PHOTO] Save failed:',
+                            saveError,
+                          );
+                          throw saveError;
+                        }
+                      } else {
+                        // Fallback: download as usual (if not in Electron)
+                        const url = window.URL.createObjectURL(resultBlob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = metadataFileName; // Use the metadata filename
+
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                      }
+
+                      window.URL.revokeObjectURL(imageUrl);
+                      imageResolve();
+                    } catch (error) {
+                      window.URL.revokeObjectURL(imageUrl);
+                      imageReject(error);
+                    }
+                  } else {
+                    imageReject(
+                      new Error('Failed to create obstacle image blob'),
+                    );
+                  }
+                },
+                'image/jpeg',
+                0.95,
+              );
+            };
+
+            image.onerror = () => {
+              window.URL.revokeObjectURL(imageUrl);
+              imageReject(new Error('Failed to load image'));
+            };
+
+            image.src = imageUrl;
+          });
+        } else {
+          // Cloud mode: Upload with obstacle flag
+          const formData = new FormData();
+          formData.append('image', blob, `obstacle_capture_${Date.now()}.jpg`);
+          formData.append('obstacle', 'true'); // Mark as obstacle detection
+          formData.append('takenWith', 'auto_obstacle_detection');
+          formData.append('ultrasonicDistance', ultrasonicValue.toString());
+
+          // Add current metadata if available
+          if (displayData?.metadata) {
+            const metadata = displayData.metadata;
+            if (metadata.ultrasonic !== undefined)
+              formData.append('ultrasonic', metadata.ultrasonic.toString());
+            if (metadata.heading !== undefined)
+              formData.append('heading', metadata.heading.toString());
+            if (metadata.pitch !== undefined)
+              formData.append('pitch', metadata.pitch.toString());
+            if (metadata.roll !== undefined)
+              formData.append('roll', metadata.roll.toString());
+            if (metadata.yaw !== undefined)
+              formData.append('yaw', metadata.yaw.toString());
+
+            // Add distance data
+            if (metadata.distanceTraveled !== undefined)
+              formData.append(
+                'distanceTraveled',
+                metadata.distanceTraveled.toString(),
+              );
+
+            // Add velocity data
+            if (metadata.velocity !== undefined)
+              formData.append('velocity', metadata.velocity.toString());
+            if (metadata.velocityX !== undefined)
+              formData.append('velocityX', metadata.velocityX.toString());
+            if (metadata.velocityY !== undefined)
+              formData.append('velocityY', metadata.velocityY.toString());
+
+            // Add position data
+            if (metadata.position) {
+              if (metadata.position.positionX !== undefined)
+                formData.append(
+                  'positionX',
+                  metadata.position.positionX.toString(),
+                );
+              if (metadata.position.positionY !== undefined)
+                formData.append(
+                  'positionY',
+                  metadata.position.positionY.toString(),
+                );
+            }
+          }
+
+          const endpoint = `/api/monitoring/realtime?deviceName=${encodeURIComponent(selectedDevice!.deviceName)}`;
+
+          // Post to monitoring/realtime endpoint
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Failed to save obstacle photo');
+          }
+
+          await response.json();
+          console.log(
+            `🚨 [AUTO PHOTO] Obstacle photo uploaded to cloud: ${ultrasonicValue.toFixed(2)}cm`,
+          );
+        }
+      } catch (error) {
+        console.error('🚨 [AUTO PHOTO] Error capturing obstacle photo:', error);
+      } finally {
+        setIsCapturingObstaclePhoto(false);
+      }
+    },
+    [
+      autoPhotoEnabled,
+      isLocalMode,
+      localCurrentSession,
+      OBSTACLE_THRESHOLD,
+      PHOTO_CAPTURE_INTERVAL,
+      lastObstaclePhotoTime,
+      isCapturingObstaclePhoto,
+      displayData,
+      selectedDevice,
+      injectImageFileName,
+    ],
+  );
+
   const listButtons = [
     {
       icon:
@@ -1458,6 +2233,7 @@ export default function MidArea_Monitoring({
       text: 'Flip Camera',
       onClick: handleToggleFlip,
     },
+    // Removed Auto Photo Toggle - now in settings modal
     // ...(isLocalMode
     //   ? [
     //       {
@@ -1481,6 +2257,9 @@ export default function MidArea_Monitoring({
         <StableCameraStream
           ref={cameraStreamRef}
           metadata={displayData?.metadata}
+          isLocalMode={isLocalMode}
+          autoPhotoEnabled={autoPhotoEnabled}
+          onAutoPhotoToggle={onAutoPhotoToggle}
         />
       </div>{' '}
       {/* Stats and monitoring data display */}
@@ -1575,11 +2354,8 @@ export default function MidArea_Monitoring({
             {listButtons.map((item, index) => {
               // Define column spans for grid-cols-20
               const getColSpan = () => {
-                if (isLocalMode) {
-                  return 'col-span-1 md:col-span-2'; // 5 buttons: 4+4+4+4+4 = 20
-                } else {
-                  return 'col-span-1 md:col-span-2'; // 4 buttons: 5+5+5+5 = 20
-                }
+                // Now we have 3 buttons total: Take Photo, Flip Camera
+                return 'col-span-1 md:col-span-2'; // 3 buttons: 6+7+7 = 20 (approximately equal distribution)
               };
 
               return (

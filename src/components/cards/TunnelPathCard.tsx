@@ -561,7 +561,7 @@ export default function TunnelPath({
                     return (
                       <div
                         key={idx}
-                        className='absolute flex flex-col items-center z-20'
+                        className='absolute flex flex-col items-center z-20 group' // Added 'group' class for hover functionality
                         style={{
                           left: `${pos.left}px`,
                           top: `${pos.top}px`,
@@ -573,12 +573,13 @@ export default function TunnelPath({
                           {point.imageUrl ? (
                             <>
                               {' '}
-                              {/* Tooltip for image points - position based on card placement */}
+                              {/* Tooltip for image points - ONLY show on hover */}
                               <div
                                 className={clsx(
                                   'absolute px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
                                   'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                   'min-w-max whitespace-nowrap z-30',
+                                  'opacity-0 group-hover:opacity-100 pointer-events-none', // Only show on hover
                                   shouldPlaceAbove
                                     ? 'bottom-full mb-2' // If card is above, tooltip goes above the top card
                                     : 'top-full mt-2', // If card is below, tooltip goes below the bottom card
@@ -694,14 +695,17 @@ export default function TunnelPath({
                                   </div>
                                 </div>
                               ) : (
-                                <div className='relative flex flex-col items-center'>
-                                  {/* Regular tooltip for points with ultrasonic but no danger */}
+                                <div className='relative flex flex-col items-center group'>
+                                  {' '}
+                                  {/* Added 'group' class for hover functionality */}
+                                  {/* Regular tooltip for points with ultrasonic but no danger - ONLY show on hover */}
                                   {point.ultrasonic !== undefined && (
                                     <div
                                       className={clsx(
                                         'absolute bottom-full mb-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-lg backdrop-blur-sm',
                                         'left-1/2 transform -translate-x-1/2 transition-all duration-200 ease-in-out',
                                         'min-w-max whitespace-nowrap z-30',
+                                        'opacity-0 group-hover:opacity-100 pointer-events-none', // Only show on hover
                                         isDark
                                           ? 'bg-gray-900/95 text-blue-300 border border-blue-500/40'
                                           : 'bg-white/95 text-blue-700 border border-blue-300',
